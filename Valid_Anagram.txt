@@ -1,0 +1,63 @@
+242. Valid Anagram
+Easy
+8.8K
+284
+Companies
+Given two strings s and t, return true if t is an anagram of s, and false otherwise.
+
+An Anagram is a word or phrase formed by rearranging the letters of a different word or phrase, typically using all the original letters exactly once.
+
+ 
+
+Example 1:
+
+Input: s = "anagram", t = "nagaram"
+Output: true
+Example 2:
+
+Input: s = "rat", t = "car"
+Output: false
+ 
+
+Constraints:
+
+1 <= s.length, t.length <= 5 * 104
+s and t consist of lowercase English letters.
+ 
+
+Follow up: What if the inputs contain Unicode characters? How would you adapt your solution to such a case?
+
+
+Solution 1:
+
+class Solution:
+    def isAnagram(self, s: str, t: str) -> bool:
+        if len(s) != len(t):
+            return False
+
+        s_map = {}
+        t_map = {}
+
+        for i in range(len(s)):
+            s_map[s[i]] = 1+ s_map.get(s[i], 0)
+            t_map[t[i]] = 1+ t_map.get(t[i], 0)
+
+
+        for i in s_map:
+            if s_map[i] != t_map.get(i, 0):
+                return False
+            
+        return True
+
+Solution 2:
+
+class Solution:
+    def isAnagram(self, s: str, t: str) -> bool:
+        return Counter(s) == Counter(t)
+
+
+Solution 3:
+
+class Solution:
+    def isAnagram(self, s: str, t: str) -> bool:
+        return sorted(s) == sorted(t)
