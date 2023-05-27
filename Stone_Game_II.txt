@@ -1,0 +1,121 @@
+1140. Stone Game II
+Medium
+1.9K
+376
+Companies
+Alice and Bob continue their games with piles of stones.  There are a number of piles arranged in a row, and each pile has a positive integer number of stones piles[i].  The objective of the game is to end with the most stones. 
+
+Alice and Bob take turns, with Alice starting first.  Initially, M = 1.
+
+On each player's turn, that player can take all the stones in the first X remaining piles, where 1 <= X <= 2M.  Then, we set M = max(M, X).
+
+The game continues until all the stones have been taken.
+
+Assuming Alice and Bob play optimally, return the maximum number of stones Alice can get.
+
+ 
+
+Example 1:
+
+Input: piles = [2,7,9,4,4]
+Output: 10
+Explanation:  If Alice takes one pile at the beginning, Bob takes two piles, then Alice takes 2 piles again. Alice can get 2 + 4 + 4 = 10 piles in total. If Alice takes two piles at the beginning, then Bob can take all three piles left. In this case, Alice get 2 + 7 = 9 piles in total. So we return 10 since it's larger. 
+Example 2:
+
+Input: piles = [1,2,3,4,5,100]
+Output: 104
+ 
+
+Constraints:
+
+1 <= piles.length <= 100
+1 <= piles[i] <= 104
+
+
+Solution 1:
+
+class Solution:
+    def stoneGameII(self, piles: List[int]) -> int:
+        if not piles:
+            return 0
+        dp = [[0] * len(piles) for _ in range(len(piles))]
+
+        suffixSum = [0] * len(piles)
+        suffixSum[-1] = piles[-1]
+        for i in range(len(piles) - 2, -1, -1):
+            suffixSum[i] = piles[i] + suffixSum[i + 1]
+
+        return self.helper(piles, dp, suffixSum, 0, 1)
+
+    def helper(self, piles, dp, suffixSum, i, M):
+        if i == len(piles):
+            return 0
+        if i + 2 * M >= len(piles):
+            return suffixSum[i]
+
+        if dp[i][M] != 0:
+            return dp[i][M]
+
+        total = 0
+        for x in range(1, 2 * M + 1):
+            total = max(total, suffixSum[i] - 
+            self.helper(piles, dp, suffixSum, i + x, max(M, x)))
+
+        dp[i][M] = total
+
+        return total
+
+
+Solution 2:
+
+class Solution:
+    def stoneGameII(self, piles: List[int]) -> int:
+        n = len(piles)
+        dp = {}
+
+        def dfs(alice, i, m):
+            if i == n:
+                return 0
+            if (alice, i, m) in dp:
+                return dp[(alice, i, m)]
+            res = -1 if alice == 0 else float('inf')
+            total = 0
+            for x in range(1, min(2 * m, n - i) + 1):
+                total += piles[i + x - 1]
+                if alice == 0:
+                    res = max(res, total + dfs(1, i + x, max(m, x)))
+                else:
+                    res = min(res, dfs(0, i + x, max(m, x)))
+            dp[(alice, i, m)] = res
+            return res
+        
+        return dfs(0, 0, 1)
+
+
+Solution 3:
+
+class Solution:
+    def stoneGameII(self, piles: List[int]) -> int:
+        if len(piles) == 1: 
+            return piles[0]
+
+        suffixSum = [0] * len(piles)
+        suffixSum[-1] = piles[-1]
+        for i in range(len(piles) - 2, -1, -1):
+            suffixSum[i] = piles[i] + suffixSum[i + 1]
+
+        dp = [[0] * (len(piles) + 1) for _ in range(len(piles) + 1)]
+
+        for pile in range(len(piles) -1, -1, -1):
+            for M in range(len(piles) -1, -1, -1):
+                sumNextPlayer = suffixSum[pile]
+
+                for nextPile in range(pile + 1, min(pile + 2 * M + 1, len(piles) + 1)):
+                    sumNextPlayer = min(sumNextPlayer, dp[nextPile][max(M, nextPile - pile)])
+
+                nextPlayer = suffixSum[pile] - sumNextPlayer
+                dp[pile][M] = nextPlayer
+
+        return dp[0][1]
+
+
