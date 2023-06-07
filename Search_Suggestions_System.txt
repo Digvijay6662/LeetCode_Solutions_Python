@@ -1,0 +1,169 @@
+1268. Search Suggestions System
+Medium
+4.1K
+198
+Companies
+You are given an array of strings products and a string searchWord.
+
+Design a system that suggests at most three product names from products after each character of searchWord is typed. Suggested products should have common prefix with searchWord. If there are more than three products with a common prefix return the three lexicographically minimums products.
+
+Return a list of lists of the suggested products after each character of searchWord is typed.
+
+ 
+
+Example 1:
+
+Input: products = ["mobile","mouse","moneypot","monitor","mousepad"], searchWord = "mouse"
+Output: [["mobile","moneypot","monitor"],["mobile","moneypot","monitor"],["mouse","mousepad"],["mouse","mousepad"],["mouse","mousepad"]]
+Explanation: products sorted lexicographically = ["mobile","moneypot","monitor","mouse","mousepad"].
+After typing m and mo all products match and we show user ["mobile","moneypot","monitor"].
+After typing mou, mous and mouse the system suggests ["mouse","mousepad"].
+Example 2:
+
+Input: products = ["havana"], searchWord = "havana"
+Output: [["havana"],["havana"],["havana"],["havana"],["havana"],["havana"]]
+Explanation: The only word "havana" will be always suggested while typing the search word.
+ 
+
+Constraints:
+
+1 <= products.length <= 1000
+1 <= products[i].length <= 3000
+1 <= sum(products[i].length) <= 2 * 104
+All the strings of products are unique.
+products[i] consists of lowercase English letters.
+1 <= searchWord.length <= 1000
+searchWord consists of lowercase English letters.
+
+
+Solution 1:
+
+class TrieNode:
+    def __init__(self):
+        self.children = {}
+        self.endOfWord = False
+
+    def insert(self, word):
+        curr = self
+        for c in word:
+            if c not in curr.children:
+                curr.children[c] = TrieNode()
+            curr = curr.children[c]
+        curr.endOfWord = True
+
+    def search(self, prefix):
+        curr = self
+        res = []
+        for c in prefix:
+            if c not in curr.children:
+                return res
+            curr = curr.children[c]
+        self.getSuggestions(curr, prefix, res)
+        return res
+
+    def getSuggestions(self, node, prefix, res):
+        if node.endOfWord:
+            res.append(prefix)
+        if len(res) == 3:
+            return
+        for c, child in node.children.items():
+            self.getSuggestions(child, prefix + c, res)
+            if len(res) == 3:
+                return
+
+
+class Solution:
+    def suggestedProducts(self, products: List[str], searchWord: str) -> List[List[str]]:
+        products.sort()
+        trie = TrieNode()
+
+        for product in products:
+            trie.insert(product)
+
+        result = []
+        prefix = ""
+        for c in searchWord:
+            prefix += c
+            suggestions = trie.search(prefix)
+            result.append(suggestions)
+
+        return result
+
+
+Solution 2:
+
+class TrieNode:
+    def __init__(self):
+        self.children = collections.defaultdict(TrieNode)
+        self.suggestions = []
+
+    def add_suggestion(self, product):
+        if len(self.suggestions) < 3:
+            self.suggestions.append(product)
+
+
+class Solution:
+    def suggestedProducts(self, products: List[str], searchWord: str) -> List[List[str]]:
+        products.sort()
+        root = TrieNode()
+
+        for product in products:
+            node = root
+            for char in product:
+                node = node.children[char]
+                node.add_suggestion(product)
+
+        result = []
+        node = root
+        for char in searchWord:
+            node = node.children[char]
+            result.append(node.suggestions)
+
+        return result
+
+
+Solution 3:
+
+class Solution:
+    def suggestedProducts(self, products: List[str], searchWord: str) -> List[List[str]]:
+        n = len(products)
+        products.sort()
+        ans = []
+        l, r = 0, n - 1
+
+        for i, c in enumerate(searchWord):
+            while l <= r and (i >= len(products[l]) or products[l][i] != c):
+                l += 1
+            while l <= r and (i >= len(products[r]) or products[r][i] != c):
+                r -= 1
+
+            if l <= r:
+                ans.append(products[l:min(l+3, r+1)])
+            else:
+                ans.append([])
+        return ans
+
+
+Solution 4:
+
+class Solution:
+    def suggestedProducts(self, products: List[str], searchWord: str) -> List[List[str]]:
+        n = len(products)
+        products.sort()
+        ans = []
+        beginSearch = 0
+        prefix = ""
+
+        for c in searchWord:
+            prefix += c
+            beginSearch = insertIndex = bisect_left(products, prefix, beginSearch, n)
+            suggestProducts = []
+
+            for i in range(insertIndex, min(insertIndex+3, n)):
+                if products[i].startswith(prefix):
+                    suggestProducts.append(products[i])
+            ans.append(suggestProducts)
+            
+        return ans
+
+

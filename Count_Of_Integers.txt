@@ -1,0 +1,110 @@
+2719. Count of Integers
+Hard
+154
+6
+Companies
+You are given two numeric strings num1 and num2 and two integers max_sum and min_sum. We denote an integer x to be good if:
+
+num1 <= x <= num2
+min_sum <= digit_sum(x) <= max_sum.
+Return the number of good integers. Since the answer may be large, return it modulo 109 + 7.
+
+Note that digit_sum(x) denotes the sum of the digits of x.
+
+ 
+
+Example 1:
+
+Input: num1 = "1", num2 = "12", min_num = 1, max_num = 8
+Output: 11
+Explanation: There are 11 integers whose sum of digits lies between 1 and 8 are 1,2,3,4,5,6,7,8,10,11, and 12. Thus, we return 11.
+Example 2:
+
+Input: num1 = "1", num2 = "5", min_num = 1, max_num = 5
+Output: 5
+Explanation: The 5 integers whose sum of digits lies between 1 and 5 are 1,2,3,4, and 5. Thus, we return 5.
+ 
+
+Constraints:
+
+1 <= num1 <= num2 <= 1022
+1 <= min_sum <= max_sum <= 400
+
+
+Solution 1:
+
+class Solution:
+    def count(self, num1: str, num2: str, min_sum: int, max_sum: int) -> int:
+        res = 0
+        mod = 10 ** 9 + 7
+
+        def digitSum(num):
+            s = 0
+            for n in num:
+                s += ord(n) - ord('0')
+
+            return s
+
+        @cache
+        def solve(num, i, currSum, isTight):
+            if i == len(num):
+                if min_sum <= currSum <= max_sum:
+                    return 1
+                else:
+                    return 0
+            ans = 0
+            end = ord(num[i]) - ord('0') if isTight else 9
+
+            for j in range(end + 1):
+                newTight = True if (isTight and j == end) else False
+                ans += solve(num, i + 1, currSum + j, newTight)
+                ans = ans % mod
+
+
+            return ans
+
+
+        res += (solve(num2, 0, 0, True) - solve(num1, 0, 0, True) + mod) % mod
+
+        if min_sum <= digitSum(num1) <= max_sum:
+            res += 1
+
+        return res
+
+
+Solution 2:
+
+class Solution:
+    def count(self, num1: str, num2: str, min_sum: int, max_sum: int) -> int:
+        mod = 1000000007
+        dp = [[[-1 for _ in range(2)] for _ in range(200)] for _ in range(23)]
+
+        def solve(num, tight, currSum, index):
+            if index == len(num):
+                return 1 if min_sum <= currSum <= max_sum else 0
+
+            if dp[index][currSum][tight] != -1:
+                return dp[index][currSum][tight]
+
+            ans = 0
+            end = int(num[index]) if tight == 1 else 9
+            for curr in range(end + 1):
+                newTight = tight if curr == end else 0
+                ans += solve(num, newTight, currSum + curr, index + 1)
+                ans %= mod
+
+            dp[index][currSum][tight] = ans
+            return ans
+
+        ans = solve(num2, 1, 0, 0)
+
+        for i in range(23):
+            for j in range(200):
+                dp[i][j] = [-1, -1]
+
+        ans -= solve(str(int(num1) - 1), 1, 0, 0)
+
+        return (ans + mod) % mod
+        
+
+
