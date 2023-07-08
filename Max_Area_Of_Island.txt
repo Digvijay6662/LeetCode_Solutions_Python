@@ -1,0 +1,161 @@
+695. Max Area of Island
+Medium
+9.2K
+197
+Companies
+You are given an m x n binary matrix grid. An island is a group of 1's (representing land) connected 4-directionally (horizontal or vertical.) You may assume all four edges of the grid are surrounded by water.
+
+The area of an island is the number of cells with a value 1 in the island.
+
+Return the maximum area of an island in grid. If there is no island, return 0.
+
+ 
+
+Example 1:
+
+
+Input: grid = [[0,0,1,0,0,0,0,1,0,0,0,0,0],[0,0,0,0,0,0,0,1,1,1,0,0,0],[0,1,1,0,1,0,0,0,0,0,0,0,0],[0,1,0,0,1,1,0,0,1,0,1,0,0],[0,1,0,0,1,1,0,0,1,1,1,0,0],[0,0,0,0,0,0,0,0,0,0,1,0,0],[0,0,0,0,0,0,0,1,1,1,0,0,0],[0,0,0,0,0,0,0,1,1,0,0,0,0]]
+Output: 6
+Explanation: The answer is not 11, because the island must be connected 4-directionally.
+Example 2:
+
+Input: grid = [[0,0,0,0,0,0,0,0]]
+Output: 0
+ 
+
+Constraints:
+
+m == grid.length
+n == grid[i].length
+1 <= m, n <= 50
+grid[i][j] is either 0 or 1.
+
+
+Solution 1: Depth-First Search
+
+class Solution:
+    def maxAreaOfIsland(self, grid: List[List[int]]) -> int:
+        directions = ((1, 0), (-1, 0), (0, 1), (0, -1))
+        rows, cols = len(grid), len(grid[0])
+        visited = set()
+        area = 0
+
+        def dfs(i, j):
+            if i < 0 or i >= rows or j < 0 or j >= cols or (i, j) in visited or grid[i][j] == 0:
+                return 0
+            
+            visited.add((i, j))
+            ans = 1
+
+            for dr, dc in directions:
+                r, c = i + dr, j + dc
+                ans += dfs(r, c)
+            
+            return ans
+
+        for i in range(rows):
+            for j in range(cols):
+                if grid[i][j] == 1 and (i, j) not in visited:
+                    area = max(area, dfs(i, j))
+
+        return area
+
+
+Solution 2: Depth-First Search Inplace
+
+class Solution:
+    def maxAreaOfIsland(self, grid: List[List[int]]) -> int:
+        directions = ((1, 0), (-1, 0), (0, 1), (0, -1))
+        rows, cols = len(grid), len(grid[0])
+        area = 0
+
+        def dfs(i, j):
+            if i < 0 or i >= rows or j < 0 or j >= cols or grid[i][j] == 0:
+                return 0
+            
+            grid[i][j] = 0
+            ans = 1
+
+            for dr, dc in directions:
+                r, c = i + dr, j + dc
+                ans += dfs(r, c)
+            
+            return ans
+
+        for i in range(rows):
+            for j in range(cols):
+                if grid[i][j] == 1:
+                    area = max(area, dfs(i, j))
+
+        return area
+
+
+Solution 3: Breadth-First Search
+
+class Solution:
+    def maxAreaOfIsland(self, grid: List[List[int]]) -> int:
+        directions = ((1, 0), (-1, 0), (0, 1), (0, -1))
+        rows, cols = len(grid), len(grid[0])
+        visited = set()
+        area = 0
+
+        def bfs(i, j):
+            q = deque([(i, j)])
+            visited.add((i, j))
+            area = 1
+            while q:
+                r, c = q.popleft()
+
+                for dr, dc in directions:
+                    nr, nc = r + dr, c + dc
+
+                    if 0 <= nr < rows and 0 <= nc < cols and (nr, nc) not in visited and grid[nr][nc] == 1:
+                        visited.add((nr, nc))
+                        q.append((nr, nc))
+                        area += 1
+
+            return area
+
+        for i in range(rows):
+            for j in range(cols):
+                if grid[i][j] == 1 and (i, j) not in visited:
+                    area = max(area, bfs(i, j))
+
+        return area
+
+
+Solution 4: Breadth-First Search Inplace
+
+class Solution:
+    def maxAreaOfIsland(self, grid: List[List[int]]) -> int:
+        directions = ((1, 0), (-1, 0), (0, 1), (0, -1))
+        rows, cols = len(grid), len(grid[0])
+        area = 0
+
+        def bfs(i, j):
+            q = deque([(i, j)])
+            grid[i][j] = 0
+            area = 1
+            while q:
+                r, c = q.popleft()
+
+                for dr, dc in directions:
+                    nr, nc = r + dr, c + dc
+
+                    if 0 <= nr < rows and 0 <= nc < cols and (nr, nc) and grid[nr][nc] == 1:
+                        grid[nr][nc] = 0
+                        q.append((nr, nc))
+                        area += 1
+
+            return area
+
+        for i in range(rows):
+            for j in range(cols):
+                if grid[i][j] == 1:
+                    area = max(area, bfs(i, j))
+
+        return area
+
+
+
+

@@ -1,0 +1,115 @@
+130. Surrounded Regions
+Medium
+7.4K
+1.6K
+Companies
+Given an m x n matrix board containing 'X' and 'O', capture all regions that are 4-directionally surrounded by 'X'.
+
+A region is captured by flipping all 'O's into 'X's in that surrounded region.
+
+ 
+
+Example 1:
+
+
+Input: board = [["X","X","X","X"],["X","O","O","X"],["X","X","O","X"],["X","O","X","X"]]
+Output: [["X","X","X","X"],["X","X","X","X"],["X","X","X","X"],["X","O","X","X"]]
+Explanation: Notice that an 'O' should not be flipped if:
+- It is on the border, or
+- It is adjacent to an 'O' that should not be flipped.
+The bottom 'O' is on the border, so it is not flipped.
+The other three 'O' form a surrounded region, so they are flipped.
+Example 2:
+
+Input: board = [["X"]]
+Output: [["X"]]
+ 
+
+Constraints:
+
+m == board.length
+n == board[i].length
+1 <= m, n <= 200
+board[i][j] is 'X' or 'O'.
+
+
+Solution 1:
+
+class Solution:
+    def solve(self, board: List[List[str]]) -> None:
+        """
+        Do not return anything, modify board in-place instead.
+        """
+
+        rows, cols = len(board), len(board[0])
+        visited = set()
+        directions = ((1, 0), (-1, 0), (0, 1), (0, -1))
+
+        def dfs(i, j):
+            if i < 0 or i == rows or j < 0 or j == cols or board[i][j] == 'X' or (i, j) in visited:
+                return
+
+            visited.add((i, j))
+
+            for dr, dc in directions:
+                dfs(i + dr, j + dc)
+
+        for r in range(rows):
+            dfs(r, 0)
+            dfs(r, cols - 1)
+
+        for c in range(cols):
+            dfs(0, c)
+            dfs(rows - 1, c)
+
+        
+        for r in range(rows):
+            for c in range(cols):
+                if (r, c) not in visited and board[r][c] == 'O':
+                    board[r][c] = 'X'
+
+
+Solution 2:
+
+class Solution:
+    def solve(self, board: List[List[str]]) -> None:
+        """
+        Do not return anything, modify board in-place instead.
+        """
+        
+        rows, cols = len(board), len(board[0])
+        directions = ((1, 0), (-1, 0), (0, 1), (0, -1))
+        q = deque()
+        
+        for i in range(rows):
+            if board[i][0] == 'O':
+                q.append((i,0))
+            if board[i][cols-1] == 'O':
+                q.append((i, cols-1))
+                
+        for j in range(cols):
+            if board[0][j] == 'O':
+                q.append((0,j))
+            if board[rows-1][j] == 'O':
+                q.append((rows-1, j))
+                
+        def inBounds(i,j):
+            return (0 <= i < rows) and (0 <= j < cols) and board[i][j] == 'O'
+                
+        while q:
+            i,j = q.popleft()
+            board[i][j] = "#"
+            
+            for dr, dc in directions:
+                r, c = i + dr, j + dc
+                if not inBounds(r, c):
+                    continue
+                q.append((r,c))
+                board[r][c] = '#'
+            
+        for i in range(rows):
+            for j in range(cols):
+                if board[i][j] == 'O':
+                    board[i][j] = 'X'
+                elif board[i][j] == '#':
+                    board[i][j] = 'O'

@@ -1,0 +1,131 @@
+332. Reconstruct Itinerary
+Hard
+4.7K
+1.7K
+Companies
+You are given a list of airline tickets where tickets[i] = [fromi, toi] represent the departure and the arrival airports of one flight. Reconstruct the itinerary in order and return it.
+
+All of the tickets belong to a man who departs from "JFK", thus, the itinerary must begin with "JFK". If there are multiple valid itineraries, you should return the itinerary that has the smallest lexical order when read as a single string.
+
+For example, the itinerary ["JFK", "LGA"] has a smaller lexical order than ["JFK", "LGB"].
+You may assume all tickets form at least one valid itinerary. You must use all the tickets once and only once.
+
+ 
+
+Example 1:
+
+
+Input: tickets = [["MUC","LHR"],["JFK","MUC"],["SFO","SJC"],["LHR","SFO"]]
+Output: ["JFK","MUC","LHR","SFO","SJC"]
+Example 2:
+
+
+Input: tickets = [["JFK","SFO"],["JFK","ATL"],["SFO","ATL"],["ATL","JFK"],["ATL","SFO"]]
+Output: ["JFK","ATL","JFK","SFO","ATL","SFO"]
+Explanation: Another possible reconstruction is ["JFK","SFO","ATL","JFK","ATL","SFO"] but it is larger in lexical order.
+ 
+
+Constraints:
+
+1 <= tickets.length <= 300
+tickets[i].length == 2
+fromi.length == 3
+toi.length == 3
+fromi and toi consist of uppercase English letters.
+fromi != toi
+
+
+Solution 1:
+
+class Solution:
+    def findItinerary(self, tickets: List[List[str]]) -> List[str]:
+        tickets.sort()
+        adj = defaultdict(list)
+
+        for src, dest in tickets:
+            adj[src].append(dest)
+
+        res = []
+
+        def dfs(src):
+            if len(res) == len(tickets) + 1:
+                return True
+
+            if src not in adj:
+                return False
+
+            temp = list(adj[src])
+            for i, dest in enumerate(temp):
+                adj[src].pop(i)
+                res.append(dest)
+                if dfs(dest):
+                    return True
+                adj[src].insert(i, dest)
+                res.pop()
+
+            return False
+
+        res.append("JFK")
+        dfs("JFK")
+        return res
+
+
+Solution 2:
+
+class Solution:
+    def findItinerary(self, tickets: List[List[str]]) -> List[str]:
+        tickets.sort()
+        adj = {src: collections.deque() for src, dest in tickets}
+
+        for src, dest in tickets:
+            adj[src].append(dest)
+
+        res = []
+
+        def dfs(src):
+            if len(res) == len(tickets) + 1:
+                return True
+
+            if src not in adj:
+                return False
+
+            temp = list(adj[src])
+            for dest in temp:
+                adj[src].popleft()
+                res.append(dest)
+                if dfs(dest):
+                    return res
+                res.pop()
+                adj[src].append(dest)
+            return False
+
+
+        res.append("JFK")
+        dfs("JFK")
+        return res
+
+
+Solution 3:
+
+class Solution:
+    def findItinerary(self, tickets: List[List[str]]) -> List[str]:
+        adj = defaultdict(list)
+
+        for src, dst in tickets:
+            adj[src].append(dst)
+
+        for src in adj:
+            adj[src].sort(reverse=True)
+
+        stack = []
+        res = []
+        stack.append("JFK")
+
+        while len(stack) > 0:
+            node = stack[-1]
+            if node in adj and len(adj[node]) > 0:
+                stack.append(adj[node].pop())
+            else:
+                res.append(stack.pop())
+
+        return res[::-1]

@@ -1,0 +1,80 @@
+137. Single Number II
+Medium
+6.5K
+586
+Companies
+Given an integer array nums where every element appears three times except for one, which appears exactly once. Find the single element and return it.
+
+You must implement a solution with a linear runtime complexity and use only constant extra space.
+
+ 
+
+Example 1:
+
+Input: nums = [2,2,3,2]
+Output: 3
+Example 2:
+
+Input: nums = [0,1,0,1,0,1,99]
+Output: 99
+ 
+
+Constraints:
+
+1 <= nums.length <= 3 * 104
+-231 <= nums[i] <= 231 - 1
+Each element in nums appears exactly three times except for one element which appears once.
+
+
+Solution 1:
+
+class Solution:
+    def singleNumber(self, nums: List[int]) -> int:
+        freq = defaultdict(int)
+
+        for n in nums:
+            freq[n] += 1
+
+
+        for k, v in freq.items():
+            if v == 1:
+                return k
+
+
+Solution 2:
+
+class Solution:
+    def singleNumber(self, nums: List[int]) -> int:
+        res = 0
+
+        # Iterate over each bit position from 0 to 31
+        for i in range(32):   
+            bitSum = 0
+
+            # Count the number of set bits at the current position for all numbers in 'nums'
+            for n in nums:
+                bitSum += (n >> i) & 1
+
+            # Calculate the sum modulo 3 and set the corresponding bit in the result
+            res |= (bitSum % 3) << i
+
+        # Check if the result is a negative number (if the leftmost bit is set)
+        if res & (1 << 31):
+            # Convert the result to a negative number
+            res = -(res ^ 0xffffffff) - 1
+
+        return res
+
+
+Solution 3:
+
+class Solution:
+    def singleNumber(self, nums: List[int]) -> int:
+        ones = 0
+        twos = 0
+
+        for num in nums:
+            ones = (ones ^ num) & ~twos
+            twos = (twos ^ num) & ~ones
+
+        return ones
