@@ -1,0 +1,139 @@
+494. Target Sum
+Medium
+9.7K
+323
+Companies
+You are given an integer array nums and an integer target.
+
+You want to build an expression out of nums by adding one of the symbols '+' and '-' before each integer in nums and then concatenate all the integers.
+
+For example, if nums = [2, 1], you can add a '+' before 2 and a '-' before 1 and concatenate them to build the expression "+2-1".
+Return the number of different expressions that you can build, which evaluates to target.
+
+ 
+
+Example 1:
+
+Input: nums = [1,1,1,1,1], target = 3
+Output: 5
+Explanation: There are 5 ways to assign symbols to make the sum of nums be target 3.
+-1 + 1 + 1 + 1 + 1 = 3
++1 - 1 + 1 + 1 + 1 = 3
++1 + 1 - 1 + 1 + 1 = 3
++1 + 1 + 1 - 1 + 1 = 3
++1 + 1 + 1 + 1 - 1 = 3
+Example 2:
+
+Input: nums = [1], target = 1
+Output: 1
+ 
+
+Constraints:
+
+1 <= nums.length <= 20
+0 <= nums[i] <= 1000
+0 <= sum(nums[i]) <= 1000
+-1000 <= target <= 1000
+
+
+Solution 1:
+
+class Solution:
+    def findTargetSumWays(self, nums: List[int], target: int) -> int:
+        n = len(nums)
+        dp = {}
+
+        def solve(idx, val):
+
+            if (idx, val) in dp:
+                return dp[(idx, val)]
+
+            if idx == n and val == target:
+                return 1
+
+            if idx == n:
+                return 0
+
+
+            op1 = solve(idx + 1, val - nums[idx])
+            op2 = solve(idx + 1, val + nums[idx])
+
+            dp[(idx, val)] = op1 + op2
+
+            return dp[(idx, val)]
+
+        return solve(0, 0)
+
+
+Solution 2:
+
+class Solution:
+    def findTargetSumWays(self, nums: List[int], target: int) -> int:
+        n = len(nums)
+        total = sum(nums)
+
+        if target > total or target < -total:
+            return 0
+
+        offset = total
+        dp = [[0] * (2 * total + 1) for _ in range(n + 1)]
+
+        dp[n][offset] = 1
+        
+        for i in range(n - 1, -1, -1):
+            for j in range(-total, total + 1):
+                if j + nums[i] <= total:
+                    dp[i][j + offset] += dp[i + 1][j + nums[i] + offset]
+                if j - nums[i] >= -total:
+                    dp[i][j + offset] += dp[i + 1][j - nums[i] + offset]
+
+        return dp[0][target + offset]
+
+
+Solution 2:
+
+
+class Solution:
+    def findTargetSumWays(self, nums: List[int], target: int) -> int:
+        n = len(nums)
+        total = sum(nums)
+
+        if target > total or target < -total:
+            return 0
+
+        offset = total
+        dp = [[0] * (2 * total + 1) for _ in range(n + 1)]
+
+        dp[n][offset] = 1
+        
+        for i in range(n - 1, -1, -1):
+            for j in range(-total, total + 1):
+                if j + nums[i] <= total:
+                    dp[i][j + offset] += dp[i + 1][j + nums[i] + offset]
+                if j - nums[i] >= -total:
+                    dp[i][j + offset] += dp[i + 1][j - nums[i] + offset]
+
+        return dp[0][target + offset]
+
+
+Solution 3:
+
+class Solution:
+    def findTargetSumWays(self, nums: List[int], target: int) -> int:
+        total = sum(nums)
+
+        if target > total or target < -total:
+            return 0
+
+        dp = [0] * (2 * total + 1)
+        dp[total] = 1
+
+        for num in nums:
+            curr = [0] * (2 * total + 1)
+            for k in range(2 * total + 1):
+                if dp[k] != 0:
+                    curr[k + num] += dp[k]
+                    curr[k - num] += dp[k]
+            dp = curr
+
+        return dp[total + target]
