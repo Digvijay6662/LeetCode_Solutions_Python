@@ -1,0 +1,83 @@
+43. Multiply Strings
+Medium
+6.4K
+2.9K
+Companies
+Given two non-negative integers num1 and num2 represented as strings, return the product of num1 and num2, also represented as a string.
+
+Note: You must not use any built-in BigInteger library or convert the inputs to integer directly.
+
+ 
+
+Example 1:
+
+Input: num1 = "2", num2 = "3"
+Output: "6"
+Example 2:
+
+Input: num1 = "123", num2 = "456"
+Output: "56088"
+ 
+
+Constraints:
+
+1 <= num1.length, num2.length <= 200
+num1 and num2 consist of digits only.
+Both num1 and num2 do not contain any leading zero, except the number 0 itself.
+
+
+Solution 1:
+
+class Solution:
+    def multiply(self, num1: str, num2: str) -> str:
+        n1 = len(num1)
+        n2 = len(num2)
+        res = [0] * (n1 + n2)
+        end = len(res) - 1
+
+        for i in range(n1 - 1, -1, -1):
+            a = int(num1[i])
+            pos = end
+            carry = 0
+
+            for j in range(n2 - 1, -1, -1):
+                b = int(num2[j])
+                product = (a * b) + carry + res[pos]
+                carry = product // 10
+                res[pos] = product % 10
+                pos = pos - 1
+                
+            while carry:
+                product = res[pos] + carry
+                carry = product // 10
+                res[pos] = product % 10
+                pos = pos - 1
+
+            end = end - 1
+
+        while len(res) > 1 and res[0] == 0:
+            res.pop(0)
+
+        return "".join(str(digit) for digit in res)
+
+
+Solution 2:
+
+class Solution:
+    def multiply(self, num1: str, num2: str) -> str:
+        n1, n2 = len(num1), len(num2)
+        res = [0] * (n1 + n2)
+        
+        for i in range(n1 - 1, -1, -1):
+            a = int(num1[i])
+            for j in range(n2 - 1, -1, -1):
+                b = int(num2[j])
+                product = (a * b) + res[i + j + 1]
+                res[i + j + 1] = product % 10
+                res[i + j] += product // 10
+                
+        start = 0
+        while start < len(res) - 1 and res[start] == 0:
+            start += 1
+        
+        return "".join(str(digit) for digit in res[start:])

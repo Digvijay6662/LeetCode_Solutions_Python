@@ -1,0 +1,114 @@
+846. Hand of Straights
+Medium
+2.2K
+148
+Companies
+Alice has some number of cards and she wants to rearrange the cards into groups so that each group is of size groupSize, and consists of groupSize consecutive cards.
+
+Given an integer array hand where hand[i] is the value written on the ith card and an integer groupSize, return true if she can rearrange the cards, or false otherwise.
+
+ 
+
+Example 1:
+
+Input: hand = [1,2,3,6,2,3,4,7,8], groupSize = 3
+Output: true
+Explanation: Alice's hand can be rearranged as [1,2,3],[2,3,4],[6,7,8]
+Example 2:
+
+Input: hand = [1,2,3,4,5], groupSize = 4
+Output: false
+Explanation: Alice's hand can not be rearranged into groups of 4.
+
+ 
+
+Constraints:
+
+1 <= hand.length <= 104
+0 <= hand[i] <= 109
+1 <= groupSize <= hand.length
+ 
+
+Note: This question is the same as 1296: https://leetcode.com/problems/divide-array-in-sets-of-k-consecutive-numbers/
+
+
+Solution 1:
+
+class Solution:
+    def isNStraightHand(self, hand: List[int], groupSize: int) -> bool:
+        n = len(hand)
+
+        if n % groupSize != 0:
+            return False
+
+        countMap = {}
+
+        for card in hand:
+            countMap[card] = countMap.get(card, 0) + 1
+
+        minHeap = list(countMap.keys())
+        heapq.heapify(minHeap)
+
+        while minHeap:
+            card = minHeap[0]
+            for newCard in range(card, card + groupSize):
+                if newCard not in countMap:
+                    return False
+                    
+                countMap[newCard] -= 1
+
+                if countMap[newCard] == 0:
+                    if newCard != minHeap[0]:
+                        return False
+                    heapq.heappop(minHeap)
+
+        return True
+
+
+Solution 2:
+
+class Solution:
+    def isNStraightHand(self, hand: List[int], groupSize: int) -> bool:
+        n = len(hand)
+
+        if n % groupSize != 0:
+            return False
+
+        countMap = Counter(hand)
+
+        for i in sorted(countMap):
+            if countMap[i] > 0:
+                val = countMap[i]
+                for j in range(groupSize):
+                    countMap[i + j] -= val
+                    if countMap[i + j] < 0:
+                        return False
+        return True
+
+
+Solution 3:
+
+class Solution:
+    def isNStraightHand(self, hand: List[int], groupSize: int) -> bool:
+        n = len(hand)
+
+        if n % groupSize != 0:
+            return False
+
+        countMap = {}
+
+        for card in hand:
+            countMap[card] = countMap.get(card, 0) + 1
+
+        for i in sorted(countMap):
+            if countMap[i] > 0:
+                val = countMap[i]
+                for j in range(groupSize):
+                    if (i + j) not in countMap:
+                        return False
+                        
+                    countMap[i + j] -= val
+                    if countMap[i + j] < 0:
+                        return False
+        return True
+

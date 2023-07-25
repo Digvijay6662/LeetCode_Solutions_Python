@@ -1,0 +1,152 @@
+688. Knight Probability in Chessboard
+Medium
+3.4K
+427
+Companies
+On an n x n chessboard, a knight starts at the cell (row, column) and attempts to make exactly k moves. The rows and columns are 0-indexed, so the top-left cell is (0, 0), and the bottom-right cell is (n - 1, n - 1).
+
+A chess knight has eight possible moves it can make, as illustrated below. Each move is two cells in a cardinal direction, then one cell in an orthogonal direction.
+
+
+Each time the knight is to move, it chooses one of eight possible moves uniformly at random (even if the piece would go off the chessboard) and moves there.
+
+The knight continues moving until it has made exactly k moves or has moved off the chessboard.
+
+Return the probability that the knight remains on the board after it has stopped moving.
+
+ 
+
+Example 1:
+
+Input: n = 3, k = 2, row = 0, column = 0
+Output: 0.06250
+Explanation: There are two moves (to (1,2), (2,1)) that will keep the knight on the board.
+From each of those positions, there are also two moves that will keep the knight on the board.
+The total probability the knight stays on the board is 0.0625.
+Example 2:
+
+Input: n = 1, k = 0, row = 0, column = 0
+Output: 1.00000
+ 
+
+Constraints:
+
+1 <= n <= 25
+0 <= k <= 100
+0 <= row, column <= n - 1
+
+
+Solution 1:
+
+class Solution:
+    def knightProbability(self, n: int, k: int, row: int, column: int) -> float:
+
+        directions = ((-2, -1), (-2, 1), (2, -1), (2, 1), (-1, 2), (1, 2), (-1, -2), (1, -2))
+        dp = {}
+
+        def solve(i, j, k):
+            if (i, j, k) in dp:
+                return dp[(i, j, k)]
+
+            if i < 0 or i >= n or j < 0 or j >=n:
+                return 0
+
+            if k == 0:
+                return 1
+
+            prob = 0
+            for dr, dc in directions:
+                r, c = i + dr, j + dc
+                prob += (1 / 8) * solve(r, c, k - 1)
+
+            dp[(i, j, k)] = prob
+            return prob
+        
+        return solve(row, column, k)
+
+
+Solution 2:
+
+class Solution:
+    def knightProbability(self, n: int, k: int, row: int, column: int) -> float:
+        directions = ((-2, -1), (-2, 1), (2, -1), (2, 1), (-1, 2), (1, 2), (-1, -2), (1, -2))
+        dp = [[[0 for _ in range(n)] for _ in range(n)] for _ in range(k+1)]
+        dp[0][row][column] = 1.0
+
+        def isValid(r, c):
+            return 0 <= r < n and 0 <= c < n
+
+        for step in range(1, k + 1):
+            for i in range(n):
+                for j in range(n):
+                    for dr, dc in directions:
+                        nr, nc = i + dr, j + dc
+                        if isValid(nr, nc):
+                            dp[step][i][j] += dp[step - 1][nr][nc] / 8.0
+
+        prob = 0.0
+        for i in range(n):
+            for j in range(n):
+                prob += dp[k][i][j]
+
+        return prob
+
+
+Solution 3:
+
+class Solution:
+    def knightProbability(self, n: int, k: int, row: int, column: int) -> float:
+        directions = ((-2, -1), (-2, 1), (2, -1), (2, 1), (-1, 2), (1, 2), (-1, -2), (1, -2))
+        prev = [[0 for _ in range(n)] for _ in range(n)]
+        curr = [[0 for _ in range(n)] for _ in range(n)]
+        prev[row][column] = 1.0
+
+        def isValid(r, c):
+            return 0 <= r < n and 0 <= c < n
+
+        for step in range(1, k + 1):
+            for i in range(n):
+                for j in range(n):
+                    curr[i][j] = 0
+                    for dr, dc in directions:
+                        nr, nc = i + dr, j + dc
+                        if isValid(nr, nc):
+                            curr[i][j] += prev[nr][nc] / 8.0
+
+            prev, curr = curr, prev
+
+        prob = 0.0
+        for i in range(n):
+            for j in range(n):
+                prob += prev[i][j]
+
+        return prob
+
+Solution 4:
+
+class Solution:
+    def knightProbability(self, n: int, k: int, row: int, column: int) -> float:
+        directions = ((-2, -1), (-2, 1), (2, -1), (2, 1), (-1, 2), (1, 2), (-1, -2), (1, -2))
+        prev = [[0 for _ in range(n)] for _ in range(n)]
+        prev[row][column] = 1.0
+
+        def isValid(r, c):
+            return 0 <= r < n and 0 <= c < n
+
+        for step in range(1, k + 1):
+            curr = [[0 for _ in range(n)] for _ in range(n)]
+            for i in range(n):
+                for j in range(n):
+                    for dr, dc in directions:
+                        nr, nc = i + dr, j + dc
+                        if isValid(nr, nc):
+                            curr[i][j] += prev[nr][nc] / 8.0
+
+            prev = curr
+
+        prob = 0.0
+        for i in range(n):
+            for j in range(n):
+                prob += prev[i][j]
+
+        return prob
