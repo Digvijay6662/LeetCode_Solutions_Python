@@ -1,0 +1,104 @@
+77. Combinations
+Medium
+6.4K
+192
+Companies
+Given two integers n and k, return all possible combinations of k numbers chosen from the range [1, n].
+
+You may return the answer in any order.
+
+ 
+
+Example 1:
+
+Input: n = 4, k = 2
+Output: [[1,2],[1,3],[1,4],[2,3],[2,4],[3,4]]
+Explanation: There are 4 choose 2 = 6 total combinations.
+Note that combinations are unordered, i.e., [1,2] and [2,1] are considered to be the same combination.
+Example 2:
+
+Input: n = 1, k = 1
+Output: [[1]]
+Explanation: There is 1 choose 1 = 1 total combination.
+ 
+
+Constraints:
+
+1 <= n <= 20
+1 <= k <= n
+
+
+
+Solution 1:
+
+class Solution:
+    def combine(self, n: int, k: int) -> List[List[int]]:
+        res = []
+
+        def solve(start, com):
+            if len(com) == k:
+                res.append(com.copy())
+                return
+
+            if start > n:
+                return 
+                
+            com.append(start)
+            solve(start + 1, com)
+            com.pop()
+
+            solve(start + 1, com)
+
+        solve(1, [])
+
+        return res
+
+
+Solution 2:
+
+class Solution:
+    def combine(self, n: int, k: int) -> List[List[int]]:
+        res = []
+
+        def solve(start, com):
+            if len(com) == k:
+                res.append(com.copy())
+                return
+            
+            for i in range(start, n + 1):
+                com.append(i)
+                solve(i + 1, com)
+                com.pop()
+
+        solve(1, [])
+
+        return res
+
+
+Solution 3:
+
+class Solution:
+    def combine(self, n: int, k: int) -> List[List[int]]:
+        res = []
+        stack = []
+        stack.append((1, []))
+
+        while stack:
+            i, com = stack.pop()
+
+            if len(com) == k:
+                res.append(com)
+                continue
+
+            for j in range(i, n + 1):
+                stack.append((j + 1, com + [j]))
+
+        return res
+
+
+
+Solution 4:
+
+class Solution:
+    def combine(self, n: int, k: int) -> List[List[int]]:
+        return list(combinations(range(1, n + 1), k))
