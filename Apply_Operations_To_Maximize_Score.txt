@@ -1,0 +1,166 @@
+2818. Apply Operations to Maximize Score
+Hard
+203
+7
+Companies
+You are given an array nums of n positive integers and an integer k.
+
+Initially, you start with a score of 1. You have to maximize your score by applying the following operation at most k times:
+
+Choose any non-empty subarray nums[l, ..., r] that you haven't chosen previously.
+Choose an element x of nums[l, ..., r] with the highest prime score. If multiple such elements exist, choose the one with the smallest index.
+Multiply your score by x.
+Here, nums[l, ..., r] denotes the subarray of nums starting at index l and ending at the index r, both ends being inclusive.
+
+The prime score of an integer x is equal to the number of distinct prime factors of x. For example, the prime score of 300 is 3 since 300 = 2 * 2 * 3 * 5 * 5.
+
+Return the maximum possible score after applying at most k operations.
+
+Since the answer may be large, return it modulo 109 + 7.
+
+ 
+
+Example 1:
+
+Input: nums = [8,3,9,3,8], k = 2
+Output: 81
+Explanation: To get a score of 81, we can apply the following operations:
+- Choose subarray nums[2, ..., 2]. nums[2] is the only element in this subarray. Hence, we multiply the score by nums[2]. The score becomes 1 * 9 = 9.
+- Choose subarray nums[2, ..., 3]. Both nums[2] and nums[3] have a prime score of 1, but nums[2] has the smaller index. Hence, we multiply the score by nums[2]. The score becomes 9 * 9 = 81.
+It can be proven that 81 is the highest score one can obtain.
+Example 2:
+
+Input: nums = [19,12,14,6,10,18], k = 3
+Output: 4788
+Explanation: To get a score of 4788, we can apply the following operations: 
+- Choose subarray nums[0, ..., 0]. nums[0] is the only element in this subarray. Hence, we multiply the score by nums[0]. The score becomes 1 * 19 = 19.
+- Choose subarray nums[5, ..., 5]. nums[5] is the only element in this subarray. Hence, we multiply the score by nums[5]. The score becomes 19 * 18 = 342.
+- Choose subarray nums[2, ..., 3]. Both nums[2] and nums[3] have a prime score of 2, but nums[2] has the smaller index. Hence, we multipy the score by nums[2]. The score becomes 342 * 14 = 4788.
+It can be proven that 4788 is the highest score one can obtain.
+ 
+
+Constraints:
+
+1 <= nums.length == n <= 105
+1 <= nums[i] <= 105
+1 <= k <= min(n * (n + 1) / 2, 109)
+
+
+Solution 1:
+
+class Solution:
+    def maximumScore(self, nums: List[int], k: int) -> int:
+        mod = 1000000007
+        n = len(nums)
+        maxNum = max(nums) + 1
+
+        prime = [True] * maxNum
+        prime[0] = prime[1] = False
+        primeScore = [0] * maxNum
+        for i in range(2, maxNum):
+            if prime[i]:
+                for j in range(i, maxNum, i):
+                    primeScore[j] += 1
+                    prime[j] = False
+
+        nextGreaterElement = [n] * n
+        stack = []
+        for i in range(n - 1, -1, -1):
+            while stack and primeScore[nums[i]] >= primeScore[nums[stack[-1]]]:
+                stack.pop()
+            nextGreaterElement[i] = stack[-1] if stack else n
+            stack.append(i)
+
+        prevGreaterOrEqualElement = [-1] * n
+        stack = []
+        for i in range(n):
+            while stack and primeScore[nums[i]] > primeScore[nums[stack[-1]]]:
+                stack.pop()
+            prevGreaterOrEqualElement[i] = stack[-1] if stack else -1
+            stack.append(i)
+
+
+        res = 1
+        pairs = [[nums[i], i] for i in range(n)]
+        pairs.sort(reverse=True)
+
+        def help(x, n):
+            res = 1
+            while n > 0:
+                if n % 2 == 1:
+                    res = (res * x) % mod
+                x = (x * x) % mod
+                n //= 2
+            return res
+
+        for num, idx in pairs:
+            operations = min((idx - prevGreaterOrEqualElement[idx]) * 
+            (nextGreaterElement[idx] - idx), k)
+            res = (res * help(num, operations)) % mod
+            k -= operations
+            if k == 0:
+                return res
+
+        return res
+
+
+Solution 2:
+
+class Solution:
+    def maximumScore(self, nums: List[int], k: int) -> int:
+
+        @cache
+        def prime_score(n):
+            res = set()
+            for i in range(2, isqrt(n) + 1):
+                while n % i == 0:
+                    res.add(i)
+                    n //= i
+            if n > 1: 
+                res.add(n)
+            return len(res)
+        
+        n = len(nums)
+        mod = 10 ** 9 + 7
+        primeScore = [prime_score(nums[i]) for i in range(n)]
+
+        nextGreaterElement = [n] * n
+        stack = []
+        for i in range(n - 1, -1, -1):
+            while stack and primeScore[i] >= primeScore[stack[-1]]:
+                stack.pop()
+            nextGreaterElement[i] = stack[-1] if stack else n
+            stack.append(i)
+
+        prevGreaterOrEqualElement = [-1] * n
+        stack = []
+        for i in range(n):
+            while stack and primeScore[i] > primeScore[stack[-1]]:
+                stack.pop()
+            prevGreaterOrEqualElement[i] = stack[-1] if stack else -1
+            stack.append(i)
+
+
+        res = 1
+        pairs = [[nums[i], i] for i in range(n)]
+        pairs.sort(reverse=True)
+
+        def help(x, n):
+            res = 1
+            while n > 0:
+                if n % 2 == 1:
+                    res = (res * x) % mod
+                x = (x * x) % mod
+                n //= 2
+            return res
+
+        for num, idx in pairs:
+            operations = min((idx - prevGreaterOrEqualElement[idx]) * 
+            (nextGreaterElement[idx] - idx), k)
+            res = (res * help(num, operations)) % mod
+            k -= operations
+            if k == 0:
+                return res
+
+        return res
+
