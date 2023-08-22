@@ -83,3 +83,25 @@ class Solution:
                 res.append(nums[q[0]])
 
         return res
+
+
+
+Solution 3:
+
+class Solution:
+    def maxSlidingWindow(self, nums: List[int], k: int) -> List[int]:
+        n = len(nums)
+        res = []
+        maxHeap = []
+
+        for i in range(n):
+            while maxHeap and maxHeap[0][1] <= i - k:
+                heapq.heappop(maxHeap)
+            
+            heapq.heappush(maxHeap, (-nums[i], i))
+
+            if i >= k - 1:
+                res.append(-maxHeap[0][0])
+
+        return res
+
