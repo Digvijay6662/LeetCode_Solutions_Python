@@ -38,7 +38,8 @@ Constraints:
 0 <= digits[i] <= 9
 digits does not contain any leading 0's.
 
-Solution:
+Solution 1:
+
 class Solution:
     def plusOne(self, digits: List[int]) -> List[int]:
         n = len(digits) - 1
@@ -49,4 +50,22 @@ class Solution:
             digits = [1] + digits
         else:
             digits[n] = digits[n] + 1
+        return digits
+
+
+Solution 2:
+
+class Solution:
+    def plusOne(self, digits: List[int]) -> List[int]:
+        n = len(digits)
+        carry = 1
+        
+        for i in range(n - 1, -1, -1):
+            val = digits[i] + carry
+            digits[i] = val % 10
+            carry = val // 10
+        
+        if carry:
+            return [carry] + digits
+        
         return digits

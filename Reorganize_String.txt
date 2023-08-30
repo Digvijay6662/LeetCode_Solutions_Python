@@ -1,0 +1,122 @@
+767. Reorganize String
+Medium
+6.5K
+208
+Companies
+Given a string s, rearrange the characters of s so that any two adjacent characters are not the same.
+
+Return any possible rearrangement of s or return "" if not possible.
+
+ 
+
+Example 1:
+
+Input: s = "aab"
+Output: "aba"
+Example 2:
+
+Input: s = "aaab"
+Output: ""
+ 
+
+Constraints:
+
+1 <= s.length <= 500
+s consists of lowercase English letters.
+
+
+Solution 1:
+
+class Solution:
+    def reorganizeString(self, s: str) -> str:
+        n = len(s)
+        res = []
+        freqMap = {}
+        
+        for ch in s:
+            freqMap[ch] = freqMap.get(ch, 0) + 1
+        
+        maxHeap = [(-count, ch) for ch, count in freqMap.items()]
+        heapq.heapify(maxHeap)
+
+        while maxHeap:
+            count1, ch1 = heapq.heappop(maxHeap)
+            if not res or ch1 != res[-1]:
+                res.append(ch1)
+                count1 += 1
+                if count1 != 0:
+                    heapq.heappush(maxHeap, (count1, ch1))
+            else:
+                if not maxHeap:
+                    return ''
+                count2, ch2 = heapq.heappop(maxHeap)
+                res.append(ch2)
+                count2 += 1
+                if count2 != 0:
+                    heapq.heappush(maxHeap, (count2, ch2))
+                heapq.heappush(maxHeap, (count1, ch1))
+
+        return ''.join(res)
+
+
+Solution 2:
+
+class Solution:
+    def reorganizeString(self, s: str) -> str:
+        n = len(s)
+        res = ['' for _ in range(n)]
+        freqMap = {}
+        
+        for ch in s:
+            freqMap[ch] = freqMap.get(ch, 0) + 1
+
+        maxHeap = [(-count, ch) for ch, count in freqMap.items()]
+        heapq.heapify(maxHeap)
+
+        i = 0
+        while maxHeap:
+            count, ch = heapq.heappop(maxHeap)
+            while count != 0:
+                res[i] = ch
+                i = i + 2
+                if i >= n:
+                    i = 1
+                count += 1
+
+        for i in range(1, n):
+            if res[i - 1] == res[i]:
+                return ''
+
+        return ''.join(res)
+
+
+Solution 3:
+
+class Solution:
+    def reorganizeString(self, s: str) -> str:
+        n = len(s)
+        freqMap = Counter(s)
+        maxCount, ch = 0, ''
+        for char, count in freqMap.items():
+            if count > maxCount:
+                maxCount = count
+                ch = char
+        if maxCount > (n + 1) // 2:
+            return ""
+        res = [''] * n
+        i = 0
+
+        while freqMap[ch] != 0:
+            res[i] = ch
+            i += 2
+            freqMap[ch] -= 1
+
+        for char, count in freqMap.items():
+            while count > 0:
+                if i >= n:
+                    i = 1
+                res[i] = char
+                i += 2
+                count -= 1
+
+        return ''.join(res)

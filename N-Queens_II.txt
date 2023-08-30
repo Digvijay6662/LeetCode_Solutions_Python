@@ -1,0 +1,75 @@
+52. N-Queens II
+Hard
+3.5K
+247
+Companies
+The n-queens puzzle is the problem of placing n queens on an n x n chessboard such that no two queens attack each other.
+
+Given an integer n, return the number of distinct solutions to the n-queens puzzle.
+
+ 
+
+Example 1:
+
+
+Input: n = 4
+Output: 2
+Explanation: There are two distinct solutions to the 4-queens puzzle as shown.
+Example 2:
+
+Input: n = 1
+Output: 1
+ 
+
+Constraints:
+
+1 <= n <= 9
+
+
+Solution 1:
+
+
+class Solution:
+    def totalNQueens(self, n: int) -> int:
+        colSet = set()
+        leftD = set()
+        rightD = set()
+            
+        def backtrack(i):
+            if i == n:
+                return 1
+
+            ans = 0
+            for j in range(n):
+                if j not in colSet and (j - i) not in leftD and (j + i) not in rightD:
+                    colSet.add(j)
+                    leftD.add(j - i)
+                    rightD.add(j + i)
+                    ans += backtrack(i + 1)
+                    colSet.remove(j)
+                    leftD.remove(j - i)
+                    rightD.remove(j + i)
+            
+            return ans
+
+        return backtrack(0)
+
+
+Solution 2:
+
+class Solution:
+    def totalNQueens(self, n: int) -> int:
+        def backtrack(row, colMask, leftDiagMask, rightDiagMask):
+            if row == n:
+                return 1
+
+            ans = 0
+            for j in range(n):
+                if (colMask & (1 << j)) == 0 and (leftDiagMask & (1 << (j - row + n - 1))) == 0 and (rightDiagMask & (1 << (j + row))) == 0:
+                    ans += backtrack(row + 1, colMask | (1 << j), leftDiagMask | (1 << (j - row + n - 1)), rightDiagMask | (1 << (j + row)))
+            
+            return ans
+
+        return backtrack(0, 0, 0, 0)
+
+
