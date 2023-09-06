@@ -141,3 +141,50 @@ class Solution:
             curr = curr.next
             
         return nodeMap[head]
+
+
+Solution 4:
+
+"""
+# Definition for a Node.
+class Node:
+    def __init__(self, x: int, next: 'Node' = None, random: 'Node' = None):
+        self.val = int(x)
+        self.next = next
+        self.random = random
+"""
+
+class Solution:
+    def copyRandomList(self, head: 'Optional[Node]') -> 'Optional[Node]':
+        if not head:
+            return None
+            
+        curr = head
+
+        while curr:
+            nextNode = curr.next
+            copy = Node(curr.val)
+            copy.next = nextNode
+            curr.next = copy
+            curr = nextNode
+
+        curr = head
+        
+        while curr:
+            copy = curr.next
+            if curr.random:
+                copy.random = curr.random.next
+            curr = copy.next
+
+        curr = head
+        copyHead = curr.next
+        currCopy = copyHead
+
+        while curr:
+            curr.next = curr.next.next
+            curr = curr.next
+            if curr:
+                currCopy.next = currCopy.next.next
+                currCopy = currCopy.next
+
+        return copyHead

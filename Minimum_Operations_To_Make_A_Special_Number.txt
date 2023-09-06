@@ -1,0 +1,188 @@
+2844. Minimum Operations to Make a Special Number
+Medium
+228
+42
+Companies
+You are given a 0-indexed string num representing a non-negative integer.
+
+In one operation, you can pick any digit of num and delete it. Note that if you delete all the digits of num, num becomes 0.
+
+Return the minimum number of operations required to make num special.
+
+An integer x is considered special if it is divisible by 25.
+
+ 
+
+Example 1:
+
+Input: num = "2245047"
+Output: 2
+Explanation: Delete digits num[5] and num[6]. The resulting number is "22450" which is special since it is divisible by 25.
+It can be shown that 2 is the minimum number of operations required to get a special number.
+Example 2:
+
+Input: num = "2908305"
+Output: 3
+Explanation: Delete digits num[3], num[4], and num[6]. The resulting number is "2900" which is special since it is divisible by 25.
+It can be shown that 3 is the minimum number of operations required to get a special number.
+Example 3:
+
+Input: num = "10"
+Output: 1
+Explanation: Delete digit num[0]. The resulting number is "0" which is special since it is divisible by 25.
+It can be shown that 1 is the minimum number of operations required to get a special number.
+
+ 
+
+Constraints:
+
+1 <= num.length <= 100
+num only consists of digits '0' through '9'.
+num does not contain any leading zeros.
+
+
+Solution 1:
+
+class Solution:
+    def minimumOperations(self, num: str) -> int:
+        n = len(num)
+        res = n
+
+        for i in range(n - 1, -1, -1):
+            d2 = int(num[i])
+            for j in range(i - 1, -1, -1):
+                d1 = int(num[j])
+                val = d1 * 10 + d2
+
+                if val % 25 == 0:
+                    res = min(res, n - j - 2)
+            
+            if d2 == 0:
+                res = min(res, n - 1)
+
+        return res
+
+
+Solution 2:
+
+class Solution:
+    def minimumOperations(self, num: str) -> int:
+        n = len(num)
+        res = n
+
+        for i in range(n - 1, -1, -1):
+            d2 = int(num[i])
+            if d2 not in [5, 0]:
+                continue
+            for j in range(i - 1, -1, -1):
+                d1 = int(num[j])
+                val = d1 * 10 + d2
+
+                if val % 25 == 0:
+                    res = min(res, n - j - 2)
+            
+            if d2 == 0:
+                res = min(res, n - 1)
+
+        return res
+
+
+
+Solution 3:
+
+class Solution:
+    def minimumOperations(self, num: str) -> int:
+        n = len(num)
+        res = n
+
+        def check(d1, d2):
+            d2Found = False
+            for i in range(n - 1, -1, -1):
+                if d2Found and d1 == num[i]:
+                    return n - i - 2
+
+                if num[i] == d2 and not d2Found:
+                    d2Found = True
+
+            return n - 1 if d2Found and d2 == '0' else n
+
+        res = min(res, check('0', '0'))
+        res = min(res, check('2', '5'))
+        res = min(res, check('5', '0'))
+        res = min(res, check('7', '5'))
+
+        return res
+
+
+Solution 4:
+
+class Solution:
+    def minimumOperations(self, num: str) -> int:
+        n = len(num)
+        fiveFound = False
+        zeroFound = False
+
+        for i in range(n - 1, -1, -1):
+            if zeroFound and num[i] == '0':
+                return n- 2 - i
+            if zeroFound and num[i] == '5':
+                return n- 2 - i
+            if fiveFound and num[i] == '2':
+                return n- 2 - i
+            if fiveFound and num[i] == '7':
+                return n- 2 - i
+
+            if num[i] == '5':
+                fiveFound = True
+            if num[i] == '0':
+                zeroFound = True
+
+        return n - 1 if zeroFound else n
+
+
+
+Solution 5:
+
+class Solution:
+    def minimumOperations(self, num: str) -> int:
+        n = len(num)
+        dp = [[-1 for _ in range(25)] for _ in range(n)]
+        
+        def solve(i, val):
+            if i == n:
+                if val % 25 == 0:
+                    return 0
+                return float('inf')
+
+            if dp[i][val] != -1:
+                return dp[i][val]
+
+            digit = int(num[i])
+            notPick = 1 + solve(i + 1, val)
+            pick = solve(i + 1, (val * 10 + digit) % 25)
+
+            dp[i][val] = min(pick, notPick)
+            return dp[i][val]
+
+        return solve(0, 0)
+
+
+
+Solution 6:
+
+class Solution:
+    def minimumOperations(self, num: str) -> int:
+        n = len(num)
+        dp = [[n for _ in range(26)] for _ in range(n + 1)]
+
+        dp[n][0] = 0
+        dp[n][25] = 0
+
+        for i in range(n - 1, -1, -1):
+            for j in range(26):
+                digit = int(num[i])
+                pick = dp[i + 1][(j * 10 + digit) % 25]
+                notPick = 1 + dp[i + 1][j]
+                dp[i][j] = min(pick, notPick)
+
+        return dp[0][0]

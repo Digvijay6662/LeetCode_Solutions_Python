@@ -1,0 +1,87 @@
+2840. Check if Strings Can be Made Equal With Operations II
+Medium
+128
+3
+Companies
+You are given two strings s1 and s2, both of length n, consisting of lowercase English letters.
+
+You can apply the following operation on any of the two strings any number of times:
+
+Choose any two indices i and j such that i < j and the difference j - i is even, then swap the two characters at those indices in the string.
+Return true if you can make the strings s1 and s2 equal, and false otherwise.
+
+ 
+
+Example 1:
+
+Input: s1 = "abcdba", s2 = "cabdab"
+Output: true
+Explanation: We can apply the following operations on s1:
+- Choose the indices i = 0, j = 2. The resulting string is s1 = "cbadba".
+- Choose the indices i = 2, j = 4. The resulting string is s1 = "cbbdaa".
+- Choose the indices i = 1, j = 5. The resulting string is s1 = "cabdab" = s2.
+Example 2:
+
+Input: s1 = "abe", s2 = "bea"
+Output: false
+Explanation: It is not possible to make the two strings equal.
+ 
+
+Constraints:
+
+n == s1.length == s2.length
+1 <= n <= 105
+s1 and s2 consist only of lowercase English letters.
+
+
+Solution 1:
+class Solution:
+    def checkStrings(self, s1: str, s2: str) -> bool:
+        
+        def isEqual(l1, l2):
+            l1.sort()
+            l2.sort()
+            return l1 == l2
+
+        def getCharacters(s, start_idx):
+            return [s[i] for i in range(start_idx, len(s), 2)]
+
+        n = len(s1)
+        even_indices_s1 = getCharacters(s1, 0)
+        even_indices_s2 = getCharacters(s2, 0)
+
+        if not isEqual(even_indices_s1, even_indices_s2):
+            return False
+
+        odd_indices_s1 = getCharacters(s1, 1)
+        odd_indices_s2 = getCharacters(s2, 1)
+
+        if not isEqual(odd_indices_s1, odd_indices_s2):
+            return False
+
+        return True
+
+
+Solution 2:
+
+class Solution:
+    def checkStrings(self, s1: str, s2: str) -> bool:
+        n = len(s1)
+        even = [0] * 26
+        odd = [0] * 26
+
+        for i in range(n):
+            ch1 = s1[i]
+            ch2 = s2[i]
+            if i % 2 == 0:
+                even[ord(ch1) - ord('a')] += 1
+                even[ord(ch2) - ord('a')] -= 1
+            else:
+                odd[ord(ch1) - ord('a')] += 1
+                odd[ord(ch2) - ord('a')] -= 1
+                
+        for i in range(26):
+            if odd[i] or even[i]:
+                return False
+
+        return True

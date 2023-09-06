@@ -1,0 +1,197 @@
+123. Best Time to Buy and Sell Stock III
+Hard
+9K
+161
+Companies
+You are given an array prices where prices[i] is the price of a given stock on the ith day.
+
+Find the maximum profit you can achieve. You may complete at most two transactions.
+
+Note: You may not engage in multiple transactions simultaneously (i.e., you must sell the stock before you buy again).
+
+ 
+
+Example 1:
+
+Input: prices = [3,3,5,0,0,3,1,4]
+Output: 6
+Explanation: Buy on day 4 (price = 0) and sell on day 6 (price = 3), profit = 3-0 = 3.
+Then buy on day 7 (price = 1) and sell on day 8 (price = 4), profit = 4-1 = 3.
+Example 2:
+
+Input: prices = [1,2,3,4,5]
+Output: 4
+Explanation: Buy on day 1 (price = 1) and sell on day 5 (price = 5), profit = 5-1 = 4.
+Note that you cannot buy on day 1, buy on day 2 and sell them later, as you are engaging multiple transactions at the same time. You must sell before buying again.
+Example 3:
+
+Input: prices = [7,6,4,3,1]
+Output: 0
+Explanation: In this case, no transaction is done, i.e. max profit = 0.
+ 
+
+Constraints:
+
+1 <= prices.length <= 105
+0 <= prices[i] <= 105
+
+
+Solution 1:
+
+class Solution:
+    def maxProfit(self, prices: List[int]) -> int:
+        n = len(prices)
+        dp = [[[-1 for _ in range(3)] for _ in range(2)] for _ in range(n)]
+        
+        def solve(i, buy, transactions):
+            if i == n or transactions == 2:
+                return 0
+
+            profit = 0
+            if dp[i][buy][transactions] != -1:
+                return dp[i][buy][transactions]
+            if buy:
+                profit = -prices[i] + solve(i + 1, not buy, transactions)
+            else:
+                profit = prices[i] + solve(i + 1, not buy, transactions + 1)
+
+            notPick = solve(i + 1, buy, transactions)
+            dp[i][buy][transactions] = max(profit, notPick)
+            return max(profit, notPick)
+
+        return solve(0, True, 0)
+
+
+
+Solution 2:
+
+
+class Solution:
+    def maxProfit(self, prices: List[int]) -> int:
+        n = len(prices)
+        dp = [[[0 for _ in range(3)] for _ in range(2)] for _ in range(n + 1)]
+
+        for i in range(n - 1, -1, -1):
+            for buy in range(2):
+                for transactions in range(1, -1, -1):
+                    if buy:
+                        profit = -prices[i] + dp[i + 1][not buy][transactions]
+                    else:
+                        profit = prices[i] + dp[i + 1][not buy][transactions + 1]
+
+                    notPick = dp[i + 1][buy][transactions]
+                    dp[i][buy][transactions] = max(profit, notPick)
+
+        return dp[0][1][0]
+
+
+
+Solution 3:
+
+
+class Solution:
+    def maxProfit(self, prices: List[int]) -> int:
+        n = len(prices)
+        after = [[0 for _ in range(3)] for _ in range(2)]
+        curr = [[0 for _ in range(3)] for _ in range(2)]
+
+
+        for i in range(n - 1, -1, -1):
+            for buy in range(2):
+                for transactions in range(1, -1, -1):
+                    if buy:
+                        profit = -prices[i] + after[not buy][transactions]
+                    else:
+                        profit = prices[i] + after[not buy][transactions + 1]
+
+                    notPick = after[buy][transactions]
+                    curr[buy][transactions] = max(profit, notPick)
+            after = curr
+
+        return curr[1][0]
+
+
+Solution 4:
+
+class Solution:
+    def maxProfit(self, prices: List[int]) -> int:
+        n = len(prices)
+        dp = [[0 for _ in range(3)] for _ in range(2)]
+
+
+        for i in range(n - 1, -1, -1):
+            for buy in range(2):
+                for transactions in range(1, -1, -1):
+                    if buy:
+                        profit = -prices[i] + dp[not buy][transactions]
+                    else:
+                        profit = prices[i] + dp[not buy][transactions + 1]
+
+                    notPick = dp[buy][transactions]
+                    dp[buy][transactions] = max(profit, notPick)
+
+        return dp[1][0]
+
+
+Solution 5:
+
+class Solution:
+    def maxProfit(self, prices: List[int]) -> int:
+        n = len(prices)
+        dp = [0 for _ in range(5)]
+
+        for i in range(n - 1, -1, -1):
+            for transactions in range(3, -1, -1):
+                if transactions % 2 == 0:
+                    dp[transactions] = max(-prices[i] + dp[transactions + 1], dp[transactions])
+                else:
+                    dp[transactions] = max(prices[i] + dp[transactions + 1], dp[transactions])
+
+        return dp[0]
+
+
+Solution 6:
+
+class Solution:
+    def maxProfit(self, prices: List[int]) -> int:
+        if len(prices) <= 1:
+            return 0
+
+        leftMin = prices[0]
+        rightMax = prices[-1]
+
+        n = len(prices)
+        leftProfit = [0] * n
+        rightProfit = [0] * (n + 1)
+        
+        for l in range(1, n):
+            leftProfit[l] = max(leftProfit[l-1], prices[l] - leftMin)
+            leftMin = min(leftMin, prices[l])
+
+            r = n - 1 - l
+            rightProfit[r] = max(rightProfit[r+1], rightMax - prices[r])
+            rightMax = max(rightMax, prices[r])
+
+        maxProfit = 0
+        for i in range(0, n):
+            maxProfit = max(maxProfit, leftProfit[i] + rightProfit[i+1])
+
+        return maxProfit
+
+
+
+Solution 7:
+
+class Solution:
+    def maxProfit(self, prices: List[int]) -> int:
+        oneCost, twoCost = float('inf'), float('inf')
+        oneProfit, twoProfit = 0, 0
+
+        for price in prices:
+            oneCost = min(oneCost, price)
+            oneProfit = max(oneProfit, price - oneCost)
+
+            twoCost = min(twoCost, price - oneProfit)
+            twoProfit = max(twoProfit, price - twoCost)
+
+        return twoProfit
