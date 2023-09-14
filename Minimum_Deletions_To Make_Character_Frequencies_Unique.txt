@@ -1,0 +1,108 @@
+1647. Minimum Deletions to Make Character Frequencies Unique
+Medium
+3.9K
+58
+Companies
+A string s is called good if there are no two different characters in s that have the same frequency.
+
+Given a string s, return the minimum number of characters you need to delete to make s good.
+
+The frequency of a character in a string is the number of times it appears in the string. For example, in the string "aab", the frequency of 'a' is 2, while the frequency of 'b' is 1.
+
+ 
+
+Example 1:
+
+Input: s = "aab"
+Output: 0
+Explanation: s is already good.
+Example 2:
+
+Input: s = "aaabbbcc"
+Output: 2
+Explanation: You can delete two 'b's resulting in the good string "aaabcc".
+Another way it to delete one 'b' and one 'c' resulting in the good string "aaabbc".
+Example 3:
+
+Input: s = "ceabaacb"
+Output: 2
+Explanation: You can delete both 'c's resulting in the good string "eabaab".
+Note that we only care about characters that are still in the string at the end (i.e. frequency of 0 is ignored).
+ 
+
+Constraints:
+
+1 <= s.length <= 105
+s contains only lowercase English letters.
+
+
+Solution 1:
+
+class Solution:
+    def minDeletions(self, s: str) -> int:
+        n = len(s)
+        freq = [0] * 26
+        
+        for ch in s:
+            freq[ord(ch) - ord('a')] += 1
+        
+        deleteCount = 0
+        used = set()
+        for count in freq:
+            while count > 0 and count in used:
+                count -= 1
+                deleteCount += 1
+            used.add(count)
+
+        return deleteCount
+
+
+Solution 2:
+
+class Solution:
+    def minDeletions(self, s: str) -> int:
+        n = len(s)
+        freq = [0] * 26
+        
+        for ch in s:
+            freq[ord(ch) - ord('a')] += 1
+        
+        freq.sort(reverse=True)
+        deleteCount = 0
+
+        for i in range(1, 26):
+            if freq[i] == 0:
+                break
+                
+            if freq[i] >= freq[i - 1]:
+                prev = freq[i]
+                freq[i] = max(0, freq[i - 1] - 1)
+                deleteCount += prev - freq[i]
+
+        return deleteCount
+
+Solution 3:
+
+
+class Solution:
+    def minDeletions(self, s: str) -> int:
+        freq = [0] * 26
+
+        for ch in s:
+            freq[ord(ch) - ord('a')] += 1
+
+        maxHeap = [-count for count in freq if count != 0]
+        heapq.heapify(maxHeap)
+
+        deleteCount = 0
+
+        while len(maxHeap) > 1:
+            count = -heapq.heappop(maxHeap)
+
+            if count == -maxHeap[0]:
+                count -= 1
+                if count > 0:
+                    heapq.heappush(maxHeap, -count)
+                deleteCount += 1
+
+        return deleteCount
