@@ -129,3 +129,27 @@ class Solution:
                 res.append(stack.pop())
 
         return res[::-1]
+
+
+
+Solution 4:
+
+class Solution:
+    def findItinerary(self, tickets: List[List[str]]) -> List[str]:
+        adj = defaultdict(list)
+
+        for src, dst in tickets:
+            adj[src].append(dst)
+
+        for src in adj:
+            adj[src].sort()  # Sort destinations lexicographically.
+
+        def dfs(node):
+            while adj[node]:
+                dfs(adj[node].pop(0))
+            result.append(node)
+
+        result = []
+        dfs("JFK")
+
+        return result[::-1]
