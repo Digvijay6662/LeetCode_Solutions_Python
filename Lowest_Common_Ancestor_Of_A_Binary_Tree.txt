@@ -36,7 +36,7 @@ p != q
 p and q will exist in the tree.
 
 
-Solution:
+Solution 1:
 
 
 # Definition for a binary tree node.
@@ -61,3 +61,59 @@ class Solution:
             return left
         else:
             return root
+
+
+Solution 2:
+
+
+# Definition for a binary tree node.
+# class TreeNode:
+#     def __init__(self, x):
+#         self.val = x
+#         self.left = None
+#         self.right = None
+
+class Solution:
+    def __init__(self):
+        self.parent = {}  # Dictionary to store parent node for each node
+        self.depth = {}  # Dictionary to store depth of each node
+        self.MAX_DEPTH = 20  # Maximum depth for binary lifting
+        
+    def lowestCommonAncestor(self, root: 'TreeNode', p: 'TreeNode', q: 'TreeNode') -> 'TreeNode':
+        self.dfs(root, None, 0)  # Precompute parent and depth for each node
+        self.fillParent(root)  # Precompute binary lifting
+        
+        # Lift p and q to the same depth
+        while self.depth[p] > self.depth[q]:
+            p = self.parent[p][0]
+
+        while self.depth[q] > self.depth[p]:
+            q = self.parent[q][0]
+
+        # Lift both nodes until they meet at the LCA
+        while p != q:
+            for i in range(self.MAX_DEPTH - 1, -1, -1):
+                if self.parent[p][i] != self.parent[q][i]:
+                    p = self.parent[p][i]
+                    q = self.parent[q][i]
+
+            p = self.parent[p][0]
+            q = self.parent[q][0]
+
+        return p
+
+    def dfs(self, node, parent, d):
+        if not node:
+            return
+
+        self.parent[node] = [parent] + [None] * (self.MAX_DEPTH - 1)
+        self.depth[node] = d
+
+        self.dfs(node.left, node, d + 1)
+        self.dfs(node.right, node, d + 1)
+        
+    def fillParent(self, root):
+        for i in range(1, self.MAX_DEPTH):
+            for node in self.parent:
+                if self.parent[node][i - 1]:
+                    self.parent[node][i] = self.parent[self.parent[node][i - 1]][i - 1]
