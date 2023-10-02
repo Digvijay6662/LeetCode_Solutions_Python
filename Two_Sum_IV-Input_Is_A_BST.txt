@@ -1,0 +1,130 @@
+653. Two Sum IV - Input is a BST
+Easy
+6.4K
+251
+Companies
+Given the root of a binary search tree and an integer k, return true if there exist two elements in the BST such that their sum is equal to k, or false otherwise.
+
+ 
+
+Example 1:
+
+
+Input: root = [5,3,6,2,4,null,7], k = 9
+Output: true
+Example 2:
+
+
+Input: root = [5,3,6,2,4,null,7], k = 28
+Output: false
+ 
+
+Constraints:
+
+The number of nodes in the tree is in the range [1, 104].
+-104 <= Node.val <= 104
+root is guaranteed to be a valid binary search tree.
+-105 <= k <= 105
+
+
+Solution 1:
+
+# Definition for a binary tree node.
+# class TreeNode:
+#     def __init__(self, val=0, left=None, right=None):
+#         self.val = val
+#         self.left = left
+#         self.right = right
+class Solution:
+    def findTarget(self, root: Optional[TreeNode], k: int) -> bool:
+
+        def dfs(node):
+            if node is None:
+                return False
+            if k - node.val in visited:
+                return True
+            visited.add(node.val)
+            return dfs(node.left) or dfs(node.right)
+    
+        visited = set()
+        return dfs(root)
+
+
+Solution 2:
+
+# Definition for a binary tree node.
+# class TreeNode:
+#     def __init__(self, val=0, left=None, right=None):
+#         self.val = val
+#         self.left = left
+#         self.right = right
+class Solution:
+    def findTarget(self, root: Optional[TreeNode], k: int) -> bool:
+        stack = [root]
+        visited = set()
+        
+        while stack:
+            node = stack.pop()
+            if k - node.val in visited:
+                return True
+            
+            if node.left:
+                stack.append(node.left)
+            
+            if node.right:
+                stack.append(node.right)
+
+            visited.add(node.val)
+        
+        return False
+
+
+Solution 3:
+
+# Definition for a binary tree node.
+# class TreeNode:
+#     def __init__(self, val=0, left=None, right=None):
+#         self.val = val
+#         self.left = left
+#         self.right = right
+class Solution:
+    def findTarget(self, root: Optional[TreeNode], k: int) -> bool:
+
+        # Helper function to push nodes and traverse to the left
+        def pushLeft(stack, node):
+            while node:
+                stack.append(node)
+                node = node.left
+
+        # Helper function to push nodes and traverse to the right
+        def pushRight(stack, node):
+            while node:
+                stack.append(node)
+                node = node.right
+
+        # Helper function to get the next node's value while traversing left
+        def getNextLeft(stack):
+            node = stack.pop()
+            pushLeft(stack, node.right)
+            return node.val
+
+        # Helper function to get the next node's value while traversing right
+        def getNextRight(stack):
+            node = stack.pop()
+            pushRight(stack, node.left)
+            return node.val
+
+        stackLeft, stackRight = [], []
+        pushLeft(stackLeft, root)
+        pushRight(stackRight, root)
+
+        valLeft, valRight = getNextLeft(stackLeft), getNextRight(stackRight)
+        while valLeft < valRight:
+            if valLeft + valRight == k:
+                return True
+            if valLeft + valRight < k:
+                valLeft = getNextLeft(stackLeft)
+            else:
+                valRight = getNextRight(stackRight)
+
+        return False

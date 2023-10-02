@@ -1,0 +1,118 @@
+557. Reverse Words in a String III
+Easy
+5.4K
+234
+Companies
+Given a string s, reverse the order of characters in each word within a sentence while still preserving whitespace and initial word order.
+
+ 
+
+Example 1:
+
+Input: s = "Let's take LeetCode contest"
+Output: "s'teL ekat edoCteeL tsetnoc"
+Example 2:
+
+Input: s = "God Ding"
+Output: "doG gniD"
+ 
+
+Constraints:
+
+1 <= s.length <= 5 * 104
+s contains printable ASCII characters.
+s does not contain any leading or trailing spaces.
+There is at least one word in s.
+All the words in s are separated by a single space.
+
+
+Solution 1:
+
+class Solution:
+    def reverseWords(self, s: str) -> str:
+        stack = []
+        res = ''
+        for ch in s:
+            if ch != ' ':
+                stack.append(ch)
+            else:
+                while stack:
+                    res += stack.pop()
+                res += ch
+
+        while stack:
+            res += stack.pop()
+
+        return res
+
+
+Solution 2:
+
+class Solution:
+    def reverseWords(self, s: str) -> str:
+        words = s.split()
+        reversed_words = [word[::-1] for word in words]
+        return ' '.join(reversed_words) 
+
+
+
+Solution 3:
+
+class Solution:
+    def reverseWords(self, s: str) -> str:
+        n = len(s)
+        res = ''
+        last = -1
+        for i in range(n):
+            if s[i] != ' ':
+                continue
+            else:
+                for j in range(i - 1, last, -1):
+                    res += s[j]
+                res += ' '
+                last = i
+
+        for j in range(n - 1, last, -1):
+            res += s[j]
+
+        return res
+
+
+Solution 4:
+
+class Solution:
+    def reverseWords(self, s: str) -> str:
+        n = len(s)
+        res = ''
+        last = -1
+        for i in range(n):
+            if i == n - 1 or s[i] == ' ':
+                j = i if i == n - 1 else i - 1
+                while j > last:
+                    res += s[j]
+                    j -= 1
+                if i != n - 1:
+                    res += ' '
+                last = i
+
+        return res
+
+
+Solution 5:
+
+class Solution:
+    def reverseWords(self, s: str) -> str:
+        n = len(s)
+        arr = list(s)
+        last = -1
+
+        for i in range(n + 1):
+            if i == n or arr[i] == ' ':
+                start = last + 1
+                end = i - 1
+                while start < end:
+                    arr[start], arr[end] = arr[end], arr[start]
+                    start += 1
+                    end -= 1
+                last = i
+        return ''.join(arr)
