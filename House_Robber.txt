@@ -29,7 +29,34 @@ Constraints:
 0 <= nums[i] <= 400
 
 
-Solution:
+Solution 1:
+
+
+class Solution:
+    def rob(self, nums: List[int]) -> int:
+        n = len(nums)
+
+        dp = {}
+
+        def solve(i):
+            if i >= n:
+                return 0
+
+            if i in dp:
+                return dp[i]
+
+            op1 = nums[i] + solve(i + 2)
+            op2 = solve(i + 1)
+
+            dp[i] = max(op1, op2)
+            return dp[i]
+
+
+        return solve(0)
+
+
+
+Solution 2:
 
 class Solution:
     def rob(self, nums: List[int]) -> int:

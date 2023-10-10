@@ -1,0 +1,226 @@
+686. Repeated String Match
+Solved
+Medium
+Topics
+Companies
+Given two strings a and b, return the minimum number of times you should repeat string a so that string b is a substring of it. If it is impossible for b​​​​​​ to be a substring of a after repeating it, return -1.
+
+Notice: string "abc" repeated 0 times is "", repeated 1 time is "abc" and repeated 2 times is "abcabc".
+
+ 
+
+Example 1:
+
+Input: a = "abcd", b = "cdabcdab"
+Output: 3
+Explanation: We return 3 because by repeating a three times "abcdabcdabcd", b is a substring of it.
+Example 2:
+
+Input: a = "a", b = "aa"
+Output: 2
+ 
+
+Constraints:
+
+1 <= a.length, b.length <= 104
+a and b consist of lowercase English letters.
+
+
+Solution 1:
+
+class Solution:
+    def repeatedStringMatch(self, a: str, b: str) -> int:
+        la, lb = len(a), len(b)
+        
+        repeats = (lb + la - 1) // la
+
+        if b in a * repeats:
+            return repeats
+        
+        if b in a * (repeats + 1):
+            return repeats + 1
+        
+        return -1
+
+
+Solution 2:
+
+class Solution:
+    def repeatedStringMatch(self, a: str, b: str) -> int:
+
+        def computeLPS(pattern):
+            m = len(pattern)
+            lps = [0] * m
+            p, i = 0, 1
+
+            while i < m:
+                if pattern[p] == pattern[i]:
+                    lps[i] = p + 1
+                    p += 1
+                    i += 1
+                elif p == 0:
+                    lps[i] = 0
+                    i += 1
+                else:
+                    p = lps[p - 1]
+
+            return lps
+
+        def kmpSearch(text, pattern, lps):
+            n, m = len(text), len(pattern)
+            i = j = 0
+
+            while i < n:
+                if text[i] == pattern[j]:
+                    i += 1
+                    j += 1
+                else:
+                    if j == 0:
+                        i += 1
+                    else:
+                        j = lps[j - 1]
+
+                if j == m:
+                    return True
+
+            return False
+
+        la, lb = len(a), len(b)
+        
+        if la == 0 or lb == 0:
+            return -1
+
+        repeats = (lb + la - 1) // la
+
+        text = a * repeats
+        pattern = b
+
+        lps = computeLPS(pattern)
+
+        if kmpSearch(text, pattern, lps):
+            return repeats
+
+        text += a
+        repeats += 1
+        if kmpSearch(text, pattern, lps):
+            return repeats
+
+        return -1
+
+
+Solution 3: Rabin-Karp Algorithm
+
+class Solution:
+    def repeatedStringMatch(self, a: str, b: str) -> int:
+
+        def rabinKarp(text, pattern):
+            base = 1000
+            if not text or not pattern:
+                return -1
+
+            n = len(text)
+            m = len(pattern)
+            p = 1
+
+            for i in range(m):
+                p = (p * 31) % base
+
+            target = 0
+            for i in range(m):
+                target = (target * 31 + ord(pattern[i])) % base 
+
+            curr = 0
+            for i in range(n):
+                curr = (curr * 31 + ord(text[i])) % base
+                if i < m - 1:
+                    continue
+                if i >= m:
+                    curr = (curr - ord(text[i - m]) * p) % base
+
+                if curr < 0:
+                    curr += base
+
+                if target == curr and text[i - m + 1:i + 1] == pattern:
+                    return i - m + 1
+
+            return -1
+
+        la, lb = len(a), len(b)
+
+        if la == 0 or lb == 0:
+            return -1
+
+        if a == b:
+            return 1
+
+        repeats = (lb + la - 1) // la
+        text = a * (repeats + 1)
+        pattern = b
+
+        index = rabinKarp(text, pattern)
+
+        if index == -1:
+            return -1
+
+        if index + lb - 1 <= la * repeats - 1:
+            return repeats
+        else:
+            return repeats + 1
+
+
+
+Solution 4: Rabin-Karp Algorithm
+
+class Solution:
+    def repeatedStringMatch(self, a: str, b: str) -> int:
+
+        def rabinKarp(text, pattern):
+            base = 1000000007
+            chars = 31
+            n = len(text)
+            m = len(pattern)
+            p = 1
+
+            for i in range(m):
+                p = (p * chars) % base
+
+            target = 0
+            curr = 0
+            for i in range(m):
+                target = (target * chars + ord(pattern[i])) % base 
+                curr = (curr * chars + ord(text[i])) % base
+
+            if target == curr and text[0:m] == pattern:
+                    return 0
+
+            for i in range(m, n):
+                curr = (curr * chars + ord(text[i])) % base
+                curr = (curr - ord(text[i - m]) * p) % base
+                if curr < 0:
+                    curr += base
+                if target == curr and text[i - m + 1:i + 1] == pattern:
+                    return i - m + 1
+
+            return -1
+
+        la, lb = len(a), len(b)
+
+        if la == 0 or lb == 0:
+            return -1
+
+        if a == b:
+            return 1
+
+        repeats = (lb + la - 1) // la
+        text = a * (repeats + 1)
+        pattern = b
+
+        index = rabinKarp(text, pattern)
+
+        if index == -1:
+            return -1
+
+        if index + lb - 1 <= la * repeats - 1:
+            return repeats
+        else:
+            return repeats + 1

@@ -34,7 +34,35 @@ Constraints:
 1 <= text1.length, text2.length <= 1000
 text1 and text2 consist of only lowercase English characters.
 
+
+
 Solution 1:
+
+class Solution:
+    def longestCommonSubsequence(self, text1: str, text2: str) -> int:
+        m, n = len(text1), len(text2)
+        dp = [[-1 for _ in range(n)] for _ in range(m)]
+
+        def solve(i, j):
+            if i == m or j == n:
+                return 0
+            
+            if dp[i][j] != -1:
+                return dp[i][j]
+
+            op1 = op2 = 0
+            if text1[i] == text2[j]:
+                op1 = 1 + solve(i + 1, j + 1)
+            else:
+                op2 = max(solve(i + 1, j), solve(i, j + 1))
+
+            dp[i][j] = max(op1, op2)
+            return dp[i][j]
+
+        return solve(0, 0)
+
+
+Solution 2:
 
 class Solution:
     def longestCommonSubsequence(self, text1: str, text2: str) -> int:
@@ -51,7 +79,7 @@ class Solution:
         return dp[0][0]
 
 
-Solution 2:
+Solution 3:
 
 class Solution:
     def longestCommonSubsequence(self, text1: str, text2: str) -> int:
@@ -66,5 +94,26 @@ class Solution:
                     dp[i][j] = max(dp[i-1][j], dp[i][j-1])
         
         return dp[m][n]
+
+
+Solution 4:
+
+
+class Solution:
+    def longestCommonSubsequence(self, text1: str, text2: str) -> int:
+        m, n = len(text1), len(text2)
+        prev = [0] * (n + 1)
+        curr = [0] * (n + 1)
+
+        for i in range(1, m + 1):
+            for j in range(1, n + 1):
+                if text1[i - 1] == text2[j - 1]:
+                    curr[j] = 1 + prev[j - 1]
+                else:
+                    curr[j] = max(prev[j], curr[j - 1])
+
+            prev = curr.copy()
+
+        return prev[n]
 
 
