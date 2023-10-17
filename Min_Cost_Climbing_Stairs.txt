@@ -42,6 +42,28 @@ Solution 1:
 
 class Solution:
     def minCostClimbingStairs(self, cost: List[int]) -> int:
+        n = len(cost)
+        dp = {}
+
+        def solve(i):
+            if i >= n:
+                return 0
+
+            if i in dp:
+                return dp[i]
+
+            op1 = cost[i] + solve(i + 1)
+            op2 = cost[i] + solve(i + 2)
+
+            dp[i] = min(op1, op2)
+            return dp[i]
+
+        return min(solve(0), solve(1))
+
+Solution 2:
+
+class Solution:
+    def minCostClimbingStairs(self, cost: List[int]) -> int:
         cost.append(0)
 
         for i in range(len(cost) - 3, -1, -1):
@@ -50,7 +72,7 @@ class Solution:
 
         return min(cost[0], cost[1])
 
-Solution 2:
+Solution 3:
 
 class Solution:
     def minCostClimbingStairs(self, cost: List[int]) -> int:
@@ -65,7 +87,7 @@ class Solution:
         return min(dp[0], dp[1])
 
 
-Solution 3:
+Solution 4:
 
 
 class Solution:
