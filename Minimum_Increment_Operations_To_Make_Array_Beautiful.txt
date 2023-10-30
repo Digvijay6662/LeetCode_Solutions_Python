@@ -1,0 +1,136 @@
+2919. Minimum Increment Operations to Make Array Beautiful
+Attempted
+Medium
+Companies
+Hint
+You are given a 0-indexed integer array nums having length n, and an integer k.
+
+You can perform the following increment operation any number of times (including zero):
+
+Choose an index i in the range [0, n - 1], and increase nums[i] by 1.
+An array is considered beautiful if, for any subarray with a size of 3 or more, its maximum element is greater than or equal to k.
+
+Return an integer denoting the minimum number of increment operations needed to make nums beautiful.
+
+A subarray is a contiguous non-empty sequence of elements within an array.
+
+ 
+
+Example 1:
+
+Input: nums = [2,3,0,0,2], k = 4
+Output: 3
+Explanation: We can perform the following increment operations to make nums beautiful:
+Choose index i = 1 and increase nums[1] by 1 -> [2,4,0,0,2].
+Choose index i = 4 and increase nums[4] by 1 -> [2,4,0,0,3].
+Choose index i = 4 and increase nums[4] by 1 -> [2,4,0,0,4].
+The subarrays with a size of 3 or more are: [2,4,0], [4,0,0], [0,0,4], [2,4,0,0], [4,0,0,4], [2,4,0,0,4].
+In all the subarrays, the maximum element is equal to k = 4, so nums is now beautiful.
+It can be shown that nums cannot be made beautiful with fewer than 3 increment operations.
+Hence, the answer is 3.
+Example 2:
+
+Input: nums = [0,1,3,3], k = 5
+Output: 2
+Explanation: We can perform the following increment operations to make nums beautiful:
+Choose index i = 2 and increase nums[2] by 1 -> [0,1,4,3].
+Choose index i = 2 and increase nums[2] by 1 -> [0,1,5,3].
+The subarrays with a size of 3 or more are: [0,1,5], [1,5,3], [0,1,5,3].
+In all the subarrays, the maximum element is equal to k = 5, so nums is now beautiful.
+It can be shown that nums cannot be made beautiful with fewer than 2 increment operations.
+Hence, the answer is 2.
+Example 3:
+
+Input: nums = [1,1,2], k = 1
+Output: 0
+Explanation: The only subarray with a size of 3 or more in this example is [1,1,2].
+The maximum element, 2, is already greater than k = 1, so we don't need any increment operation.
+Hence, the answer is 0.
+ 
+
+Constraints:
+
+3 <= n == nums.length <= 105
+0 <= nums[i] <= 109
+0 <= k <= 109
+
+
+Solution 1:
+
+class Solution:
+    def minIncrementOperations(self, nums: List[int], k: int) -> int:
+        n = len(nums)
+        dp = [[[-1 for _ in range(n)] for _ in range(2)] for _ in range(2)]
+
+        def solve(i, cur, nxt):
+            if i == n - 2:
+                return 0
+            
+            if dp[cur][nxt][i] != -1:
+                return dp[cur][nxt][i]
+
+            ans = float('inf')
+
+            ok = [
+                (cur or nums[i] >= k),
+                (nxt or nums[i + 1] >= k),
+                (nums[i + 2] >= k)
+            ]
+
+            ans = min(ans, (0 if ok[0] else (k - nums[i])) + solve(i + 1, nxt, False))
+            ans = min(ans, (0 if ok[1] else (k - nums[i + 1])) + solve(i + 1, True, False))
+            ans = min(ans, (0 if ok[2] else (k - nums[i + 2])) + solve(i + 1, nxt, True))
+
+            dp[cur][nxt][i] = ans
+            return ans
+
+        return solve(0, False, False)
+
+
+Solution 2:
+
+class Solution:
+    def minIncrementOperations(self, nums: List[int], k: int) -> int:
+        n = len(nums)
+        q = deque([])
+
+        for i in range(3):
+            q.append(max(0, k - nums[i]))
+
+        for i in range(3, n):
+            a = q.popleft()
+            curr = a + max(0, k - nums[i])
+            curr = min(curr, q[0] + max(0, k - nums[i]))
+            curr = min(curr, q[1] + max(0, k - nums[i]))
+            q.append(curr)
+
+        return min(q.popleft(), q.popleft(), q.popleft())
+
+
+Solution 3:
+
+class Solution:
+    def minIncrementOperations(self, nums: List[int], k: int) -> int:
+        n = len(nums)
+        prev_3, prev_2, prev_1 = max(0, k - nums[0]), max(0, k - nums[1]), max(0, k - nums[2])
+        
+        for i in range(3, n):
+            curr = prev_3 + max(0, k - nums[i])
+            curr = min(curr, prev_2 + max(0, k - nums[i]))
+            curr = min(curr, prev_1 + max(0, k - nums[i]))
+            prev_3, prev_2, prev_1 = prev_2, prev_1, curr
+          
+        return min(prev_1, prev_2, prev_3)
+
+
+Solution 4:
+
+class Solution:
+    def minIncrementOperations(self, nums: List[int], k: int) -> int:
+        n = len(nums)
+        prev_3, prev_2, prev_1 = 0, 0, 0
+        
+        for i in range(n):
+            prev_3, prev_2, prev_1 = prev_2, prev_1, min(prev_3, prev_2, prev_1) + max(k - nums[i], 0)
+          
+        return min(prev_1, prev_2, prev_3)

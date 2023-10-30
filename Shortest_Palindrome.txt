@@ -1,0 +1,103 @@
+214. Shortest Palindrome
+Solved
+Hard
+Topics
+Companies
+You are given a string s. You can convert s to a 
+palindrome
+ by adding characters in front of it.
+
+Return the shortest palindrome you can find by performing this transformation.
+
+ 
+
+Example 1:
+
+Input: s = "aacecaaa"
+Output: "aaacecaaa"
+Example 2:
+
+Input: s = "abcd"
+Output: "dcbabcd"
+ 
+
+Constraints:
+
+0 <= s.length <= 5 * 104
+s consists of lowercase English letters only.
+
+
+Solution 1:
+
+class Solution:
+    def shortestPalindrome(self, s: str) -> str:
+        def computeLPS(pattern):
+            m = len(pattern)
+            lps = [0] * m
+            p, i = 0, 1
+
+            while i < m:
+                if pattern[p] == pattern[i]:
+                    lps[i] = p + 1
+                    p += 1
+                    i += 1
+                elif p == 0:
+                    lps[i] = 0
+                    i += 1
+                else:
+                    p = lps[p - 1]
+
+            return lps
+
+        rev_s = s[::-1]
+        combined = s + "#" + rev_s
+        lps = computeLPS(combined)
+        longest_suffix = rev_s[:len(s) - lps[-1]]
+        return longest_suffix + s
+
+
+Solution 2:
+
+class Solution:
+    def shortestPalindrome(self, s: str) -> str:
+        
+        def zAlgorithm(string):
+            n = len(string)
+            z = [0] * n
+            l = r = 0
+            for i in range(1, n):
+                if i > r:
+                    l = r = i
+                    while r < n and string[r] == string[r - l]:
+                        r += 1
+                    z[i] = r - l
+                    r -= 1
+                else:
+                    idx = i - l
+                    if i + z[idx] <= r:
+                        z[i] = z[idx]
+                    else:
+                        l = i
+                        while r < n and string[r] == string[r - l]:
+                            r += 1
+                        z[i] = r - l
+                        r -= 1
+            return z
+
+
+        rev_s = s[::-1]
+        string = s + '#' + rev_s
+        
+        z = zAlgorithm(string)
+        n = len(s)
+        m = len(string)
+
+        start_ind = -1
+
+        for i in range(n + 1, m):
+            if i + z[i] == m:
+                start_ind = i - n - 1
+                break
+                
+        return rev_s[:start_ind] + s
+        
