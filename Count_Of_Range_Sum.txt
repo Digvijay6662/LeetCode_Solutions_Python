@@ -1,0 +1,138 @@
+327. Count of Range Sum
+Solved
+Hard
+Topics
+Companies
+Given an integer array nums and two integers lower and upper, return the number of range sums that lie in [lower, upper] inclusive.
+
+Range sum S(i, j) is defined as the sum of the elements in nums between indices i and j inclusive, where i <= j.
+
+ 
+
+Example 1:
+
+Input: nums = [-2,5,-1], lower = -2, upper = 2
+Output: 3
+Explanation: The three ranges are: [0,0], [2,2], and [0,2] and their respective sums are: -2, -1, 2.
+Example 2:
+
+Input: nums = [0], lower = 0, upper = 0
+Output: 1
+ 
+
+Constraints:
+
+1 <= nums.length <= 105
+-231 <= nums[i] <= 231 - 1
+-105 <= lower <= upper <= 105
+The answer is guaranteed to fit in a 32-bit integer.
+
+
+Solution 1:
+
+class Solution:
+    def countRangeSum(self, nums: List[int], lower: int, upper: int) -> int:
+
+        def mergeAndCount(left, mid, right):
+            count = 0
+            j, k = mid + 1, mid + 1
+
+            for i in range(left, mid + 1):
+                while j <= right and prefix[j] - prefix[i] < lower:
+                    j += 1
+                
+                while k <= right and prefix[k] - prefix[i] <= upper:
+                    k += 1
+
+                count += k - j
+
+
+            merged = []
+            i, j = left, mid + 1
+
+            while i <= mid and j <= right:
+                if prefix[i] <= prefix[j]:
+                    merged.append(prefix[i])
+                    i += 1
+                else:
+                    merged.append(prefix[j])
+                    j += 1
+
+            while i <= mid:
+                merged.append(prefix[i])
+                i += 1
+
+            while j <= right:
+                merged.append(prefix[j])
+                j += 1
+
+            for i in range(left, right + 1):
+                prefix[i] = merged[i - left]
+
+            return count
+
+        def mergeSortAndCount(left, right):
+            if left >= right:
+                return 0
+
+            mid = left + (right - left) // 2
+            count = mergeSortAndCount(left, mid) + mergeSortAndCount(mid + 1, right)
+            count += mergeAndCount(left, mid, right)
+            return count
+
+
+        n = len(nums)
+        prefix = [0]
+
+        for i in range(n):
+            prefix.append(prefix[-1] + nums[i])
+
+        return mergeSortAndCount(0, n)
+        
+
+
+Solution 2:
+
+class Solution:
+    def countRangeSum(self, nums: List[int], lower: int, upper: int) -> int:
+
+        def mergeAndCount(left, mid, right):
+            count = 0
+            j, k = mid + 1, mid + 1
+
+            for i in range(left, mid + 1):
+                while j <= right and prefix[j] - prefix[i] < lower:
+                    j += 1
+                
+                while k <= right and prefix[k] - prefix[i] <= upper:
+                    k += 1
+
+                count += k - j
+
+
+            merged = sorted(prefix[left:right + 1])
+
+            for i in range(left, right + 1):
+                prefix[i] = merged[i - left]
+
+            return count
+
+
+        def mergeSortAndCount(left, right):
+            if left >= right:
+                return 0
+
+            mid = left + (right - left) // 2
+            count = mergeSortAndCount(left, mid) + mergeSortAndCount(mid + 1, right)
+            count += mergeAndCount(left, mid, right)
+            return count
+
+
+        n = len(nums)
+        prefix = [0]
+
+        for i in range(n):
+            prefix.append(prefix[-1] + nums[i])
+
+        return mergeSortAndCount(0, n)
+        

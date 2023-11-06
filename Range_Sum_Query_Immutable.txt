@@ -1,0 +1,182 @@
+303. Range Sum Query - Immutable
+Solved
+Easy
+Topics
+Companies
+Given an integer array nums, handle multiple queries of the following type:
+
+Calculate the sum of the elements of nums between indices left and right inclusive where left <= right.
+Implement the NumArray class:
+
+NumArray(int[] nums) Initializes the object with the integer array nums.
+int sumRange(int left, int right) Returns the sum of the elements of nums between indices left and right inclusive (i.e. nums[left] + nums[left + 1] + ... + nums[right]).
+ 
+
+Example 1:
+
+Input
+["NumArray", "sumRange", "sumRange", "sumRange"]
+[[[-2, 0, 3, -5, 2, -1]], [0, 2], [2, 5], [0, 5]]
+Output
+[null, 1, -1, -3]
+
+Explanation
+NumArray numArray = new NumArray([-2, 0, 3, -5, 2, -1]);
+numArray.sumRange(0, 2); // return (-2) + 0 + 3 = 1
+numArray.sumRange(2, 5); // return 3 + (-5) + 2 + (-1) = -1
+numArray.sumRange(0, 5); // return (-2) + 0 + 3 + (-5) + 2 + (-1) = -3
+ 
+
+Constraints:
+
+1 <= nums.length <= 104
+-105 <= nums[i] <= 105
+0 <= left <= right < nums.length
+At most 104 calls will be made to sumRange.
+
+
+Solution 1: Segment Tree
+
+class SegmentTree:
+    def __init__(self, n):
+        self.tree = [0] * (4 * n)
+    
+    def buildTree(self, l, r, i, nums):
+        if l == r:
+            self.tree[i] = nums[l]
+            return 
+
+        m = (l + r) >> 1
+        self.buildTree(l, m, 2*i + 1, nums)
+        self.buildTree(m + 1, r, 2*i + 2, nums)
+
+        self.tree[i] = self.tree[2*i + 1] + self.tree[2*i + 2]
+    
+    def query(self, l, r, i, lo, hi):
+        if lo > r or hi < l:
+            return 0
+
+        if l >= lo and r <= hi:
+            return self.tree[i]
+
+        m = (l + r) // 2
+        left_sum = self.query(l, m, 2 * i + 1, lo, hi)
+        right_sum = self.query(m + 1, r, 2 * i + 2, lo, hi)
+        return left_sum + right_sum
+
+class NumArray:
+
+    def __init__(self, nums: List[int]):
+        self.n = len(nums)
+        self.t = SegmentTree(self.n)
+        self.t.buildTree(0, self.n - 1, 0, nums)
+
+    def sumRange(self, left: int, right: int) -> int:
+        return self.t.query(0, self.n - 1, 0, left, right)
+        
+
+
+# Your NumArray object will be instantiated and called as such:
+# obj = NumArray(nums)
+# param_1 = obj.sumRange(left,right)
+
+
+
+Solution 2: Fenwick Tree
+
+class FenwickTree:
+    def __init__(self, n):
+        self.tree = [0] * (n + 1)
+
+    def update(self, i, delta):
+        i += 1
+        while i < len(self.tree):
+            self.tree[i] += delta
+            i += i & -i
+
+    def query(self, i):
+        i += 1
+        total = 0
+        while i > 0:
+            total += self.tree[i]
+            i -= i & -i
+        return total
+
+class NumArray:
+
+    def __init__(self, nums: List[int]):
+        n = len(nums)
+        self.t = FenwickTree(n)
+        for i, num in enumerate(nums):
+            self.t.update(i, num)
+
+    def sumRange(self, left: int, right: int) -> int:
+        return self.t.query(right) - self.t.query(left - 1) if left > 0 else self.t.query(right)
+
+# Your NumArray object will be instantiated and called as such:
+# obj = NumArray(nums)
+# param_1 = obj.sumRange(left,right)
+
+
+Solution 3:
+
+class FenwickTree:
+    def __init__(self, n):
+        self.tree = [0] * (n + 1)
+
+    def buildTree(self, nums):
+        self.tree[1:] = nums.copy()
+        size = len(self.tree)
+        for i in range(1, size):
+            p = i + (i & -i)
+            if p < size:
+                self.tree[p] = self.tree[p] + self.tree[i]
+
+    def update(self, i, delta):
+        i += 1
+        while i < len(self.tree):
+            self.tree[i] += delta
+            i += i & -i
+
+    def query(self, i):
+        i += 1
+        total = 0
+        while i > 0:
+            total += self.tree[i]
+            i -= i & -i
+        return total
+
+class NumArray:
+
+    def __init__(self, nums: List[int]):
+        n = len(nums)
+        self.t = FenwickTree(n)
+        self.t.buildTree(nums)
+
+    def sumRange(self, left: int, right: int) -> int:
+        return self.t.query(right) - self.t.query(left - 1) if left > 0 else self.t.query(right)
+
+# Your NumArray object will be instantiated and called as such:
+# obj = NumArray(nums)
+# param_1 = obj.sumRange(left,right)
+
+Solution 4:
+
+class NumArray:
+
+    def __init__(self, nums: List[int]):
+        self.prefix = [0] * len(nums)
+        self.prefix[0] = nums[0]
+        for i in range(1, len(nums)):
+            self.prefix[i] = nums[i] + self.prefix[i - 1]
+
+    def sumRange(self, left: int, right: int) -> int:
+        if left == 0:
+            return self.prefix[right]
+        return self.prefix[right] - self.prefix[left - 1]
+        
+
+
+# Your NumArray object will be instantiated and called as such:
+# obj = NumArray(nums)
+# param_1 = obj.sumRange(left,right)
