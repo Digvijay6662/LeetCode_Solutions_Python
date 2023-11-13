@@ -103,3 +103,30 @@ class Solution:
                 j += 1
 
         return ''.join(res)
+
+
+Solution 4:
+
+class Solution:
+    def sortVowels(self, s: str) -> str:
+        n = len(s)
+        vowels = ['A', 'E', 'I', 'O', 'U', 'a', 'e', 'i', 'o', 'u']
+        countMap = defaultdict(int)
+
+        for c in s:
+            if c in vowels:
+                countMap[c] += 1
+
+        res = ''
+        j = 0
+        for i in range(n):
+            if s[i] in vowels:
+                while countMap[vowels[j]] == 0:
+                    j += 1
+
+                res += vowels[j]
+                countMap[vowels[j]] -= 1
+            else:
+                res += s[i]
+
+        return res
