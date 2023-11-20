@@ -1,0 +1,148 @@
+116. Populating Next Right Pointers in Each Node
+Solved
+Medium
+Topics
+Companies
+You are given a perfect binary tree where all leaves are on the same level, and every parent has two children. The binary tree has the following definition:
+
+struct Node {
+  int val;
+  Node *left;
+  Node *right;
+  Node *next;
+}
+Populate each next pointer to point to its next right node. If there is no next right node, the next pointer should be set to NULL.
+
+Initially, all next pointers are set to NULL.
+
+ 
+
+Example 1:
+
+
+Input: root = [1,2,3,4,5,6,7]
+Output: [1,#,2,3,#,4,5,6,7,#]
+Explanation: Given the above perfect binary tree (Figure A), your function should populate each next pointer to point to its next right node, just like in Figure B. The serialized output is in level order as connected by the next pointers, with '#' signifying the end of each level.
+Example 2:
+
+Input: root = []
+Output: []
+ 
+
+Constraints:
+
+The number of nodes in the tree is in the range [0, 212 - 1].
+-1000 <= Node.val <= 1000
+ 
+
+Follow-up:
+
+You may only use constant extra space.
+The recursive approach is fine. You may assume implicit stack space does not count as extra space for this problem.
+
+
+Solution 1:
+
+"""
+# Definition for a Node.
+class Node:
+    def __init__(self, val: int = 0, left: 'Node' = None, right: 'Node' = None, next: 'Node' = None):
+        self.val = val
+        self.left = left
+        self.right = right
+        self.next = next
+"""
+
+class Solution:
+    def connect(self, root: 'Optional[Node]') -> 'Optional[Node]':
+        if not root:
+            return root
+
+        q = deque([root])
+
+        while q:
+            prev = None
+            for _ in range(len(q)):
+                node = q.popleft()
+                node.next = prev
+
+                if node.right:
+                    q.append(node.right)
+
+                if node.left:
+                    q.append(node.left)
+
+                prev = node
+
+        return root
+        
+
+Solution 2:
+
+"""
+# Definition for a Node.
+class Node:
+    def __init__(self, val: int = 0, left: 'Node' = None, right: 'Node' = None, next: 'Node' = None):
+        self.val = val
+        self.left = left
+        self.right = right
+        self.next = next
+"""
+
+class Solution:
+    def connect(self, root: 'Optional[Node]') -> 'Optional[Node]':
+        if not root:
+            return root
+
+        current = root  # Pointer to the current node in the level
+
+        while current:
+            dummy_head = Node()  # Dummy head for the next level
+            tail = dummy_head   # Pointer to the last connected node in the next level
+
+            while current:
+                if current.left:
+                    tail.next = current.left
+                    tail = tail.next
+
+                if current.right:
+                    tail.next = current.right
+                    tail = tail.next
+
+                current = current.next
+
+            current = dummy_head.next  # Move to the next level
+
+        return root
+
+
+Solution 3:
+
+"""
+# Definition for a Node.
+class Node:
+    def __init__(self, val: int = 0, left: 'Node' = None, right: 'Node' = None, next: 'Node' = None):
+        self.val = val
+        self.left = left
+        self.right = right
+        self.next = next
+"""
+
+class Solution:
+    def connect(self, root: 'Optional[Node]') -> 'Optional[Node]':
+        if not root:
+            return root
+
+        tail = root
+        while tail:
+            curr = tail
+            while curr:
+                if curr.left:
+                    curr.left.next = curr.right
+                    if curr.next:
+                        curr.right.next = curr.next.left
+                curr = curr.next
+
+            tail = tail.left
+
+        return root

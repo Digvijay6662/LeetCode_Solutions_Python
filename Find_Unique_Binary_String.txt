@@ -1,0 +1,108 @@
+1980. Find Unique Binary String
+Solved
+Medium
+Topics
+Companies
+Hint
+Given an array of strings nums containing n unique binary strings each of length n, return a binary string of length n that does not appear in nums. If there are multiple answers, you may return any of them.
+
+ 
+
+Example 1:
+
+Input: nums = ["01","10"]
+Output: "11"
+Explanation: "11" does not appear in nums. "00" would also be correct.
+Example 2:
+
+Input: nums = ["00","01"]
+Output: "11"
+Explanation: "11" does not appear in nums. "10" would also be correct.
+Example 3:
+
+Input: nums = ["111","011","001"]
+Output: "101"
+Explanation: "101" does not appear in nums. "000", "010", "100", and "110" would also be correct.
+ 
+
+Constraints:
+
+n == nums.length
+1 <= n <= 16
+nums[i].length == n
+nums[i] is either '0' or '1'.
+All the strings of nums are unique.
+
+
+Solution 1:
+
+class Solution:
+    def findDifferentBinaryString(self, nums: List[str]) -> str:
+        n = len(nums)
+        nums = set(nums)
+
+        result = ''
+        def solve(i, string):
+            nonlocal result
+            if i == n:
+                if string not in nums:
+                    result = string
+                    return True
+                return False
+
+            return solve(i + 1, string + '1') or solve(i + 1, string + '0')
+
+        solve(0, '')
+        return result
+
+
+Solution 2:
+
+class Solution:
+    def findDifferentBinaryString(self, nums: List[str]) -> str:
+        n = len(nums)
+        nums = set(nums)
+
+        def solve(i, string):
+            if i == n:
+                if string not in nums:
+                    return string
+                return ''
+
+            ans = solve(i + 1, string + '1')
+            if ans:
+                return ans
+
+            return solve(i + 1, string + '0')
+
+        return solve(0, '')
+
+
+Solution 3:
+
+class Solution:
+    def findDifferentBinaryString(self, nums: List[str]) -> str:
+        num_set = set()
+        for num in nums:
+            num_set.add(int(num, 2))
+
+        n = len(nums)
+        for num in range(n + 1):
+            if num not in num_set:
+                ans = bin(num)[2:]
+                return "0" * (n - len(ans)) + ans
+
+
+Solution 4:
+
+class Solution:
+    def findDifferentBinaryString(self, nums: List[str]) -> str:
+        n = len(nums)
+        result = []
+
+        for i in range(n):
+            ch = nums[i][i]
+            result.append('1' if ch == '0' else '0')
+
+        return ''.join(result)
+

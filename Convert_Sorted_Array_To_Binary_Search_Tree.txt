@@ -25,8 +25,8 @@ Constraints:
 -104 <= nums[i] <= 104
 nums is sorted in a strictly increasing order.
 
-Solution:
 
+Solution 1:
 
 # Definition for a binary tree node.
 # class TreeNode:
@@ -46,3 +46,35 @@ class Solution:
         head.right = self.sortedArrayToBST(nums[mid + 1:])
 
         return head
+
+
+Solution 2:
+
+# Definition for a binary tree node.
+# class TreeNode:
+#     def __init__(self, val=0, left=None, right=None):
+#         self.val = val
+#         self.left = left
+#         self.right = right
+class Solution:
+    def sortedArrayToBST(self, nums: List[int]) -> Optional[TreeNode]:
+        if not nums:
+            return None
+
+        root = TreeNode()
+        stack = [(root, 0, len(nums))]
+
+        while stack:
+            node, left, right = stack.pop()
+            mid = left + (right - left) // 2
+            node.val = nums[mid]
+
+            if left < mid:
+                node.left = TreeNode()
+                stack.append((node.left, left, mid))
+            
+            if mid + 1 < right:
+                node.right = TreeNode()
+                stack.append((node.right, mid + 1, right))
+
+        return root

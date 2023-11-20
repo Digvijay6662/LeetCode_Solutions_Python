@@ -74,3 +74,31 @@ class Solution:
             root = root.right
 
         return res
+
+
+Solution 3: Morris Traversal
+
+# Definition for a binary tree node.
+# class TreeNode:
+#     def __init__(self, val=0, left=None, right=None):
+#         self.val = val
+#         self.left = left
+#         self.right = right
+class Solution:
+    def inorderTraversal(self, root: Optional[TreeNode]) -> List[int]:
+        result = []
+        curr = root
+        while curr:
+            if curr.left:
+                node = curr.left
+                while node.right:
+                    node = node.right
+                node.right = curr
+                temp = curr
+                curr = curr.left
+                temp.left = None
+            else:
+                result.append(curr.val)
+                curr = curr.right
+
+        return result
