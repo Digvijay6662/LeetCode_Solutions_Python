@@ -37,6 +37,34 @@ Solution 1:
 
 class Solution:
     def coinChange(self, coins: List[int], amount: int) -> int:
+        n = len(coins)
+        dp = [[-1 for _ in range(amount + 1)] for _ in range(n)]
+
+        def solve(i, a):
+            if a == 0:
+                return 0
+
+            if i == n or a < 0:
+                return float('inf')
+
+            if dp[i][a] != -1:
+                return dp[i][a]
+
+            pick = 1 + min(solve(i + 1, a - coins[i]), solve(i, a - coins[i]))
+            notPick = solve(i + 1, a)
+
+            dp[i][a] = min(pick, notPick)
+            return dp[i][a]
+
+        ans = solve(0, amount) 
+
+        return -1 if ans == float('inf') else ans
+
+
+Solution 2:
+
+class Solution:
+    def coinChange(self, coins: List[int], amount: int) -> int:
 
         dp = [amount + 1] * (amount + 1)
         dp[0] = 0

@@ -1,0 +1,141 @@
+2944. Minimum Number of Coins for Fruits
+Solved
+Medium
+Companies
+Hint
+You are at a fruit market with different types of exotic fruits on display.
+
+You are given a 1-indexed array prices, where prices[i] denotes the number of coins needed to purchase the ith fruit.
+
+The fruit market has the following offer:
+
+If you purchase the ith fruit at prices[i] coins, you can get the next i fruits for free.
+Note that even if you can take fruit j for free, you can still purchase it for prices[j] coins to receive a new offer.
+
+Return the minimum number of coins needed to acquire all the fruits.
+
+ 
+
+Example 1:
+
+Input: prices = [3,1,2]
+Output: 4
+Explanation: You can acquire the fruits as follows:
+- Purchase the 1st fruit with 3 coins, you are allowed to take the 2nd fruit for free.
+- Purchase the 2nd fruit with 1 coin, you are allowed to take the 3rd fruit for free.
+- Take the 3rd fruit for free.
+Note that even though you were allowed to take the 2nd fruit for free, you purchased it because it is more optimal.
+It can be proven that 4 is the minimum number of coins needed to acquire all the fruits.
+Example 2:
+
+Input: prices = [1,10,1,1]
+Output: 2
+Explanation: You can acquire the fruits as follows:
+- Purchase the 1st fruit with 1 coin, you are allowed to take the 2nd fruit for free.
+- Take the 2nd fruit for free.
+- Purchase the 3rd fruit for 1 coin, you are allowed to take the 4th fruit for free.
+- Take the 4th fruit for free.
+It can be proven that 2 is the minimum number of coins needed to acquire all the fruits.
+ 
+
+Constraints:
+
+1 <= prices.length <= 1000
+1 <= prices[i] <= 105
+
+
+Solution 1:
+
+class Solution:
+    def minimumCoins(self, prices: List[int]) -> int:
+        n = len(prices)
+        dp = [[-1 for _ in range(n)] for _ in range(n)]
+
+        def solve(i, rem):
+            if i == n:
+                return 0
+
+            if dp[i][rem] != -1:
+                return dp[i][rem]
+
+            if rem:
+                ans = min(prices[i] + solve(i + 1, i + 1), solve(i + 1, rem - 1))
+            else:
+                ans = prices[i] + solve(i + 1, i + 1)
+
+            dp[i][rem] = ans
+            return ans
+        
+        return solve(0, 0)
+
+
+Solution 2:
+
+class Solution:
+    def minimumCoins(self, prices: List[int]) -> int:
+        n = len(prices)
+        dp = [[0 for _ in range(n + 1)] for _ in range(n + 1)]
+
+        for i in range(n - 1, -1, -1):
+            for rem in range(n - 1, -1, -1):
+                if rem:
+                    ans = min(prices[i] + dp[i + 1][i + 1], dp[i + 1][rem - 1])
+                else:
+                    ans = prices[i] + dp[i + 1][i + 1]
+
+                dp[i][rem] = ans
+
+        return dp[0][0]
+
+
+Solution 3:
+
+class Solution:
+    def minimumCoins(self, prices: List[int]) -> int:
+        n = len(prices)
+        dp = [[0] * (n + 1) for _ in range(n + 1)]
+
+        for i in range(n - 1, -1, -1):
+            for rem in range(n - i + 1):
+                if rem > 0:
+                    dp[i][rem] = min(prices[i] + dp[i + 1][i + 1], dp[i + 1][rem - 1])
+                else:
+                    dp[i][rem] = prices[i] + dp[i + 1][i + 1]
+
+        return dp[0][0]
+
+
+Solution 4:
+
+class Solution:
+    def minimumCoins(self, prices: List[int]) -> int:
+        n = len(prices)
+        prev = [0] * (n + 1)
+
+        for i in range(n - 1, -1, -1):
+            curr = [0] * (n + 1)
+            for rem in range(n - i + 1):
+                if rem > 0:
+                    curr[rem] = min(prices[i] + prev[i + 1], prev[rem - 1])
+                else:
+                    curr[rem] = prices[i] + prev[i + 1]
+            prev = curr
+
+        return prev[0]
+
+
+Solution 5:
+
+class Solution:
+    def minimumCoins(self, prices: List[int]) -> int:
+        n = len(prices)
+        dp = [float('inf')] * (n + 1)
+        dp[0] = 0
+
+        for i in range(1, n + 1):
+            curr_coins = dp[i - 1] + prices[i - 1]
+
+            for j in range(i + 1):
+                dp[min(n, i + j)] = min(dp[min(n, i + j)], curr_coins)
+
+        return dp[n]

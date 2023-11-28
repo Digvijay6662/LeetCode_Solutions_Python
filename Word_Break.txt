@@ -37,6 +37,29 @@ All the strings of wordDict are unique.
 
 Solution 1: Top-Down Approach
 
+class Solution:
+    def wordBreak(self, s: str, wordDict: List[str]) -> bool:
+        n = len(s)
+        dp = [-1 for _ in range(n)]
+        
+        def solve(i):
+            if i == n:
+                return True
+            
+            if dp[i] != -1:
+                return dp[i]
+
+            dp[i] = False
+            for j in range(i, n + 1):
+                if s[i:j] in wordDict and solve(j):
+                    dp[i] = True
+                    
+            return dp[i]
+
+        return solve(0)
+        
+
+Solution 2: Bottom-Up Approach
 
 class Solution:
     def wordBreak(self, s: str, wordDict: List[str]) -> bool:
@@ -53,7 +76,7 @@ class Solution:
         return dp[0]
 
 
-Solution 2: Bottom-Up Approach
+Solution 3: Bottom-Up Approach
 
 class Solution:
     def wordBreak(self, s: str, wordDict: List[str]) -> bool:
@@ -70,7 +93,7 @@ class Solution:
         return dp[n]
 
 
-Solution 3:
+Solution 4:
 
 class TrieNode:
     def __init__(self):

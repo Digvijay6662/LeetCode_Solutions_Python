@@ -25,7 +25,30 @@ Constraints:
 The product of any prefix or suffix of nums is guaranteed to fit in a 32-bit integer.
 
 
-Solution:
+Solution 1:
+
+class Solution:
+    def maxProduct(self, nums: List[int]) -> int:
+        n = len(nums)
+        res = float('-inf')
+        prefix = suffix = 1
+        
+        for i in range(n):
+            if prefix == 0:
+                prefix = 1
+            
+            if suffix == 0:
+                suffix = 1
+            
+            prefix *= nums[i]
+            suffix *= nums[n - i - 1]
+
+            res = max(res, suffix, prefix)
+
+        return res
+        
+
+Solution 2:
 
 class Solution:
     def maxProduct(self, nums: List[int]) -> int:
