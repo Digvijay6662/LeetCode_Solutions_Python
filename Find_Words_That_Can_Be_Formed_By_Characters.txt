@@ -1,0 +1,84 @@
+1160. Find Words That Can Be Formed by Characters
+Solved
+Easy
+Topics
+Companies
+Hint
+You are given an array of strings words and a string chars.
+
+A string is good if it can be formed by characters from chars (each character can only be used once).
+
+Return the sum of lengths of all good strings in words.
+
+ 
+
+Example 1:
+
+Input: words = ["cat","bt","hat","tree"], chars = "atach"
+Output: 6
+Explanation: The strings that can be formed are "cat" and "hat" so the answer is 3 + 3 = 6.
+Example 2:
+
+Input: words = ["hello","world","leetcode"], chars = "welldonehoneyr"
+Output: 10
+Explanation: The strings that can be formed are "hello" and "world" so the answer is 5 + 5 = 10.
+ 
+
+Constraints:
+
+1 <= words.length <= 1000
+1 <= words[i].length, chars.length <= 100
+words[i] and chars consist of lowercase English letters.
+
+
+Solution 1:
+
+class Solution:
+    def countCharacters(self, words: List[str], chars: str) -> int:
+        countMap = {}
+        result = 0
+
+        for ch in chars:
+            countMap[ch] = countMap.get(ch, 0) + 1
+
+        for word in words:
+            tempMap = countMap.copy()
+            flag = True
+            
+            for ch in word:
+                if ch not in tempMap or tempMap[ch] == 0:
+                    flag = False
+                    break
+                tempMap[ch] -= 1
+            
+            if flag:
+                result += len(word)
+
+        return result
+
+
+Solution 2:
+
+class Solution:
+    def countCharacters(self, words: List[str], chars: str) -> int:
+        counts = [0] * 26
+        result = 0
+
+        for ch in chars:
+            counts[ord(ch) - ord('a')] += 1
+
+        for word in words:
+            if self.check(word, counts):
+                result += len(word)
+
+        return result
+
+    def check(self, word, counts):
+        temp = [0] * 26
+        for ch in word:
+            x = ord(ch) - ord('a')
+            temp[x] += 1
+            if temp[x] > counts[x]:
+                return False
+
+        return True
