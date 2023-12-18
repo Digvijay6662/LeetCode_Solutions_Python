@@ -1,0 +1,132 @@
+2965. Find Missing and Repeated Values
+Solved
+Easy
+Companies
+You are given a 0-indexed 2D integer matrix grid of size n * n with values in the range [1, n2]. Each integer appears exactly once except a which appears twice and b which is missing. The task is to find the repeating and missing numbers a and b.
+
+Return a 0-indexed integer array ans of size 2 where ans[0] equals to a and ans[1] equals to b.
+
+ 
+
+Example 1:
+
+Input: grid = [[1,3],[2,2]]
+Output: [2,4]
+Explanation: Number 2 is repeated and number 4 is missing so the answer is [2,4].
+Example 2:
+
+Input: grid = [[9,1,7],[8,9,2],[3,4,6]]
+Output: [9,5]
+Explanation: Number 9 is repeated and number 5 is missing so the answer is [9,5].
+ 
+
+Constraints:
+
+2 <= n == grid.length == grid[i].length <= 50
+1 <= grid[i][j] <= n * n
+For all x that 1 <= x <= n * n there is exactly one x that is not equal to any of the grid members.
+For all x that 1 <= x <= n * n there is exactly one x that is equal to exactly two of the grid members.
+For all x that 1 <= x <= n * n except two of them there is exatly one pair of i, j that 0 <= i, j <= n - 1 and grid[i][j] == x.
+
+
+Solution 1:
+
+class Solution:
+    def findMissingAndRepeatedValues(self, grid: List[List[int]]) -> List[int]:
+        n = len(grid)
+        set_num = set()
+        rep = mis = -1
+
+        for i in range(n):
+            for j in range(n):
+                if grid[i][j] in set_num:
+                    rep = grid[i][j]
+                set_num.add(grid[i][j])
+                    
+        for i in range(1, n * n + 1):
+            if i not in set_num:
+                mis = i
+                
+        return [rep, mis]
+
+
+Solution 2:
+
+class Solution:
+    def findMissingAndRepeatedValues(self, grid: List[List[int]]) -> List[int]:
+        n = len(grid)
+        actual_sum = actual_sum_square = 0
+
+        for i in range(n):
+            for j in range(n):
+                actual_sum += grid[i][j]
+                actual_sum_square += grid[i][j] ** 2
+
+        n = n * n
+        total_sum = n * (n + 1) // 2
+        total_sum_square = n * (n + 1) * (2 * n + 1) // 6
+
+        # x: Missing Value, y: Repeated Value
+        # x - y = total_sum - actual_sum
+        # x2 - y2 = total_sum_square - actual_sum_square
+        # x + y = (total_sum_square - actual_sum_square + x - y) / (x - y)
+        value1 = total_sum - actual_sum
+        value2 = (total_sum_square - actual_sum_square) // value1
+        
+        # From eq.1 and eq.4
+        x = (value1 + value2) // 2
+        # From eq.4
+        y = value2 - x
+
+        return [y, x]
+
+
+Solution 3:
+
+class Solution:
+    def findMissingAndRepeatedValues(self, grid: List[List[int]]) -> List[int]:
+        n = len(grid)
+        xor = 0
+        count = 1
+
+        #Step 1: Find XOR of all elements:
+        for i in range(n):
+            for j in range(n):
+                xor = xor ^ grid[i][j]
+                xor = xor ^ count
+                count += 1
+
+        #Step 2: Find the differentiating bit number:
+        number = (xor & ~(xor - 1))
+
+        #Step 3: Group the numbers:
+        zero = 0
+        one = 0
+        for i in range(n):
+            for j in range(n):
+                #part of 1 group:
+                if ((grid[i][j] & number) != 0):
+                    one = one ^ grid[i][j]
+                #part of 0 group:
+                else:
+                    zero = zero ^ grid[i][j]
+
+        for i in range(1, n * n + 1):
+            #part of 1 group:
+            if ((i & number) != 0):
+                one = one ^ i
+            #part of 0 group:
+            else:
+                zero = zero ^ i
+
+        # Last step: Identify the numbers:
+        count = 0
+        for i in range(n):
+            for j in range(n):
+                if (grid[i][j] == zero):
+                    count += 1
+
+        if (count == 2):
+            return [zero, one]
+
+        return [one, zero]
