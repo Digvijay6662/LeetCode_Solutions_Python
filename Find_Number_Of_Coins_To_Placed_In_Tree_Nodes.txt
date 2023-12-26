@@ -1,0 +1,146 @@
+2973. Find Number of Coins to Place in Tree Nodes
+Solved
+Hard
+Companies
+Hint
+You are given an undirected tree with n nodes labeled from 0 to n - 1, and rooted at node 0. You are given a 2D integer array edges of length n - 1, where edges[i] = [ai, bi] indicates that there is an edge between nodes ai and bi in the tree.
+
+You are also given a 0-indexed integer array cost of length n, where cost[i] is the cost assigned to the ith node.
+
+You need to place some coins on every node of the tree. The number of coins to be placed at node i can be calculated as:
+
+If size of the subtree of node i is less than 3, place 1 coin.
+Otherwise, place an amount of coins equal to the maximum product of cost values assigned to 3 distinct nodes in the subtree of node i. If this product is negative, place 0 coins.
+Return an array coin of size n such that coin[i] is the number of coins placed at node i.
+
+ 
+
+Example 1:
+
+
+Input: edges = [[0,1],[0,2],[0,3],[0,4],[0,5]], cost = [1,2,3,4,5,6]
+Output: [120,1,1,1,1,1]
+Explanation: For node 0 place 6 * 5 * 4 = 120 coins. All other nodes are leaves with subtree of size 1, place 1 coin on each of them.
+Example 2:
+
+
+Input: edges = [[0,1],[0,2],[1,3],[1,4],[1,5],[2,6],[2,7],[2,8]], cost = [1,4,2,3,5,7,8,-4,2]
+Output: [280,140,32,1,1,1,1,1,1]
+Explanation: The coins placed on each node are:
+- Place 8 * 7 * 5 = 280 coins on node 0.
+- Place 7 * 5 * 4 = 140 coins on node 1.
+- Place 8 * 2 * 2 = 32 coins on node 2.
+- All other nodes are leaves with subtree of size 1, place 1 coin on each of them.
+Example 3:
+
+
+Input: edges = [[0,1],[0,2]], cost = [1,2,-2]
+Output: [0,1,1]
+Explanation: Node 1 and 2 are leaves with subtree of size 1, place 1 coin on each of them. For node 0 the only possible product of cost is 2 * 1 * -2 = -4. Hence place 0 coins on node 0.
+ 
+
+Constraints:
+
+2 <= n <= 2 * 104
+edges.length == n - 1
+edges[i].length == 2
+0 <= ai, bi < n
+cost.length == n
+1 <= |cost[i]| <= 104
+The input is generated such that edges represents a valid tree.
+
+
+Solution 1:
+
+class Solution:
+    def placedCoins(self, edges: List[List[int]], cost: List[int]) -> List[int]:
+        n = len(cost)
+        graph = defaultdict(list)
+
+        for src, dest in edges:
+            graph[src].append(dest)
+            graph[dest].append(src)
+        
+        coins = [0] * n
+
+        def solve(node, par):
+            vals = [cost[node]]
+
+            for child in graph[node]:
+                if child == par:
+                    continue
+
+                vals += solve(child, node)
+
+            vals.sort()
+
+            if len(vals) < 3:
+                coins[node] = 1
+            else:
+                coins[node] = max(vals[-1] * vals[-2] * vals[-3],
+                                vals[0] * vals[1] * vals[-1],
+                                0)
+
+            if len(vals) >= 5:
+                vals = vals[:2] + vals[-3:]
+                
+            return vals
+
+        solve(0, -1)
+
+        return coins
+                
+
+
+Solution 2:
+
+class TreeNode:
+    def __init__(self, val: int):
+        self.numNodes = 1
+        self.posMax = [val] if val > 0 else []
+        self.negMin = [val] if val < 0 else []
+
+    def update(self, child: 'TreeNode'):
+        self.numNodes += child.numNodes
+        self.posMax += child.posMax
+        self.negMin += child.negMin
+
+        self.posMax = sorted(self.posMax, reverse=True)[:3]
+        self.negMin = sorted(self.negMin)[:2]
+
+    def product(self) -> int:
+        if self.numNodes < 3:
+            return 1
+
+        result = 0
+        if len(self.posMax) == 3:
+            result = self.posMax[0] * self.posMax[1] * self.posMax[2]
+
+        if len(self.negMin) == 2 and self.posMax:
+            result = max(result, self.negMin[0] * self.negMin[1] * self.posMax[0])
+
+        return result
+
+class Solution:
+    def fillCoins(self, graph: List[List[int]], cost: List[int], curr: int, par: int, coins: List[int]) -> 'TreeNode':
+
+        node = TreeNode(cost[curr])
+        for child in graph[curr]:
+            if child != par:
+                child_node = self.fillCoins(graph, cost, child, curr, coins)
+                node.update(child_node)
+
+        coins[curr] = node.product()
+        return node
+
+    def placedCoins(self, edges: List[List[int]], cost: List[int]) -> List[int]:
+        n = len(cost)
+        graph = [[] for _ in range(n)]
+
+        for src, dest in edges:
+            graph[src].append(dest)
+            graph[dest].append(src)
+
+        coins = [0] * n
+        self.fillCoins(graph, cost, 0, -1, coins)
+        return coins

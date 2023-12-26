@@ -1,0 +1,269 @@
+2977. Minimum Cost to Convert String II
+Solved
+Hard
+Companies
+Hint
+You are given two 0-indexed strings source and target, both of length n and consisting of lowercase English characters. You are also given two 0-indexed string arrays original and changed, and an integer array cost, where cost[i] represents the cost of converting the string original[i] to the string changed[i].
+
+You start with the string source. In one operation, you can pick a substring x from the string, and change it to y at a cost of z if there exists any index j such that cost[j] == z, original[j] == x, and changed[j] == y. You are allowed to do any number of operations, but any pair of operations must satisfy either of these two conditions:
+
+The substrings picked in the operations are source[a..b] and source[c..d] with either b < c or d < a. In other words, the indices picked in both operations are disjoint.
+The substrings picked in the operations are source[a..b] and source[c..d] with a == c and b == d. In other words, the indices picked in both operations are identical.
+Return the minimum cost to convert the string source to the string target using any number of operations. If it is impossible to convert source to target, return -1.
+
+Note that there may exist indices i, j such that original[j] == original[i] and changed[j] == changed[i].
+
+ 
+
+Example 1:
+
+Input: source = "abcd", target = "acbe", original = ["a","b","c","c","e","d"], changed = ["b","c","b","e","b","e"], cost = [2,5,5,1,2,20]
+Output: 28
+Explanation: To convert "abcd" to "acbe", do the following operations:
+- Change substring source[1..1] from "b" to "c" at a cost of 5.
+- Change substring source[2..2] from "c" to "e" at a cost of 1.
+- Change substring source[2..2] from "e" to "b" at a cost of 2.
+- Change substring source[3..3] from "d" to "e" at a cost of 20.
+The total cost incurred is 5 + 1 + 2 + 20 = 28. 
+It can be shown that this is the minimum possible cost.
+Example 2:
+
+Input: source = "abcdefgh", target = "acdeeghh", original = ["bcd","fgh","thh"], changed = ["cde","thh","ghh"], cost = [1,3,5]
+Output: 9
+Explanation: To convert "abcdefgh" to "acdeeghh", do the following operations:
+- Change substring source[1..3] from "bcd" to "cde" at a cost of 1.
+- Change substring source[5..7] from "fgh" to "thh" at a cost of 3. We can do this operation because indices [5,7] are disjoint with indices picked in the first operation.
+- Change substring source[5..7] from "thh" to "ghh" at a cost of 5. We can do this operation because indices [5,7] are disjoint with indices picked in the first operation, and identical with indices picked in the second operation.
+The total cost incurred is 1 + 3 + 5 = 9.
+It can be shown that this is the minimum possible cost.
+Example 3:
+
+Input: source = "abcdefgh", target = "addddddd", original = ["bcd","defgh"], changed = ["ddd","ddddd"], cost = [100,1578]
+Output: -1
+Explanation: It is impossible to convert "abcdefgh" to "addddddd".
+If you select substring source[1..3] as the first operation to change "abcdefgh" to "adddefgh", you cannot select substring source[3..7] as the second operation because it has a common index, 3, with the first operation.
+If you select substring source[3..7] as the first operation to change "abcdefgh" to "abcddddd", you cannot select substring source[1..3] as the second operation because it has a common index, 3, with the first operation.
+ 
+
+Constraints:
+
+1 <= source.length == target.length <= 1000
+source, target consist only of lowercase English characters.
+1 <= cost.length == original.length == changed.length <= 100
+1 <= original[i].length == changed[i].length <= source.length
+original[i], changed[i] consist only of lowercase English characters.
+original[i] != changed[i]
+1 <= cost[i] <= 106
+
+
+Solution 1:
+
+class Solution:
+    def minimumCost(self, source: str, target: str, original: List[str], changed: List[str], cost: List[int]) -> int:
+        keyMap = {}
+
+        for key in original:
+            if key not in keyMap:
+                keyMap[key] = len(keyMap)
+
+
+        for key in changed:
+            if key not in keyMap:
+                keyMap[key] = len(keyMap)
+
+        n = len(keyMap)
+        dist = [[float('inf') for _ in range(n)] for _ in range(n)]
+
+        for i in range(n):
+            dist[i][i] = 0
+
+        size = len(cost)
+
+        for i in range(size):
+            src = keyMap[original[i]]
+            dest = keyMap[changed[i]]
+            path_cost = cost[i]
+            dist[src][dest] = min(dist[src][dest], path_cost)
+
+        for k in range(n):
+            for i in range(n):
+                for j in range(n):
+                    dist[i][j] = min(dist[i][j], dist[i][k] + dist[k][j])
+
+        possible_lengths = set()
+
+        for string in original:
+            possible_lengths.add(len(string))
+
+        length = len(source)
+
+        dp = [float('inf')] * (length + 1)
+        dp[0] = 0
+
+        for i in range(length):
+            if dp[i] == float('inf'):
+                continue
+
+            if target[i] == source[i]:
+                dp[i + 1] = min(dp[i + 1], dp[i])
+
+            for l in possible_lengths:
+                if i + l >= len(dp):
+                    continue
+
+                src_string = source[i:i + l]
+                tar_string = target[i:i + l]
+
+                c1 = keyMap[src_string] if src_string in keyMap else -1
+                c2 = keyMap[tar_string] if tar_string in keyMap else -1
+
+                if c1 >= 0 and c2 >= 0 and dist[c1][c2] < float('inf'):
+                    dp[i + l] = min(dp[i + l], dp[i] + dist[c1][c2])
+
+        return dp[-1] if dp[-1] != float('inf') else -1
+
+
+Solution 2:
+
+class Solution:
+    def minimumCost(self, source: str, target: str, original: List[str], changed: List[str], cost: List[int]) -> int:
+        keyMap = {}
+
+        for key in original:
+            if key not in keyMap:
+                keyMap[key] = len(keyMap)
+
+
+        for key in changed:
+            if key not in keyMap:
+                keyMap[key] = len(keyMap)
+
+        n = len(keyMap)
+        dist = [[float('inf') for _ in range(n)] for _ in range(n)]
+
+        for i in range(n):
+            dist[i][i] = 0
+
+        size = len(cost)
+
+        for i in range(size):
+            src = keyMap[original[i]]
+            dest = keyMap[changed[i]]
+            path_cost = cost[i]
+            dist[src][dest] = min(dist[src][dest], path_cost)
+
+        for k in range(n):
+            for i in range(n):
+                if dist[i][k] < float('inf'):
+                    for j in range(n):
+                        if dist[k][j] < float('inf'):
+                            dist[i][j] = min(dist[i][j], dist[i][k] + dist[k][j])
+
+        possible_lengths = set()
+
+        for string in original:
+            possible_lengths.add(len(string))
+
+        length = len(source)
+
+        dp = [float('inf')] * (length + 1)
+        dp[0] = 0
+
+        for i in range(length):
+            if dp[i] == float('inf'):
+                continue
+
+            if target[i] == source[i]:
+                dp[i + 1] = min(dp[i + 1], dp[i])
+
+            for l in possible_lengths:
+                if i + l >= len(dp):
+                    continue
+
+                src_string = source[i:i + l]
+                tar_string = target[i:i + l]
+
+                c1 = keyMap[src_string] if src_string in keyMap else -1
+                c2 = keyMap[tar_string] if tar_string in keyMap else -1
+
+                if c1 >= 0 and c2 >= 0 and dist[c1][c2] < float('inf'):
+                    dp[i + l] = min(dp[i + l], dp[i] + dist[c1][c2])
+
+        return dp[-1] if dp[-1] != float('inf') else -1
+
+        
+Solution 3:
+
+class Solution:
+    def minimumCost(self, source: str, target: str, original: List[str], changed: List[str], cost: List[int]) -> int:
+        keyMap = {}
+
+        for key in original:
+            if key not in keyMap:
+                keyMap[key] = len(keyMap)
+
+        for key in changed:
+            if key not in keyMap:
+                keyMap[key] = len(keyMap)
+
+        n = len(keyMap)
+        graph = defaultdict(list)
+
+        for i in range(len(cost)):
+            src = keyMap[original[i]]
+            dest = keyMap[changed[i]]
+            path_cost = cost[i]
+            graph[src].append((dest, path_cost))
+
+        def dijkstras(start):
+            dist = [float('inf')] * n
+            dist[start] = 0
+            minHeap = [(0, start)]
+
+            while minHeap:
+                cost, node = heapq.heappop(minHeap)
+
+                if cost > dist[node]:
+                    continue
+
+                for neighbor, neighbor_cost in graph[node]:
+                    new_cost = cost + neighbor_cost
+                    if new_cost < dist[neighbor]:
+                        dist[neighbor] = new_cost
+                        heapq.heappush(minHeap, (new_cost, neighbor))
+
+            return dist
+
+        dist = [[float('inf') for _ in range(n)] for _ in range(n)]
+
+        for i in range(n):
+            dist[i] = dijkstras(i)
+
+        possible_lengths = set(len(string) for string in original)
+
+        length = len(source)
+
+        dp = [float('inf')] * (length + 1)
+        dp[0] = 0
+
+        for i in range(length):
+            if dp[i] == float('inf'):
+                continue
+
+            if target[i] == source[i]:
+                dp[i + 1] = min(dp[i + 1], dp[i])
+
+            for l in possible_lengths:
+                if i + l >= len(dp):
+                    continue
+
+                src_string = source[i:i + l]
+                tar_string = target[i:i + l]
+
+                c1 = keyMap.get(src_string, -1)
+                c2 = keyMap.get(tar_string, -1)
+
+                if c1 != -1 and c2 != -1:
+                    dp[i + l] = min(dp[i + l], dp[i] + dist[c1][c2])
+
+        return dp[-1] if dp[-1] != float('inf') else -1

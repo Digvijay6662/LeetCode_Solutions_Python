@@ -1,0 +1,127 @@
+661. Image Smoother
+Solved
+Easy
+Topics
+Companies
+An image smoother is a filter of the size 3 x 3 that can be applied to each cell of an image by rounding down the average of the cell and the eight surrounding cells (i.e., the average of the nine cells in the blue smoother). If one or more of the surrounding cells of a cell is not present, we do not consider it in the average (i.e., the average of the four cells in the red smoother).
+
+
+Given an m x n integer matrix img representing the grayscale of an image, return the image after applying the smoother on each cell of it.
+
+ 
+
+Example 1:
+
+
+Input: img = [[1,1,1],[1,0,1],[1,1,1]]
+Output: [[0,0,0],[0,0,0],[0,0,0]]
+Explanation:
+For the points (0,0), (0,2), (2,0), (2,2): floor(3/4) = floor(0.75) = 0
+For the points (0,1), (1,0), (1,2), (2,1): floor(5/6) = floor(0.83333333) = 0
+For the point (1,1): floor(8/9) = floor(0.88888889) = 0
+Example 2:
+
+
+Input: img = [[100,200,100],[200,50,200],[100,200,100]]
+Output: [[137,141,137],[141,138,141],[137,141,137]]
+Explanation:
+For the points (0,0), (0,2), (2,0), (2,2): floor((100+200+200+50)/4) = floor(137.5) = 137
+For the points (0,1), (1,0), (1,2), (2,1): floor((200+200+50+200+100+100)/6) = floor(141.666667) = 141
+For the point (1,1): floor((50+200+200+200+200+100+100+100+100)/9) = floor(138.888889) = 138
+ 
+
+Constraints:
+
+m == img.length
+n == img[i].length
+1 <= m, n <= 200
+0 <= img[i][j] <= 255
+
+
+Solution 1:
+
+class Solution:
+    def imageSmoother(self, img: List[List[int]]) -> List[List[int]]:
+
+        def average(i, j):
+            total = img[i][j]
+            count = 1
+
+            for dr, dc in directions:
+                r, c = i + dr, j + dc
+                if 0 <= r < rows and 0 <= c < cols:
+                    total += img[r][c]
+                    count += 1
+
+            return total//count
+
+
+        rows, cols = len(img), len(img[0])
+        directions = [(1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (-1, -1), (1, -1), (-1, 1)]
+
+        result = [[0 for _ in range(cols)] for _ in range(rows)]
+
+        for i in range(rows):
+            for j in range(cols):
+                result[i][j] = average(i, j)
+
+        return result
+
+        
+
+Solution 2:
+
+class Solution:
+    def imageSmoother(self, img: List[List[int]]) -> List[List[int]]:
+        rows, cols = len(img), len(img[0])
+
+        # Calculate prefix sum
+        prefix = [[0 for _ in range(cols + 1)] for _ in range(rows + 1)]
+
+        for i in range(1, rows + 1):
+            for j in range(1, cols + 1):
+                prefix[i][j] = prefix[i][j - 1] + prefix[i - 1][j] - \
+                                prefix[i - 1][j - 1] + img[i - 1][j - 1]
+
+        result = [[0 for _ in range(cols)] for _ in range(rows)]
+
+        for i in range(rows):
+            for j in range(cols):
+                r1, c1, r2, c2 = max(0, i - 1), max(0, j - 1), min(rows - 1, i + 1), min(cols - 1, j + 1)
+                total = prefix[r2 + 1][c2 + 1] - prefix[r2 + 1][c1] - prefix[r1][c2 + 1] + prefix[r1][c1]
+
+                result[i][j] = total // ((r2 - r1 + 1) * (c2 - c1 + 1))
+
+        return result
+
+
+Solution 3:
+
+class Solution:
+    def imageSmoother(self, img: List[List[int]]) -> List[List[int]]:
+
+        def average(i, j):
+            total = img[i][j]
+            count = 1
+
+            for dr, dc in directions:
+                r, c = i + dr, j + dc
+                if 0 <= r < rows and 0 <= c < cols:
+                    total += img[r][c] % 256
+                    count += 1
+
+            return img[i][j] | (total//count << 8)
+
+
+        rows, cols = len(img), len(img[0])
+        directions = [(1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (-1, -1), (1, -1), (-1, 1)]
+
+        for i in range(rows):
+            for j in range(cols):
+                img[i][j] = average(i, j)
+
+        for i in range(rows):
+            for j in range(cols):
+                img[i][j] = img[i][j] >> 8
+
+        return img
