@@ -1,0 +1,107 @@
+698. Partition to K Equal Sum Subsets
+Solved
+Medium
+Topics
+Companies
+Hint
+Given an integer array nums and an integer k, return true if it is possible to divide this array into k non-empty subsets whose sums are all equal.
+
+ 
+
+Example 1:
+
+Input: nums = [4,3,2,3,5,2,1], k = 4
+Output: true
+Explanation: It is possible to divide it into 4 subsets (5), (1, 4), (2,3), (2,3) with equal sums.
+Example 2:
+
+Input: nums = [1,2,3,4], k = 3
+Output: false
+ 
+
+Constraints:
+
+1 <= k <= nums.length <= 16
+1 <= nums[i] <= 104
+The frequency of each element is in the range [1, 4].
+
+
+Solution 1:
+
+class Solution:
+    def canPartitionKSubsets(self, nums: List[int], k: int) -> bool:
+        n = len(nums)
+        total = sum(nums)
+
+        if total % k:
+            return False
+
+        subset_sum = total // k
+
+        if max(nums) > subset_sum:
+            return False
+        
+        def solve(idx, currsum, remaining):
+            if remaining == 0:
+                return True
+            
+            if currsum == subset_sum:
+                return solve(0, 0, remaining - 1)
+
+            for i in range(idx, n):
+                if visited[i]:
+                    continue
+                if currsum + nums[i] > subset_sum:
+                    continue
+                visited[i] = True
+                if solve(i + 1, currsum + nums[i], remaining):
+                    return True
+                visited[i] = False
+            return False
+        
+        visited = [False] * n
+        return solve(0, 0, k)
+
+
+Solution 2:
+
+class Solution:
+    def canPartitionKSubsets(self, nums: List[int], k: int) -> bool:
+        n = len(nums)
+        total_sum = sum(nums)
+
+        if total_sum % k != 0:
+            return False
+
+        target = total_sum // k
+        nums.sort(reverse=True)
+
+        if nums[0] > target:
+            return False
+
+        visited = [False] * n
+        dp = {}
+
+        def backtrack(i, k, rem):
+            if tuple(visited) in dp:
+                return dp[tuple(visited)]
+
+            if k == 0:
+                return True
+
+            if rem == 0:
+                partition = backtrack(0, k - 1, target)
+                dp[tuple(visited)] = partition
+                return partition
+
+            for j in range(i, n):
+                if not visited[j] and rem - nums[j] >= 0:
+                    visited[j] = True
+                    if backtrack(j + 1, k, rem - nums[j]):
+                        return True
+                    visited[j] = False
+
+            dp[tuple(visited)] = False
+            return False
+
+        return backtrack(0, k, target)

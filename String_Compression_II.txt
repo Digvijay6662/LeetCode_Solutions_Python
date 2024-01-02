@@ -1,0 +1,109 @@
+1531. String Compression II
+Solved
+Hard
+Topics
+Companies
+Hint
+Run-length encoding is a string compression method that works by replacing consecutive identical characters (repeated 2 or more times) with the concatenation of the character and the number marking the count of the characters (length of the run). For example, to compress the string "aabccc" we replace "aa" by "a2" and replace "ccc" by "c3". Thus the compressed string becomes "a2bc3".
+
+Notice that in this problem, we are not adding '1' after single characters.
+
+Given a string s and an integer k. You need to delete at most k characters from s such that the run-length encoded version of s has minimum length.
+
+Find the minimum length of the run-length encoded version of s after deleting at most k characters.
+
+ 
+
+Example 1:
+
+Input: s = "aaabcccd", k = 2
+Output: 4
+Explanation: Compressing s without deleting anything will give us "a3bc3d" of length 6. Deleting any of the characters 'a' or 'c' would at most decrease the length of the compressed string to 5, for instance delete 2 'a' then we will have s = "abcccd" which compressed is abc3d. Therefore, the optimal way is to delete 'b' and 'd', then the compressed version of s will be "a3c3" of length 4.
+Example 2:
+
+Input: s = "aabbaa", k = 2
+Output: 2
+Explanation: If we delete both 'b' characters, the resulting compressed string would be "a4" of length 2.
+Example 3:
+
+Input: s = "aaaaaaaaaaa", k = 0
+Output: 3
+Explanation: Since k is zero, we cannot delete anything. The compressed string is "a11" of length 3.
+ 
+
+Constraints:
+
+1 <= s.length <= 100
+0 <= k <= s.length
+s contains only lowercase English letters.
+
+
+Solution 1:
+
+class Solution:
+    def getLengthOfOptimalCompression(self, s: str, k: int) -> int:
+        n = len(s)
+        dp = {}
+
+        def solve(i, prev_char, prev_freq, k):
+            if k < 0:
+                return float('inf')
+
+            if i == n:
+                return 0
+
+            if (i, prev_char, prev_freq, k) in dp:
+                return dp[(i, prev_char, prev_freq, k)]
+
+            delete_ch = solve(i + 1, prev_char, prev_freq, k - 1)
+
+            if s[i] != prev_char:
+                keep_ch = 1 + solve(i + 1, s[i], 1, k)
+            else:
+                if prev_freq == 1 or prev_freq == 9 or prev_freq == 99:
+                    keep_ch = 1 + solve(i + 1, prev_char, prev_freq + 1, k)
+                else:
+                    keep_ch = solve(i + 1, prev_char, prev_freq + 1, k)
+
+            result = min(delete_ch, keep_ch)
+            dp[(i, prev_char, prev_freq, k)] = result
+            return result
+
+        return solve(0, None, 0, k)
+
+
+Solution 2:
+
+class Solution:
+    def getLengthOfOptimalCompression(self, s: str, k: int) -> int:
+        n = len(s)
+        dp = [[-1 for _ in range(k + 1)] for _ in range(n)]
+
+        def solve(i, k):
+            if k < 0:
+                return float('inf')
+
+            if i == n or (n - i) <= k:
+                return 0
+
+            if dp[i][k] != -1:
+                return dp[i][k]
+
+            delete_ch = solve(i + 1, k - 1)
+            keep_ch = float('inf')
+            freq = extra_length = deleted = 0
+            j = i
+            while j < n and deleted <= k:
+                if s[j] == s[i]:
+                    freq += 1
+                    if freq == 2 or freq == 10 or freq  == 100:
+                        extra_length += 1
+                else:
+                    deleted += 1
+                keep_ch = min(keep_ch, 1 + extra_length + solve(j + 1, k - deleted))
+                j += 1
+
+            dp[i][k] = min(delete_ch, keep_ch)
+            return dp[i][k]
+            
+        return solve(0, k)

@@ -27,7 +27,7 @@ Constraints:
 s contains only lowercase English letters.
 
 
-Solution:
+Solution 1: 
 
 class Solution:
     def partition(self, s: str) -> List[List[str]]:
@@ -49,6 +49,44 @@ class Solution:
 
             for j in range(i, n):
                 if isPalindrome(i, j):
+                    curr.append(s[i:j + 1])
+                    backtrack(j + 1, curr)
+                    curr.pop()
+
+        backtrack(0, [])
+        return res
+
+
+Solution 2:
+
+class Solution:
+    def partition(self, s: str) -> List[List[str]]:
+        n = len(s)
+        dp = [[False] * n for _ in range(n)]
+
+        # All substrings of length 1 are palindromes
+        for i in range(n):
+            dp[i][i] = True
+
+        # Check for substrings of length 2
+        for i in range(n - 1):
+            if s[i] == s[i + 1]:
+                dp[i][i + 1] = True
+
+        # Check for substrings of length 3 and above
+        for length in range(3, n + 1):
+            for i in range(n - length + 1):
+                j = i + length - 1
+                dp[i][j] = dp[i + 1][j - 1] and s[i] == s[j]
+        
+        res = []
+        def backtrack(i, curr):
+            if i == n:
+                res.append(curr.copy())
+                return
+
+            for j in range(i, n):
+                if dp[i][j]:
                     curr.append(s[i:j + 1])
                     backtrack(j + 1, curr)
                     curr.pop()
