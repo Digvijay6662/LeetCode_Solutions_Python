@@ -146,3 +146,93 @@ class Solution:
             time += 1
 
         return time - 1
+
+
+Solution 3:
+
+# class TreeNode:
+#     def __init__(self, val=0, left=None, right=None):
+#         self.val = val
+#         self.left = left
+#         self.right = right
+class Solution:
+    def amountOfTime(self, root: Optional[TreeNode], start: int) -> int:
+        graph = defaultdict(list)
+
+        def dfs(node, par):
+            if par:
+                graph[node.val].append(par.val)
+                graph[par.val].append(node.val)
+            if node.left:
+                dfs(node.left, node)
+            if node.right:
+                dfs(node.right, node)
+
+        dfs(root, None)
+
+        q = deque([start])
+        visited = set()
+        visited.add(start)
+        time = 0
+
+        while q:
+            infected  = False
+            for _ in range(len(q)):
+                node = q.popleft()
+
+                for nei in graph[node]:
+                    if nei not in visited:
+                        infected = True
+                        q.append(nei)
+                        visited.add(nei)
+
+            if infected:
+                time += 1
+
+        return time
+
+
+Solution 4:
+
+# Definition for a binary tree node.
+# class TreeNode:
+#     def __init__(self, val=0, left=None, right=None):
+#         self.val = val
+#         self.left = left
+#         self.right = right
+class Solution:
+    def amountOfTime(self, root: Optional[TreeNode], start: int) -> int:
+        # Variable to store the maximum time for infection to spread
+        max_time = 0
+
+        def dfs(node):
+            nonlocal max_time
+
+            # Base case: if the node is None, return 0
+            if not node:
+                return 0
+
+            # Recursive calls to calculate the depth of left and right subtrees
+            left_depth = dfs(node.left)
+            right_depth = dfs(node.right)
+
+            # Check if the current node is the initially infected node
+            if node.val == start:
+                # Update max_time with the maximum depth of the subtrees
+                max_time = max(left_depth, right_depth)
+                # Indicate that the infected node is found
+                return -1
+            elif left_depth >= 0 and right_depth >= 0:
+                # Case: This subtree does not contain the infected node
+                # Return the maximum depth of the subtree for further calculations
+                return max(left_depth, right_depth) + 1
+            else:
+                # Case: One of the subtrees contains the initially infected node
+                # Sum the depth of the initially infected node (negative value)
+                # and the max depth of the other subtree (positive value)
+                max_time = max(max_time, abs(left_depth - right_depth))
+                return min(left_depth, right_depth) - 1
+
+        # Start the depth-first search from the root
+        dfs(root)
+        return max_time
