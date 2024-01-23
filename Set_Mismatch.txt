@@ -1,0 +1,99 @@
+645. Set Mismatch
+Solved
+Easy
+Topics
+Companies
+You have a set of integers s, which originally contains all the numbers from 1 to n. Unfortunately, due to some error, one of the numbers in s got duplicated to another number in the set, which results in repetition of one number and loss of another number.
+
+You are given an integer array nums representing the data status of this set after the error.
+
+Find the number that occurs twice and the number that is missing and return them in the form of an array.
+
+ 
+
+Example 1:
+
+Input: nums = [1,2,2,4]
+Output: [2,3]
+Example 2:
+
+Input: nums = [1,1]
+Output: [1,2]
+ 
+
+Constraints:
+
+2 <= nums.length <= 104
+1 <= nums[i] <= 104
+
+
+Solution 1:
+
+class Solution:
+    def findErrorNums(self, nums: List[int]) -> List[int]:
+        n = len(nums)
+        s1 = sum(nums)
+        s2 = n * (n  + 1)//2
+
+        sum_of_squares_original = 0
+        sum_of_sqaures_actual = 0
+
+        for i in range(n):
+            sum_of_squares_original += nums[i] * nums[i]
+            sum_of_sqaures_actual += (i + 1) * (i + 1)
+
+        # a = repeating number
+        # b = missing number
+        # s1 - s2 = a - b
+        # sum_of_squares_original - sum_of_squares_actual = a2 - b2 = (a - b)(a + b)
+        # val1 = (a - b)
+
+        val1 = s1 - s2
+        val2 = (sum_of_squares_original - sum_of_sqaures_actual) // val1
+
+        # val2 = a + b, val1 + val2 = 2a
+        a = (val1 + val2)//2
+        # b = val2 - a
+        b = val2 - a
+
+        return [a, b]
+
+
+Solution 2:
+
+class Solution:
+    def findErrorNums(self, nums: List[int]) -> List[int]:
+        n = len(nums)
+        xor = 0
+
+        # Calculate XOR of all numbers from 1 to n and all elements in nums
+        for i in range(n):
+            xor = xor ^ (i + 1) ^ nums[i]
+
+        # Find the rightmost set bit (different bit) in XOR result
+        diff_bit = (xor & ~(xor - 1))
+        on = off = 0
+
+        # Separate numbers into two groups based on the different bit
+        for i in range(n):
+            if (i + 1) & diff_bit:
+                on ^= (i + 1)
+            else:
+                off ^= (i + 1)
+
+            if nums[i] & diff_bit:
+                on ^= nums[i]
+            else:
+                off ^= nums[i]
+
+        # Count occurrences of the found numbers in the array
+        count = 0
+        for num in nums:
+            if num == on:
+                count += 1
+
+        # Return the pair [repeating number, missing number]
+        if count == 0:
+            return [off, on]
+        else:
+            return [on, off]
