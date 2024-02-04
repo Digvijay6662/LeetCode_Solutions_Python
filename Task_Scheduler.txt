@@ -43,7 +43,7 @@ Constraints:
 tasks[i] is upper-case English letter.
 The integer n is in the range [0, 100].
 
-Solution:
+Solution 1:
 
 class Solution:
     def leastInterval(self, tasks: List[str], n: int) -> int:
@@ -67,3 +67,23 @@ class Solution:
                 heapq.heappush(maxHeap, q.popleft()[0])
 
         return time
+
+
+Solution 2:
+
+class Solution:
+    def leastInterval(self, tasks: List[str], n: int) -> int:
+        size = len(tasks)
+        count = [0] * 26
+
+        for task in tasks:
+            count[ord(task) - ord('A')] += 1
+
+        count.sort(reverse=True)
+        max_freq = count[0]
+        spaces = (max_freq - 1) * n
+
+        for i in range(1, 26):
+            spaces -= min(max_freq - 1, count[i])
+
+        return size + max(0, spaces)

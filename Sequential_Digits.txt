@@ -1,0 +1,84 @@
+1291. Sequential Digits
+Solved
+Medium
+Topics
+Companies
+Hint
+An integer has sequential digits if and only if each digit in the number is one more than the previous digit.
+
+Return a sorted list of all the integers in the range [low, high] inclusive that have sequential digits.
+
+ 
+
+Example 1:
+
+Input: low = 100, high = 300
+Output: [123,234]
+Example 2:
+
+Input: low = 1000, high = 13000
+Output: [1234,2345,3456,4567,5678,6789,12345]
+ 
+
+Constraints:
+
+10 <= low <= high <= 10^9
+
+
+Solution 1:
+
+class Solution:
+    def sequentialDigits(self, low: int, high: int) -> List[int]:
+        all_seq = [
+            12, 23, 34, 45, 56, 67, 78, 89,
+            123, 234, 345, 456, 567, 678, 789,
+            1234, 2345, 3456, 4567, 5678, 6789,
+            12345, 23456, 34567, 45678, 56789,
+            123456, 234567, 345678, 456789,
+            1234567, 2345678, 3456789,
+            12345678, 23456789,
+            123456789
+        ]
+
+        result = [num for num in all_seq if low <= num <= high]
+        return result
+
+
+Solution 2:
+
+class Solution:
+    def sequentialDigits(self, low: int, high: int) -> List[int]:
+        q = deque()
+        for digit in range(1, 10):
+            q.append(digit)
+
+        result = []
+        while q:
+            number = q.popleft()
+            if low <= number <= high:
+                result.append(number)
+            if number > high:
+                break
+            digit = number % 10
+            if digit < 9:
+                q.append(number * 10 + (digit + 1))
+        
+        return result
+
+
+Solution 3:
+
+class Solution:
+    def sequentialDigits(self, low: int, high: int) -> List[int]:
+        sequence = "123456789"
+        result = []
+        len_min = len(str(low))
+        len_max = len(str(high))
+
+        for i in range(len_min, len_max + 1):
+            for j in range(10 - i):
+                num = int(sequence[j : j + i])
+                if low <= num <= high:
+                    result.append(num)
+
+        return result
