@@ -1,0 +1,123 @@
+279. Perfect Squares
+Solved
+Medium
+Topics
+Companies
+Given an integer n, return the least number of perfect square numbers that sum to n.
+
+A perfect square is an integer that is the square of an integer; in other words, it is the product of some integer with itself. For example, 1, 4, 9, and 16 are perfect squares while 3 and 11 are not.
+
+ 
+
+Example 1:
+
+Input: n = 12
+Output: 3
+Explanation: 12 = 4 + 4 + 4.
+Example 2:
+
+Input: n = 13
+Output: 2
+Explanation: 13 = 4 + 9.
+ 
+
+Constraints:
+
+1 <= n <= 104
+
+
+Solution 1:
+
+class Solution:
+    def numSquares(self, n: int) -> int:
+        dp = [-1] * (n + 1)
+        
+        def solve(rem):
+            if rem == 0:
+                return 0
+            
+            if rem < 0:
+                return float('inf')
+
+            if dp[rem] != -1:
+                return dp[rem]
+            
+            ans = float('inf')
+            for i in range(1, int(rem**0.5) + 1):
+                ans = min(ans, 1 + solve(rem - i*i))
+            
+            dp[rem] = ans
+            return ans
+
+        return solve(n)
+
+
+Solution 2:
+
+class Solution:
+    def numSquares(self, n: int) -> int:
+        dp = [float('inf')] * (n + 1)
+        dp[0] = 0
+
+        for i in range(1, n + 1):
+            for j in range(1, int(i**0.5) + 1):
+                dp[i] = min(dp[i], dp[i - j*j] + 1)
+
+        return dp[n]
+
+
+Solution 3:
+
+class Solution:
+    def numSquares(self, n: int) -> int:
+        squares = [i * i for i in range(1, int(n**0.5) + 1)]
+        queue = deque([(n, 0)])
+        visited = set()
+
+        while queue:
+            remaining, steps = queue.popleft()
+            if remaining == 0:
+                return steps
+            
+            if steps == 4:
+                continue
+
+            for square in squares:
+                next_num = remaining - square
+                if next_num >= 0 and next_num not in visited:
+                    queue.append((next_num, steps + 1))
+                    visited.add(next_num)
+
+        return -1
+
+
+Solution 4:
+
+class Solution:
+    def numSquares(self, n: int) -> int:
+        # Step 1: Calculate the integer square root of n
+        square_root = int(sqrt(n))
+
+        # Step 2: Check if n is a perfect square
+        if square_root * square_root == n:
+            return 1  # If true, return 1 since n can be expressed as the sum of one square.
+
+        # Step 3: Check for additional conditions
+        while n % 4 == 0:
+            n //= 4  # Divide n by 4 until it is not divisible by 4.  4^a (8b + 7)
+
+        if n % 8 == 7:
+            return 4  # If n is of the form 8b + 7, return 4 since it requires four squares.
+
+        # Step 4: Iterate to find the number of squares required
+        for i in range(1, int(sqrt(n)) + 1):
+            # Calculate the square of i and the integer square root of (n - first)
+            first = i * i
+            second = int(sqrt(n - first))
+
+            # Check if second * second is equal to (n - first)
+            if second * second == n - first:
+                return 2  # If true, return 2 since n can be expressed as the sum of two squares.
+
+        # If none of the conditions is satisfied, return 3 as the default number of squares required.
+        return 3

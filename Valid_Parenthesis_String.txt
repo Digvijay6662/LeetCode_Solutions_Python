@@ -33,7 +33,37 @@ Constraints:
 s[i] is '(', ')' or '*'.
 
 
-Solution:
+Solution 1:
+
+class Solution:
+    def checkValidString(self, s: str) -> bool:
+        n = len(s)
+        dp = {}
+
+        def solve(i, left):
+            if i == n:
+                return left == 0
+
+            if (i, left) in dp:
+                return dp[(i, left)]
+
+            if left < 0:
+                dp[(i, left)] = False
+                return False
+
+            if s[i] == '(':
+                dp[(i, left)] = solve(i + 1, left + 1)
+            elif s[i] == ')':
+                dp[(i, left)] = solve(i + 1, left - 1)
+            else:
+                dp[(i, left)] = solve(i + 1, left + 1) or solve(i + 1, left - 1) or solve(i + 1, left)
+
+            return dp[(i, left)]
+
+        return solve(0, 0)
+
+
+Solution 2:
 
 class Solution:
     def checkValidString(self, s: str) -> bool:
