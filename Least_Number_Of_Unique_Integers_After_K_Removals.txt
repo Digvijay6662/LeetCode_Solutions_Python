@@ -1,0 +1,85 @@
+1481. Least Number of Unique Integers after K Removals
+Solved
+Medium
+Topics
+Companies
+Hint
+Given an array of integers arr and an integer k. Find the least number of unique integers after removing exactly k elements.
+
+ 
+
+Example 1:
+
+Input: arr = [5,5,4], k = 1
+Output: 1
+Explanation: Remove the single 4, only 5 is left.
+Example 2:
+Input: arr = [4,3,1,1,3,3,2], k = 3
+Output: 2
+Explanation: Remove 4, 2 and either one of the two 1s or three 3s. 1 and 3 will be left.
+ 
+
+Constraints:
+
+1 <= arr.length <= 10^5
+1 <= arr[i] <= 10^9
+0 <= k <= arr.length
+
+
+Solution 1:
+
+class Solution:
+    def findLeastNumOfUniqueInts(self, arr: List[int], k: int) -> int:
+        counts = Counter(arr)
+
+        unique_counts = sorted(counts.values())
+        unique_nums = len(unique_counts)
+
+        for freq in unique_counts:
+            if k >= freq:
+                k -= freq
+                unique_nums -= 1
+            else:
+                break
+
+        return unique_nums
+
+
+Solution 2:
+
+class Solution:
+    def findLeastNumOfUniqueInts(self, arr: List[int], k: int) -> int:
+        counts = Counter(arr)
+
+        unique_counts = list(counts.values())
+        heapq.heapify(unique_counts)
+        nums_removed = 0
+
+        while unique_counts:
+            nums_removed += heapq.heappop(unique_counts)
+            if nums_removed > k:
+                return len(unique_counts) + 1
+
+        return 0
+
+
+Solution 3:
+
+class Solution:
+    def findLeastNumOfUniqueInts(self, arr: List[int], k: int) -> int:
+        n = len(arr)
+        count = Counter(arr)
+
+        freq_count = [0] * (n + 1)
+        for c in count.values():
+            freq_count[c] += 1
+
+        remaining_unique_elements = len(count)
+
+        for i in range(1, n + 1):
+            num_elements_to_remove = min(k // i, freq_count[i])
+            k -= (i * num_elements_to_remove)
+            remaining_unique_elements -= num_elements_to_remove
+            if k < i:
+                return remaining_unique_elements
+        return 0

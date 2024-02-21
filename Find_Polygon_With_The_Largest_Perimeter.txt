@@ -55,3 +55,19 @@ class Solution:
                 return total + nums[i]
 
         return -1
+
+
+Solution 2:
+
+class Solution:
+    def largestPerimeter(self, nums: List[int]) -> int:
+        nums.sort()
+        curr = 0
+        result = -1
+
+        for num in nums:
+            if num < curr:
+                result = num + curr
+            curr += num
+
+        return result
