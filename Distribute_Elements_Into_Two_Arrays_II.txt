@@ -1,0 +1,229 @@
+3072. Distribute Elements Into Two Arrays II
+Solved
+Hard
+Topics
+Companies
+Hint
+You are given a 1-indexed array of integers nums of length n.
+
+We define a function greaterCount such that greaterCount(arr, val) returns the number of elements in arr that are strictly greater than val.
+
+You need to distribute all the elements of nums between two arrays arr1 and arr2 using n operations. In the first operation, append nums[1] to arr1. In the second operation, append nums[2] to arr2. Afterwards, in the ith operation:
+
+If greaterCount(arr1, nums[i]) > greaterCount(arr2, nums[i]), append nums[i] to arr1.
+If greaterCount(arr1, nums[i]) < greaterCount(arr2, nums[i]), append nums[i] to arr2.
+If greaterCount(arr1, nums[i]) == greaterCount(arr2, nums[i]), append nums[i] to the array with a lesser number of elements.
+If there is still a tie, append nums[i] to arr1.
+The array result is formed by concatenating the arrays arr1 and arr2. For example, if arr1 == [1,2,3] and arr2 == [4,5,6], then result = [1,2,3,4,5,6].
+
+Return the integer array result.
+
+ 
+
+Example 1:
+
+Input: nums = [2,1,3,3]
+Output: [2,3,1,3]
+Explanation: After the first 2 operations, arr1 = [2] and arr2 = [1].
+In the 3rd operation, the number of elements greater than 3 is zero in both arrays. Also, the lengths are equal, hence, append nums[3] to arr1.
+In the 4th operation, the number of elements greater than 3 is zero in both arrays. As the length of arr2 is lesser, hence, append nums[4] to arr2.
+After 4 operations, arr1 = [2,3] and arr2 = [1,3].
+Hence, the array result formed by concatenation is [2,3,1,3].
+Example 2:
+
+Input: nums = [5,14,3,1,2]
+Output: [5,3,1,2,14]
+Explanation: After the first 2 operations, arr1 = [5] and arr2 = [14].
+In the 3rd operation, the number of elements greater than 3 is one in both arrays. Also, the lengths are equal, hence, append nums[3] to arr1.
+In the 4th operation, the number of elements greater than 1 is greater in arr1 than arr2 (2 > 1). Hence, append nums[4] to arr1.
+In the 5th operation, the number of elements greater than 2 is greater in arr1 than arr2 (2 > 1). Hence, append nums[5] to arr1.
+After 5 operations, arr1 = [5,3,1,2] and arr2 = [14].
+Hence, the array result formed by concatenation is [5,3,1,2,14].
+Example 3:
+
+Input: nums = [3,3,3,3]
+Output: [3,3,3,3]
+Explanation: At the end of 4 operations, arr1 = [3,3] and arr2 = [3,3].
+Hence, the array result formed by concatenation is [3,3,3,3].
+ 
+
+Constraints:
+
+3 <= n <= 105
+1 <= nums[i] <= 109
+
+
+Solution 1:
+
+from sortedcontainers import SortedList
+
+class Solution:
+    def resultArray(self, nums: List[int]) -> List[int]:
+        n = len(nums)
+        arr1, arr2 = [nums[0]], [nums[1]]
+        s1, s2 = SortedList([nums[0]]), SortedList([nums[1]])
+
+        for i in range(2, n):
+            count1 = len(arr1) - bisect_right(s1, nums[i])
+            count2 = len(arr2) - bisect_right(s2, nums[i])
+
+            if count1 > count2:
+                arr1.append(nums[i])
+                s1.add(nums[i])
+            elif count1 < count2:
+                arr2.append(nums[i])
+                s2.add(nums[i])
+            else:
+                if len(arr1) <= len(arr2):
+                    arr1.append(nums[i])
+                    s1.add(nums[i])
+                else:
+                    arr2.append(nums[i])
+                    s2.add(nums[i])
+
+        return arr1 + arr2
+        
+
+
+Solution 2: Segment Tree
+
+class SegmentTree:
+    def __init__(self, n):
+        self.tree = [0] * (4 * n)
+
+    def buildTree(self, l, r, i, arr):
+        if l == r:
+            self.tree[i] = arr[l]
+            return
+
+        m = (l + r) // 2
+        self.buildTree(l, m, 2 * i + 1, arr)
+        self.buildTree(m + 1, r, 2 * i + 2, arr)
+
+        self.tree[i] = self.tree[2 * i + 1] + self.tree[2 * i + 2]
+
+    def update(self, l, r, i, idx, val):
+        if idx < l or idx > r:
+            return 
+    
+        if l == r:
+            self.tree[i] += val
+            return
+
+        m = (l + r) // 2
+        if idx <= m:
+            self.update(l, m, 2 * i + 1, idx, val)
+        else:
+            self.update(m + 1, r, 2 * i + 2, idx, val)
+
+        self.tree[i] = self.tree[2 * i + 1] + self.tree[2 * i + 2]
+
+    def query(self, l, r, i, lo, hi):
+        if lo > r or hi < l:
+            return 0
+
+        if l >= lo and r <= hi:
+            return self.tree[i]
+
+        m = (l + r) // 2
+        left_sum = self.query(l, m, 2 * i + 1, lo, hi)
+        right_sum = self.query(m + 1, r, 2 * i + 2, lo, hi)
+        return left_sum + right_sum
+
+class Solution:
+    def resultArray(self, nums: List[int]) -> List[int]:
+        n = len(nums)
+        arr1, arr2 = [], []
+        tree1, tree2 = SegmentTree(n), SegmentTree(n)
+
+        sorted_nums = sorted([(nums[i], i) for i in range(n)])
+        sorted_nums_ind = {sorted_nums[i][1]: i for i in range(n)}
+
+        arr1.append(nums[0])
+        tree1.update(0, n - 1, 0, sorted_nums_ind[0], 1)
+        arr2.append(nums[1])
+        tree2.update(0, n - 1, 0, sorted_nums_ind[1], 1)
+
+        for i in range(2, n):
+            ind = sorted_nums_ind[i]
+
+            count1 = tree1.query(0, n - 1, 0, ind, n - 1)
+            count2 = tree2.query(0, n - 1, 0, ind, n - 1)
+
+            if count1 > count2:
+                arr1.append(nums[i])
+                tree1.update(0, n - 1, 0, ind, 1)
+            if count1 < count2:
+                arr2.append(nums[i])
+                tree2.update(0, n - 1, 0, ind, 1)
+            if count1 == count2:
+                if len(arr1) <= len(arr2):
+                    arr1.append(nums[i])
+                    tree1.update(0, n - 1, 0, ind, 1)
+                else:
+                    arr2.append(nums[i])
+                    tree2.update(0, n - 1, 0, ind, 1)
+                    
+        result = arr1 + arr2
+        return result
+
+
+Solution 3: Fenwick Tree
+
+class FenwickTree:
+    def __init__(self, n):
+        self.N = n
+        self.tree = {}
+
+    def query(self, i):
+        total = 0
+        while i:
+            total += self.tree.get(i, 0)
+            i -= (i & -i)
+        return total
+
+    def sumRange(self, start, end):
+        return self.query(end) - self.query(start - 1)
+
+    def update(self, i, val):
+        while i <= self.N:
+            self.tree[i] = self.tree.get(i, 0) + val
+            i += (i & -i)
+
+class Solution:
+    def resultArray(self, nums: List[int]) -> List[int]:
+        arr1, arr2 = [], []
+
+        mx = max(nums)
+        f1, f2 = FenwickTree(mx + 1), FenwickTree(mx + 1)
+
+        for i, num in enumerate(nums):
+            if i == 0:
+                arr1.append(num)
+                f1.update(num, 1)
+                continue
+            elif i == 1:
+                arr2.append(num)
+                f2.update(num, 1)
+                continue
+
+            count1 = f1.sumRange(num + 1, mx)
+            count2 = f2.sumRange(num + 1, mx)
+
+            if count1 > count2:
+                arr1.append(num)
+                f1.update(num, 1)
+            elif count1 < count2 :
+                arr2.append(num)
+                f2.update(num, 1)
+            else:
+                if len(arr1) <= len(arr2):
+                    arr1.append(num)
+                    f1.update(num, 1)
+                else:
+                    arr2.append(num)
+                    f2.update(num, 1)
+                    
+        return arr1 + arr2
+        
+        
