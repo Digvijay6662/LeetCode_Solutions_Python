@@ -1,0 +1,147 @@
+3076. Shortest Uncommon Substring in an Array
+Solved
+Medium
+Companies
+Hint
+You are given an array arr of size n consisting of non-empty strings.
+
+Find a string array answer of size n such that:
+
+answer[i] is the shortest 
+substring
+ of arr[i] that does not occur as a substring in any other string in arr. If multiple such substrings exist, answer[i] should be the 
+lexicographically smallest
+. And if no such substring exists, answer[i] should be an empty string.
+Return the array answer.
+
+ 
+
+Example 1:
+
+Input: arr = ["cab","ad","bad","c"]
+Output: ["ab","","ba",""]
+Explanation: We have the following:
+- For the string "cab", the shortest substring that does not occur in any other string is either "ca" or "ab", we choose the lexicographically smaller substring, which is "ab".
+- For the string "ad", there is no substring that does not occur in any other string.
+- For the string "bad", the shortest substring that does not occur in any other string is "ba".
+- For the string "c", there is no substring that does not occur in any other string.
+Example 2:
+
+Input: arr = ["abc","bcd","abcd"]
+Output: ["","","abcd"]
+Explanation: We have the following:
+- For the string "abc", there is no substring that does not occur in any other string.
+- For the string "bcd", there is no substring that does not occur in any other string.
+- For the string "abcd", the shortest substring that does not occur in any other string is "abcd".
+ 
+
+Constraints:
+
+n == arr.length
+2 <= n <= 100
+1 <= arr[i].length <= 20
+arr[i] consists only of lowercase English letters.
+
+
+Solution 1:
+
+class Solution:
+    def shortestSubstrings(self, arr: List[str]) -> List[str]:
+        n = len(arr)
+        result = [""] * n
+
+        hashMap = defaultdict(set)
+
+        for i in range(n):
+            s = arr[i]
+            for j in range(len(s)):
+                for k in range(j, len(s)):
+                    hashMap[i].add(s[j:k + 1])
+        
+        for i in range(n):
+            minLength = float('inf')
+            minstr = ""
+            for substr in hashMap[i]:
+                flag = True
+                for j in range(n):
+                    if i == j:
+                        continue
+
+                    if substr in hashMap[j]:
+                        flag = False
+                        break
+                
+                if flag:
+                    if len(substr) < minLength:
+                        minLength = len(substr)
+                        minstr = substr
+                    elif len(substr) == minLength:
+                        minstr = min(minstr, substr)
+
+            result[i] = minstr
+
+        return result
+
+
+Solution 2:
+
+class TrieNode:
+    def __init__(self):
+        self.children = {}
+        self.count = 0
+
+class Trie:
+    def __init__(self):
+        self.root = TrieNode()
+
+    def insert(self, word):
+        curr = self.root
+        for ch in word:
+            if ch not in curr.children:
+                curr.children[ch] = TrieNode()
+            curr = curr.children[ch]
+            curr.count += 1
+
+    def remove(self, word):
+        curr = self.root
+        for ch in word:
+            if ch in curr.children:
+                curr = curr.children[ch]
+                curr.count -= 1
+                if curr.count == 0:
+                    break
+
+class Solution:
+    def shortestSubstrings(self, arr: List[str]) -> List[str]:
+        n = len(arr)
+        result = []
+        trie = Trie()
+
+        for word in arr:
+            for i in range(len(word)):
+                trie.insert(word[i:])
+        
+        for word in arr:
+            for i in range(len(word)):
+                trie.remove(word[i:])
+            minstr = ''
+            for i in range(len(word)):
+                for j in range(i, len(word)):
+                    substr = word[i:j + 1]
+                    curr = trie.root
+                    for ch in substr:
+                        if ch not in curr.children or curr.children[ch].count == 0:
+                            if len(minstr) == 0 or len(substr) < len(minstr):
+                                minstr = substr
+                            elif len(substr) == len(minstr) and substr < minstr:
+                                minstr = substr
+                            break
+                        else:
+                            curr = curr.children[ch]
+
+            for i in range(len(word)):
+                trie.insert(word[i:])
+
+            result.append(minstr)
+
+        return result

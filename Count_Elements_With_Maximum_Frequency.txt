@@ -48,4 +48,22 @@ class Solution:
                 result += count
 
         return result
+
+
+Solution 2:
+
+class Solution:
+    def maxFrequencyElements(self, nums: List[int]) -> int:
+        countMap = defaultdict(int)
+        maxFreq = result = 0
+
+        for num in nums:
+            countMap[num] += 1
+            if countMap[num] > maxFreq:
+                maxFreq = countMap[num]
+                result = maxFreq
+            elif countMap[num] == maxFreq:
+                result += maxFreq
+
+        return result
         
