@@ -1,0 +1,124 @@
+1171. Remove Zero Sum Consecutive Nodes from Linked List
+Solved
+Medium
+Topics
+Companies
+Hint
+Given the head of a linked list, we repeatedly delete consecutive sequences of nodes that sum to 0 until there are no such sequences.
+
+After doing so, return the head of the final linked list.  You may return any such answer.
+
+ 
+
+(Note that in the examples below, all sequences are serializations of ListNode objects.)
+
+Example 1:
+
+Input: head = [1,2,-3,3,1]
+Output: [3,1]
+Note: The answer [1,2,1] would also be accepted.
+Example 2:
+
+Input: head = [1,2,3,-3,4]
+Output: [1,2,4]
+Example 3:
+
+Input: head = [1,2,3,-3,-2]
+Output: [1]
+ 
+
+Constraints:
+
+The given linked list will contain between 1 and 1000 nodes.
+Each node in the linked list has -1000 <= node.val <= 1000.
+
+
+Solution 1:
+
+# Definition for singly-linked list.
+# class ListNode:
+#     def __init__(self, val=0, next=None):
+#         self.val = val
+#         self.next = next
+class Solution:
+    def removeZeroSumSublists(self, head: Optional[ListNode]) -> Optional[ListNode]:
+        dummy = ListNode(0, head)
+        left = dummy
+
+        while left:
+            prefix_sum = 0
+            right = left.next
+
+            while right:
+                prefix_sum += right.val
+                if prefix_sum == 0:
+                    left.next = right.next
+                right = right.next
+            left = left.next
+
+        return dummy.next
+
+
+Solution 2:
+
+# Definition for singly-linked list.
+# class ListNode:
+#     def __init__(self, val=0, next=None):
+#         self.val = val
+#         self.next = next
+class Solution:
+    def removeZeroSumSublists(self, head: Optional[ListNode]) -> Optional[ListNode]:
+        dummy = ListNode(0, head)
+        curr = dummy
+        prefix_sum = 0
+        prefix_map = {0: dummy}
+
+        while curr:
+            prefix_sum += curr.val
+            prefix_map[prefix_sum] = curr
+            curr = curr.next
+
+        prefix_sum = 0
+        curr = dummy
+
+        while curr:
+            prefix_sum += curr.val
+            curr.next = prefix_map[prefix_sum].next
+            curr = curr.next
+
+        return dummy.next
+
+
+Solution 3:
+
+# Definition for singly-linked list.
+# class ListNode:
+#     def __init__(self, val=0, next=None):
+#         self.val = val
+#         self.next = next
+class Solution:
+    def removeZeroSumSublists(self, head: Optional[ListNode]) -> Optional[ListNode]:
+        dummy = ListNode(0, head)
+        curr = dummy
+        prefix_sum = 0
+        prefix_map = {}
+
+        while curr:
+            prefix_sum += curr.val
+
+            if prefix_sum in prefix_map:
+                prev = prefix_map[prefix_sum]
+                curr = prev.next
+
+                p = prefix_sum + curr.val
+                while p != prefix_sum:
+                    del prefix_map[p]
+                    curr = curr.next
+                    p += curr.val
+
+                prev.next = curr.next
+            else:
+                prefix_map[prefix_sum] = curr
+            curr = curr.next
+
+        return dummy.next

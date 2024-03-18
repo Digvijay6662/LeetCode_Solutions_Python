@@ -1,0 +1,209 @@
+3082. Find the Sum of the Power of All Subsequences
+Solved
+Hard
+Companies
+Hint
+You are given an integer array nums of length n and a positive integer k.
+
+The power of an array of integers is defined as the number of 
+subsequences
+ with their sum equal to k.
+
+Return the sum of power of all subsequences of nums.
+
+Since the answer may be very large, return it modulo 109 + 7.
+
+ 
+
+Example 1:
+
+Input:  nums = [1,2,3], k = 3 
+
+Output:  6 
+
+Explanation:
+
+There are 5 subsequences of nums with non-zero power:
+
+The subsequence [1,2,3] has 2 subsequences with sum == 3: [1,2,3] and [1,2,3].
+The subsequence [1,2,3] has 1 subsequence with sum == 3: [1,2,3].
+The subsequence [1,2,3] has 1 subsequence with sum == 3: [1,2,3].
+The subsequence [1,2,3] has 1 subsequence with sum == 3: [1,2,3].
+The subsequence [1,2,3] has 1 subsequence with sum == 3: [1,2,3].
+Hence the answer is 2 + 1 + 1 + 1 + 1 = 6.
+
+Example 2:
+
+Input:  nums = [2,3,3], k = 5 
+
+Output:  4 
+
+Explanation:
+
+There are 3 subsequences of nums with non-zero power:
+
+The subsequence [2,3,3] has 2 subsequences with sum == 5: [2,3,3] and [2,3,3].
+The subsequence [2,3,3] has 1 subsequence with sum == 5: [2,3,3].
+The subsequence [2,3,3] has 1 subsequence with sum == 5: [2,3,3].
+Hence the answer is 2 + 1 + 1 = 4.
+
+Example 3:
+
+Input:  nums = [1,2,3], k = 7 
+
+Output:  0 
+
+Explanation: There exists no subsequence with sum 7. Hence all subsequences of nums have power = 0.
+
+ 
+
+Constraints:
+
+1 <= n <= 100
+1 <= nums[i] <= 104
+1 <= k <= 100
+
+
+Solution 1:
+
+class Solution:
+    def sumOfPower(self, nums: List[int], k: int) -> int:
+        mod = 1000000007
+        n = len(nums)
+        
+        dp = [[[-1] * (k + 1) for _ in range(n + 1)] for _ in range(n + 1)]
+        
+        def custom_pow(base, exp):
+            result = 1
+            while exp > 0:
+                if exp % 2 == 1:
+                    result = (result * base) % mod
+                base = (base * base) % mod
+                exp //= 2
+            return result
+        
+        def solve(i, length, curr_sum):
+            if curr_sum == k:
+                return custom_pow(2, n - length) % mod
+
+            if i == n or curr_sum > k:
+                return 0
+            
+            if dp[i][length][curr_sum] != -1:
+                return dp[i][length][curr_sum]
+            
+            not_take = solve(i + 1, length, curr_sum) % mod
+            take = solve(i + 1, length + 1, curr_sum + nums[i]) % mod
+            
+            ans = (take + not_take) % mod
+            dp[i][length][curr_sum] = ans
+
+            return ans
+
+        return solve(0, 0, 0)
+
+
+Solution 2:
+
+class Solution:
+    def sumOfPower(self, nums: List[int], k: int) -> int:
+        mod = 1000000007
+        n = len(nums)
+        
+        dp = [[-1] * (k + 1) for _ in range(n + 1)]
+        
+        def custom_pow(base, exp):
+            result = 1
+            while exp > 0:
+                if exp % 2 == 1:
+                    result = (result * base) % mod
+                base = (base * base) % mod
+                exp //= 2
+            return result
+        
+        def solve(i, curr_sum):
+            if curr_sum == k:
+                return custom_pow(2, n - i) % mod
+
+            if i == n or curr_sum > k:
+                return 0
+            
+            if dp[i][curr_sum] != -1:
+                return dp[i][curr_sum]
+            
+            not_take = (2 * solve(i + 1, curr_sum)) % mod
+            take = solve(i + 1, curr_sum + nums[i]) % mod
+            
+            ans = (take + not_take) % mod
+            dp[i][curr_sum] = ans
+
+            return ans
+
+        return solve(0, 0)
+
+
+Solution 3:
+
+class Solution:
+    def sumOfPower(self, nums: List[int], k: int) -> int:
+        mod = 1000000007
+        n = len(nums)
+        
+        def custom_pow(base, exp):
+            result = 1
+            while exp > 0:
+                if exp % 2 == 1:
+                    result = (result * base) % mod
+                base = (base * base) % mod
+                exp //= 2
+            return result
+
+        dp = [[0] * (k + 1) for _ in range(n + 1)]
+
+        for i in range(n + 1):
+            dp[i][k] = custom_pow(2, n - i) % mod
+
+        for i in range(n - 1, -1, -1):
+            for curr_sum in range(k - 1, -1, -1):
+                take = not_take = 0
+                not_take = (2 * dp[i + 1][curr_sum]) % mod
+                if curr_sum + nums[i] <= k:
+                    take = dp[i + 1][curr_sum + nums[i]] % mod
+                ans = (take + not_take) % mod
+                dp[i][curr_sum] = ans
+
+        return dp[0][0]
+
+
+Solution 4:
+
+class Solution:
+    def sumOfPower(self, nums: List[int], k: int) -> int:
+        mod = 1000000007
+        n = len(nums)
+        
+        def custom_pow(base, exp):
+            result = 1
+            while exp > 0:
+                if exp % 2 == 1:
+                    result = (result * base) % mod
+                base = (base * base) % mod
+                exp //= 2
+            return result
+
+        dp = [0] * (k + 1)
+        dp[k] = 1
+
+        for i in range(n - 1, -1, -1):
+            ndp = [0] * (k + 1)
+            for curr_sum in range(k, -1, -1):
+                take = not_take = 0
+                not_take = (2 * dp[curr_sum]) % mod
+                if curr_sum + nums[i] <= k:
+                    take = dp[curr_sum + nums[i]] % mod
+                ans = (take + not_take) % mod
+                ndp[curr_sum] = ans
+
+            dp = ndp
+
+        return dp[0]

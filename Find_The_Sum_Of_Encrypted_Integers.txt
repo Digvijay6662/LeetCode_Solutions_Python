@@ -1,0 +1,94 @@
+3079. Find the Sum of Encrypted Integers
+Solved
+Easy
+Companies
+Hint
+You are given an integer array nums containing positive integers. We define a function encrypt such that encrypt(x) replaces every digit in x with the largest digit in x. For example, encrypt(523) = 555 and encrypt(213) = 333.
+
+Return the sum of encrypted elements.
+
+ 
+
+Example 1:
+
+Input: nums = [1,2,3]
+
+Output: 6
+
+Explanation: The encrypted elements are [1,2,3]. The sum of encrypted elements is 1 + 2 + 3 == 6.
+
+Example 2:
+
+Input: nums = [10,21,31]
+
+Output: 66
+
+Explanation: The encrypted elements are [11,22,33]. The sum of encrypted elements is 11 + 22 + 33 == 66.
+
+ 
+
+Constraints:
+
+1 <= nums.length <= 50
+1 <= nums[i] <= 1000
+
+
+Solution 1:
+
+class Solution:
+    def sumOfEncryptedInt(self, nums: List[int]) -> int:
+        total_sum = 0
+
+        for num in nums:
+            num_str = str(num)
+            largest_digit = max(num_str)
+            encrypted_num = largest_digit * len(num_str)
+            total_sum += int(encrypted_num)
+
+        return total_sum
+        
+
+Solution 2:
+
+class Solution:
+    def sumOfEncryptedInt(self, nums: List[int]) -> int:
+        
+        def helper(val):
+            max_digit = 0
+            length = 0
+            while val > 0:
+                max_digit = max(max_digit, val % 10)
+                length += 1
+                val //= 10
+                
+            curr = 0
+            while length:
+                curr = curr * 10 + max_digit
+                length -= 1
+                
+            return curr
+        
+        result = 0
+        for num in nums:
+            result += helper(num)
+                
+        return result
+
+
+Solution 3:
+
+class Solution:
+    def sumOfEncryptedInt(self, nums: List[int]) -> int:
+        total_sum = 0
+
+        for n in nums:
+            multiplier = 0
+            max_digit = 0
+            
+            while n:
+                multiplier = multiplier * 10 + 1
+                max_digit = max(max_digit, n % 10)
+                n //= 10
+            total_sum += max_digit * multiplier
+        
+        return total_sum
