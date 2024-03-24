@@ -1,0 +1,83 @@
+3091. Apply Operations to Make Sum of Array Greater Than or Equal to k
+Solved
+Medium
+Companies
+Hint
+You are given a positive integer k. Initially, you have an array nums = [1].
+
+You can perform any of the following operations on the array any number of times (possibly zero):
+
+Choose any element in the array and increase its value by 1.
+Duplicate any element in the array and add it to the end of the array.
+Return the minimum number of operations required to make the sum of elements of the final array greater than or equal to k.
+
+ 
+
+Example 1:
+
+Input: k = 11
+
+Output: 5
+
+Explanation:
+
+We can do the following operations on the array nums = [1]:
+
+Increase the element by 1 three times. The resulting array is nums = [4].
+Duplicate the element two times. The resulting array is nums = [4,4,4].
+The sum of the final array is 4 + 4 + 4 = 12 which is greater than or equal to k = 11.
+The total number of operations performed is 3 + 2 = 5.
+
+Example 2:
+
+Input: k = 1
+
+Output: 0
+
+Explanation:
+
+The sum of the original array is already greater than or equal to 1, so no operations are needed.
+
+ 
+
+Constraints:
+
+1 <= k <= 105
+
+
+Solution 1:
+
+class Solution:
+    def minOperations(self, k: int) -> int:
+        min_operations = k
+
+        # nums = [4, 4, 4]
+        # Here num = 4 (a + 1), a = 3, b = 2
+        
+        for a in range(k):
+            b = math.ceil(k/(a + 1)) - 1
+            min_operations = min(min_operations, a + b)
+
+        return min_operations
+
+
+Solution 2:
+
+class Solution:
+    def minOperations(self, k: int) -> int:
+        # nums = [4, 4, 4]
+        # Here num = 4 (a + 1), a = 3, b = 2
+        
+        # (a + 1) + (a + 1) * b >= k
+        # (a + 1)(b + 1) >= k
+        # ab + a + b + 1 >= k
+        # for the above a + b to minimum we should maximize ab
+        # Product of two numbers will be bigger keeping the sum constant
+        # if they are as much close as possible.
+        # a2 >= k
+        # a >= root(k)
+
+        a = math.ceil(sqrt(k)) - 1
+        b = math.ceil(k/(a + 1)) - 1
+
+        return a + b

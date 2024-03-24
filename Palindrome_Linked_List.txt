@@ -96,3 +96,59 @@ class Solution:
             revCurr = revCurr.next
 
         return True
+
+
+Solution 3:
+
+# Definition for singly-linked list.
+# class ListNode:
+#     def __init__(self, val=0, next=None):
+#         self.val = val
+#         self.next = next
+class Solution:
+    def isPalindrome(self, head: Optional[ListNode]) -> bool:
+        slow = fast = head
+        prev = None
+
+        while fast and fast.next:
+            fast = fast.next.next
+            nxt = slow.next
+            slow.next = prev
+            prev = slow
+            slow = nxt
+
+        if fast:
+            slow = slow.next
+
+        curr = prev
+        while curr and slow:
+            if curr.val != slow.val:
+                return False
+            curr = curr.next
+            slow = slow.next
+
+        return True
+
+
+Solution 4:
+
+# Definition for singly-linked list.
+# class ListNode:
+#     def __init__(self, val=0, next=None):
+#         self.val = val
+#         self.next = next
+class Solution:
+    def isPalindrome(self, head: Optional[ListNode]) -> bool:
+        self.curr = head
+        def solve(node):
+            if not node:
+                return True
+
+            if not solve(node.next):
+                return False
+            if self.curr.val != node.val:
+                return False
+            self.curr = self.curr.next
+            return True
+
+        return solve(head)
