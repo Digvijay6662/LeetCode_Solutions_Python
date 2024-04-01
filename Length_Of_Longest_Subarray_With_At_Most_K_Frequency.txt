@@ -62,3 +62,27 @@ class Solution:
             right += 1
             
         return result
+
+
+Solution 2:
+
+class Solution:
+    def maxSubarrayLength(self, nums: List[int], k: int) -> int:
+        n = len(nums)
+        count = defaultdict(int)
+        l = r = faulty = 0
+
+        while r < n:
+            count[nums[r]] += 1
+
+            if count[nums[r]] == k + 1:
+                faulty += 1
+            
+            if faulty:
+                count[nums[l]] -= 1
+                if count[nums[l]] == k:
+                    faulty -= 1
+                l += 1
+            r += 1
+
+        return r - l

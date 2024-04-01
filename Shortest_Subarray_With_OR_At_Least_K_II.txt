@@ -1,0 +1,87 @@
+3097. Shortest Subarray With OR at Least K II
+Solved
+Medium
+Companies
+Hint
+You are given an array nums of non-negative integers and an integer k.
+
+An array is called special if the bitwise OR of all of its elements is at least k.
+
+Return the length of the shortest special non-empty 
+subarray
+ of nums, or return -1 if no special subarray exists.
+
+ 
+
+Example 1:
+
+Input: nums = [1,2,3], k = 2
+
+Output: 1
+
+Explanation:
+
+The subarray [3] has OR value of 3. Hence, we return 1.
+
+Example 2:
+
+Input: nums = [2,1,8], k = 10
+
+Output: 3
+
+Explanation:
+
+The subarray [2,1,8] has OR value of 11. Hence, we return 3.
+
+Example 3:
+
+Input: nums = [1,2], k = 0
+
+Output: 1
+
+Explanation:
+
+The subarray [1] has OR value of 1. Hence, we return 1.
+
+ 
+
+Constraints:
+
+1 <= nums.length <= 2 * 105
+0 <= nums[i] <= 109
+0 <= k <= 109
+
+
+Solution 1:
+
+class Solution:
+    def minimumSubarrayLength(self, nums: List[int], k: int) -> int:
+        n = len(nums)
+        bit_count = [0] * 32  # Initialize an array to keep track of the count of set bits at each position
+        l = r = 0  # Initialize two pointers for the sliding window
+        curr = 0  # Initialize the current power value (sum of set bits)
+        result = float('inf')  # Initialize the result (minimum subarray length)
+
+        while r < n:
+            # Update the bit_count array for the current element at position r
+            for i in range(32):
+                if (nums[r] >> i) & 1:
+                    if bit_count[i] == 0:
+                        curr += (1 << i)  # Add the contribution of the newly set bit
+                    bit_count[i] += 1
+
+            # Adjust the window by moving the left pointer
+            while l <= r and curr >= k:
+                result = min(result, r - l + 1)  # Update the result with the minimum subarray length
+                # Update the bit_count array for the element at position l
+                for i in range(32):
+                    if (nums[l] >> i) & 1:
+                        bit_count[i] -= 1  # Decrease the count of set bits
+                        if bit_count[i] == 0:
+                            curr -= (1 << i)  # Subtract the contribution of the unset bit
+                l += 1
+
+            r += 1  # Move the right pointer to expand the window
+
+        # Return the result (or -1 if no valid subarray found)
+        return result if result != float('inf') else -1

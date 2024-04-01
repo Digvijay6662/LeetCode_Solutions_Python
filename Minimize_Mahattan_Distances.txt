@@ -1,0 +1,93 @@
+3102. Minimize Manhattan Distances
+Solved
+Hard
+Companies
+Hint
+You are given a 0-indexed array points representing integer coordinates of some points on a 2D plane, where points[i] = [xi, yi].
+
+The distance between two points is defined as their 
+Manhattan distance
+.
+
+Return the minimum possible value for maximum distance between any two points by removing exactly one point.
+
+ 
+
+Example 1:
+
+Input: points = [[3,10],[5,15],[10,2],[4,4]]
+Output: 12
+Explanation: The maximum distance after removing each point is the following:
+- After removing the 0th point the maximum distance is between points (5, 15) and (10, 2), which is |5 - 10| + |15 - 2| = 18.
+- After removing the 1st point the maximum distance is between points (3, 10) and (10, 2), which is |3 - 10| + |10 - 2| = 15.
+- After removing the 2nd point the maximum distance is between points (5, 15) and (4, 4), which is |5 - 4| + |15 - 4| = 12.
+- After removing the 3rd point the maximum distance is between points (5, 15) and (10, 2), which is |5 - 10| + |15 - 2| = 18.
+It can be seen that 12 is the minimum possible maximum distance between any two points after removing exactly one point.
+Example 2:
+
+Input: points = [[1,1],[1,1],[1,1]]
+Output: 0
+Explanation: It can be seen that removing any of the points results in the maximum distance between any two points of 0.
+ 
+
+Constraints:
+
+3 <= points.length <= 105
+points[i].length == 2
+1 <= points[i][0], points[i][1] <= 108
+
+
+Solution 1:
+
+from sortedcontainers import SortedList
+class Solution:
+    def minimumDistance(self, points: List[List[int]]) -> int:
+        sorted_sum, sorted_diff = SortedList(), SortedList()
+        for p in points:
+            sorted_sum.add(p[0] - p[1])
+            sorted_diff.add(p[0] + p[1])
+        
+        result = float('inf')
+        for p in points:
+            sorted_sum.remove(p[0] - p[1])
+            sorted_diff.remove(p[0] + p[1])
+            result = min(result, max(sorted_sum[-1] - sorted_sum[0], sorted_diff[-1] - sorted_diff[0]))
+            sorted_sum.add(p[0] - p[1])
+            sorted_diff.add(p[0] + p[1])
+        
+        return result
+
+
+Solution 2:
+
+class Solution:
+    def minimumDistance(self, points: List[List[int]]) -> int:
+        n = len(points)
+
+        def getMaxDist(idx):
+            max_sum, min_sum = [-1, float('-inf')], [-1, float('inf')]
+            max_diff, min_diff = [-1, float('-inf')], [-1, float('inf')]
+
+            for i in range(n):
+                if i == idx:
+                    continue
+                s = points[i][0] + points[i][1]
+                d = points[i][0] - points[i][1]
+
+                if s > max_sum[1]:
+                    max_sum = [i, s]
+                if s < min_sum[1]:
+                    min_sum = [i, s]
+                if d > max_diff[1]:
+                    max_diff = [i, d]
+                if d < min_diff[1]:
+                    min_diff = [i, d]
+            
+            if max_sum[1] - min_sum[1] > max_diff[1] - min_diff[1]:
+                return [max_sum[1] - min_sum[1], max_sum[0], min_sum[0]]
+
+            return [max_diff[1] - min_diff[1], max_diff[0], min_diff[0]]
+
+        d, x, y = getMaxDist(-1)
+
+        return min(getMaxDist(x)[0], getMaxDist(y)[0])

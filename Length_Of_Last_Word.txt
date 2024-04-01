@@ -36,8 +36,7 @@ There will be at least one word in s.
 
 
 
-Solution:  
-
+Solution 1:  
 
 class Solution:
     def lengthOfLastWord(self, s: str) -> int:
@@ -49,3 +48,25 @@ class Solution:
             else:
                 break
         return count
+
+
+Solution 2:
+
+class Solution:
+    def lengthOfLastWord(self, s: str) -> int:
+        n = len(s)
+        r = n - 1
+
+        while r >= 0 and s[r] == ' ':
+            r -= 1
+
+        if r == -1:
+            return n
+
+        end_idx = r
+
+        while r >= 0 and s[r] != ' ':
+            r -= 1
+        
+        return end_idx - r
+
