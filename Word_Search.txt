@@ -37,7 +37,7 @@ board and word consists of only lowercase and uppercase English letters.
 
 Follow up: Could you use search pruning to make your solution faster with a larger board?
 
-Solution:
+Solution 1:
 
 class Solution:
     def exist(self, board: List[List[str]], word: str) -> bool:
@@ -80,4 +80,56 @@ class Solution:
 
         # If the word is not found, return False
         return False
+
+
+Solution 2:
+
+class Solution:
+    def exist(self, board: List[List[str]], word: str) -> bool:
+        n, m = len(board), len(board[0])
+        size = len(word)
+
+        if size > n * m:
+            return False
+
+        count = defaultdict(int)
+
+        for i in range(n):
+            for j in range(m):
+                count[board[i][j]] += 1
+        
+        for ch, freq in Counter(word).items():
+            if freq > count[ch]:
+                return False
+
+        if count[word[0]] > count[word[-1]]:
+            word = word[::-1]
+        
+        directions = [(0, 1), (1, 0), (0, -1), (-1, 0)]
+
+        def dfs(r, c, i):
+            if i == size:
+                return True
+
+            visited.add((r, c))
+
+            for dr, dc in directions:
+                nr, nc = r + dr, c + dc
+                if 0 <= nr < n and 0 <= nc < m and (nr, nc) not in visited and board[nr][nc] == word[i]:
+                    if dfs(nr, nc, i + 1):
+                        return True
+
+            visited.remove((r, c))
+
+            return False
+
+        visited = set()
+        for r in range(n):
+            for c in range(m):
+                if board[r][c] == word[0]:
+                    if dfs(r, c, 1):
+                        return True
+
+        return False
+        
 
