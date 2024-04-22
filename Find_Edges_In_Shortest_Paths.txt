@@ -1,0 +1,149 @@
+3123. Find Edges in Shortest Paths
+Solved
+Hard
+Companies
+Hint
+You are given an undirected weighted graph of n nodes numbered from 0 to n - 1. The graph consists of m edges represented by a 2D array edges, where edges[i] = [ai, bi, wi] indicates that there is an edge between nodes ai and bi with weight wi.
+
+Consider all the shortest paths from node 0 to node n - 1 in the graph. You need to find a boolean array answer where answer[i] is true if the edge edges[i] is part of at least one shortest path. Otherwise, answer[i] is false.
+
+Return the array answer.
+
+Note that the graph may not be connected.
+
+ 
+
+Example 1:
+
+
+Input: n = 6, edges = [[0,1,4],[0,2,1],[1,3,2],[1,4,3],[1,5,1],[2,3,1],[3,5,3],[4,5,2]]
+
+Output: [true,true,true,false,true,true,true,false]
+
+Explanation:
+
+The following are all the shortest paths between nodes 0 and 5:
+
+The path 0 -> 1 -> 5: The sum of weights is 4 + 1 = 5.
+The path 0 -> 2 -> 3 -> 5: The sum of weights is 1 + 1 + 3 = 5.
+The path 0 -> 2 -> 3 -> 1 -> 5: The sum of weights is 1 + 1 + 2 + 1 = 5.
+Example 2:
+
+
+Input: n = 4, edges = [[2,0,1],[0,1,1],[0,3,4],[3,2,2]]
+
+Output: [true,false,false,true]
+
+Explanation:
+
+There is one shortest path between nodes 0 and 3, which is the path 0 -> 2 -> 3 with the sum of weights 1 + 2 = 3.
+
+ 
+
+Constraints:
+
+2 <= n <= 5 * 104
+m == edges.length
+1 <= m <= min(5 * 104, n * (n - 1) / 2)
+0 <= ai, bi < n
+ai != bi
+1 <= wi <= 105
+There are no repeated edges.
+
+
+Solution 1:
+
+class Solution:
+    def findAnswer(self, n: int, edges: List[List[int]]) -> List[bool]:
+        m = len(edges)
+        graph = defaultdict(list)
+        parents = defaultdict(list)
+        
+        for u, v, w in edges:
+            graph[u].append((v, w))
+            graph[v].append((u, w))
+
+        dist = [float('inf')] * n
+        dist[0] = 0
+        minHeap = [(0, 0)]
+
+        while minHeap:
+            d, node = heapq.heappop(minHeap)
+            if d > dist[node]:
+                continue
+            for nei, wei in graph[node]:
+                if d + wei < dist[nei]:
+                    dist[nei] = d + wei
+                    parents[nei] = [node]
+                    heapq.heappush(minHeap, (dist[nei], nei))
+                elif d + wei == dist[nei]:
+                    parents[nei].append(node)
+        
+        edges_ind = {}
+        for i in range(m):
+            u, v, _ = edges[i]
+            edges_ind[(u, v)] = i
+            edges_ind[(v, u)] = i
+        
+        result = [False] * m
+        visited = [False] * n
+        
+        q = deque([n - 1])
+        while q:
+            node = q.popleft()
+            for par in parents[node]:
+                result[edges_ind[(node, par)]] = True
+                if not visited[par]:
+                    q.append(par)
+                    visited[par] = True
+        
+        return result
+
+
+Solution 2:
+
+class Solution:
+    def findAnswer(self, n: int, edges: List[List[int]]) -> List[bool]:
+        m = len(edges)
+        graph = defaultdict(list)
+
+        for u, v, w in edges:
+            graph[u].append([v, w])
+            graph[v].append([u, w])
+      
+        def dijkstras(src):
+            dist = [float('inf')] * n
+            dist[src] = 0
+            minHeap = [(0, src)]
+
+            while minHeap:
+                d, node = heapq.heappop(minHeap)
+                if d > dist[node]:
+                    continue
+                for nei, wei in graph[node]:
+                    if d + wei < dist[nei]:
+                        dist[nei] = d + wei
+                        heapq.heappush(minHeap, (dist[nei], nei))
+
+            return dist
+
+        dist_from_source = dijkstras(0)
+        dist_from_target = dijkstras(n - 1)
+
+        min_dist = dist_from_source[n - 1]
+
+        result = [False] * m
+
+        if min_dist == float('inf'):
+            return result
+
+        for i in range(m):
+            u, v, w = edges[i]
+
+            if dist_from_source[u] + w + dist_from_target[v] == min_dist:
+                result[i] = True
+
+            if dist_from_source[v] + w + dist_from_target[u] == min_dist:
+                result[i] = True 
+
+        return result
