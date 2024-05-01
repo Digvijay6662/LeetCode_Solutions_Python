@@ -1,0 +1,190 @@
+1289. Minimum Falling Path Sum II
+Solved
+Hard
+Topics
+Companies
+Hint
+Given an n x n integer matrix grid, return the minimum sum of a falling path with non-zero shifts.
+
+A falling path with non-zero shifts is a choice of exactly one element from each row of grid such that no two elements chosen in adjacent rows are in the same column.
+
+ 
+
+Example 1:
+
+
+Input: grid = [[1,2,3],[4,5,6],[7,8,9]]
+Output: 13
+Explanation: 
+The possible falling paths are:
+[1,5,9], [1,5,7], [1,6,7], [1,6,8],
+[2,4,8], [2,4,9], [2,6,7], [2,6,8],
+[3,4,8], [3,4,9], [3,5,7], [3,5,9]
+The falling path with the smallest sum is [1,5,7], so the answer is 13.
+Example 2:
+
+Input: grid = [[7]]
+Output: 7
+ 
+
+Constraints:
+
+n == grid.length == grid[i].length
+1 <= n <= 200
+-99 <= grid[i][j] <= 99
+
+
+Solution 1:
+
+class Solution:
+    def minFallingPathSum(self, grid: List[List[int]]) -> int:
+        n = len(grid)
+        dp = [[-1 for _ in range(n)] for _ in range(n)]
+
+        def solve(i, prev):
+            if i == n:
+                return 0
+
+            if dp[i][prev] != -1:
+                return dp[i][prev]
+
+            ans = float('inf')
+            for j in range(n):
+                if j == prev:
+                    continue
+                ans = min(ans, grid[i][j] + solve(i + 1, j))
+
+            dp[i][prev] = ans
+            return ans
+
+        result = float('inf')
+        for j in range(n):
+            result = min(result, grid[0][j] + solve(1, j))
+
+        return result
+
+
+Solution 2:
+
+class Solution:
+    def minFallingPathSum(self, grid: List[List[int]]) -> int:
+        n = len(grid)
+        dp = [[0 for _ in range(n)] for _ in range(n)]
+
+        for j in range(n):
+            dp[0][j] = grid[0][j]
+
+        for i in range(1, n):
+            for j in range(n):
+                dp[i][j] = min(dp[i - 1][k] for k in range(n) if k != j) + grid[i][j]
+                
+        return min(dp[-1])
+
+
+Solution 3:
+
+class Solution:
+    def minFallingPathSum(self, grid: List[List[int]]) -> int:
+        n = len(grid)
+        dp = grid[0][:]
+
+        for i in range(1, n):
+            new_dp = [0] * n
+            for j in range(n):
+                new_dp[j] = min(dp[k] for k in range(n) if k != j) + grid[i][j]
+            dp = new_dp
+
+        return min(dp)
+
+
+Solution 4:
+
+class Solution:
+    def minFallingPathSum(self, grid: List[List[int]]) -> int:
+        n = len(grid)
+        dp = grid[0][:]
+
+        for i in range(1, n):
+            new_dp = [0] * n
+            for j in range(n):
+                m1 = m2 = float('inf')
+                if j > 0:
+                    m1 = min(dp[:j])
+                if j < n - 1:
+                    m2 = min(dp[j + 1:])
+                new_dp[j] = min(m1, m2) + grid[i][j]
+            dp = new_dp
+
+        return min(dp)
+
+
+Solution 5:
+
+class Solution:
+    def minFallingPathSum(self, grid: List[List[int]]) -> int:
+        n = len(grid)
+        dp = [0] * n
+        minCol1 = minCol2 = -1
+
+        for j in range(n):
+            dp[j] = grid[0][j]
+            if minCol1 == -1 or dp[minCol1] >= dp[j]:
+                minCol2 = minCol1
+                minCol1 = j
+            elif minCol2 == -1 or dp[minCol2] >= dp[j]:
+                minCol2 = j
+
+        for i in range(1, n):
+            new_dp = [0] * n
+            currMinCol1 = currMinCol2 = -1
+            for j in range(n):
+                if j != minCol1:
+                    new_dp[j] = dp[minCol1] + grid[i][j]
+                else:
+                    new_dp[j] = dp[minCol2] + grid[i][j]
+
+                if currMinCol1 == -1 or new_dp[currMinCol1] >= new_dp[j]:
+                    currMinCol2 = currMinCol1
+                    currMinCol1 = j
+                elif currMinCol2 == -1 or new_dp[currMinCol2] >= new_dp[j]:
+                    currMinCol2 = j
+
+            minCol1 = currMinCol1
+            minCol2 = currMinCol2
+            dp = new_dp
+
+        return dp[minCol1]
+
+
+Solution 6:
+
+class Solution:
+    def minFallingPathSum(self, grid: List[List[int]]) -> int:
+        n = len(grid)
+        minCol1 = minCol2 = -1
+
+        for j in range(n):
+            if minCol1 == -1 or grid[0][minCol1] >= grid[0][j]:
+                minCol2 = minCol1
+                minCol1 = j
+            elif minCol2 == -1 or grid[0][minCol2] >= grid[0][j]:
+                minCol2 = j
+
+        for i in range(1, n):
+            currMinCol1 = currMinCol2 = -1
+            for j in range(n):
+                if j != minCol1:
+                    grid[i][j] += grid[i-1][minCol1]
+                else:
+                    grid[i][j] += grid[i-1][minCol2]
+
+                if currMinCol1 == -1 or grid[i][currMinCol1] >= grid[i][j]:
+                    currMinCol2 = currMinCol1
+                    currMinCol1 = j
+                elif currMinCol2 == -1 or grid[i][currMinCol2] >= grid[i][j]:
+                    currMinCol2 = j
+
+            minCol1 = currMinCol1
+            minCol2 = currMinCol2
+
+        return grid[-1][minCol1]
