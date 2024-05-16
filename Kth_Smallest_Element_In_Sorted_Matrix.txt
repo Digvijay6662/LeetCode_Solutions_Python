@@ -1,0 +1,159 @@
+378. Kth Smallest Element in a Sorted Matrix
+Solved
+Medium
+Topics
+Companies
+Given an n x n matrix where each of the rows and columns is sorted in ascending order, return the kth smallest element in the matrix.
+
+Note that it is the kth smallest element in the sorted order, not the kth distinct element.
+
+You must find a solution with a memory complexity better than O(n2).
+
+ 
+
+Example 1:
+
+Input: matrix = [[1,5,9],[10,11,13],[12,13,15]], k = 8
+Output: 13
+Explanation: The elements in the matrix are [1,5,9,10,11,12,13,13,15], and the 8th smallest number is 13
+Example 2:
+
+Input: matrix = [[-5]], k = 1
+Output: -5
+ 
+
+Constraints:
+
+n == matrix.length == matrix[i].length
+1 <= n <= 300
+-109 <= matrix[i][j] <= 109
+All the rows and columns of matrix are guaranteed to be sorted in non-decreasing order.
+1 <= k <= n2
+ 
+
+Follow up:
+
+Could you solve the problem with a constant memory (i.e., O(1) memory complexity)?
+Could you solve the problem in O(n) time complexity? The solution may be too advanced for an interview but you may find reading this paper fun.
+
+
+Solution 1:
+
+class Solution:
+    def kthSmallest(self, matrix: List[List[int]], k: int) -> int:
+        n = len(matrix)
+        maxHeap = []
+
+        for i in range(n):
+            for j in range(n):
+                heapq.heappush(maxHeap, -matrix[i][j])
+                if len(maxHeap) > k:
+                    heapq.heappop(maxHeap)
+
+        return -maxHeap[0]
+
+
+Solution 2:
+
+class Solution:
+    def kthSmallest(self, matrix: List[List[int]], k: int) -> int:
+        n = len(matrix)
+        minHeap = [(matrix[0][0], 0, 0)]
+        visited = {(0, 0)}
+
+        for _ in range(k - 1):
+            val, i, j = heapq.heappop(minHeap)
+            if i + 1 < n and (i + 1, j) not in visited:
+                heapq.heappush(minHeap, (matrix[i + 1][j], i + 1, j))
+                visited.add((i + 1, j))
+            
+            if j + 1 < n and (i, j + 1) not in visited:
+                heapq.heappush(minHeap, (matrix[i][j + 1], i, j + 1))
+                visited.add((i, j + 1))
+        
+        return minHeap[0][0]
+
+
+Solution 3:
+
+
+class Solution:
+    def kthSmallest(self, matrix: List[List[int]], k: int) -> int:
+        n = len(matrix)
+        minHeap = []
+
+        for r in range(min(k, n)):
+            heapq.heappush(minHeap, (matrix[r][0], r, 0))
+
+        result = -1
+        for i in range(k):
+            result, r, c = heapq.heappop(minHeap)
+            if c + 1 < n:
+                heapq.heappush(minHeap, (matrix[r][c + 1], r, c + 1))
+        return result
+
+
+Solution 4:
+
+
+class Solution:
+    def kthSmallest(self, matrix: List[List[int]], k: int) -> int:
+        n = len(matrix)
+
+        def binary_search(arr, num):
+            l, r = 0, n - 1
+            while l <= r:
+                m = (l + r) >> 1
+                if arr[m] <= num:
+                    l = m + 1
+                else:
+                    r = m - 1
+            return l
+
+        def helper(num):
+            count = 0
+            for i in range(n):
+                idx = binary_search(matrix[i], num)
+                count += idx
+            
+            return count
+
+        l, r = matrix[0][0], matrix[-1][-1]
+        while l <= r:
+            m = (l + r) >> 1
+            count = helper(m)
+            if count >= k:
+                r = m - 1
+            else:
+                l = m + 1
+
+        return l
+
+
+Solution 5:
+
+class Solution:
+    def kthSmallest(self, matrix: List[List[int]], k: int) -> int:
+        n = len(matrix)
+
+        def helper(num):
+            count = 0
+            j = n - 1
+            for i in range(n):
+                while j >= 0 and matrix[i][j] > num:
+                    j -= 1
+                count += (j + 1)
+            return count
+
+        l, r = matrix[0][0], matrix[-1][-1]
+        while l <= r:
+            m = (l + r) >> 1
+            count = helper(m)
+            if count >= k:
+                r = m - 1
+            else:
+                l = m + 1
+
+        return l
+
+

@@ -27,7 +27,7 @@ Constraints:
 -106 <= nums[i] <= 106
 
 
-Solution:
+Solution 1:
 
 class Solution:
     def findNumberOfLIS(self, nums: List[int]) -> int:
@@ -53,3 +53,32 @@ class Solution:
                 res += counts[i]
 
         return res
+
+
+Solution 2:
+
+class Solution:
+    def findNumberOfLIS(self, nums: List[int]) -> int:
+        n = len(nums)
+        dp = [1] * n
+        count = [1] * n
+        result = 0
+        max_length = 1
+
+        for i in range(1, n):
+            for j in range(i):
+                if nums[i] > nums[j]:
+                    if dp[i] < dp[j] + 1:
+                        dp[i] = dp[j] + 1
+                        count[i] = count[j]
+                    elif dp[i] == dp[j] + 1:
+                        count[i] += count[j]
+
+            if dp[i] > max_length:
+                max_length = dp[i] 
+
+        for i in range(n):
+            if dp[i] == max_length:
+                result += count[i]
+
+        return result 

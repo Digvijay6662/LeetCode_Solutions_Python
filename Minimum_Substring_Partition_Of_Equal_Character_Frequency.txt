@@ -1,0 +1,189 @@
+3144. Minimum Substring Partition of Equal Character Frequency
+Solved
+Medium
+Companies
+Hint
+Given a string s, you need to partition it into one or more balanced 
+substrings
+. For example, if s == "ababcc" then ("abab", "c", "c"), ("ab", "abc", "c"), and ("ababcc") are all valid partitions, but ("a", "bab", "cc"), ("aba", "bc", "c"), and ("ab", "abcc") are not. The unbalanced substrings are bolded.
+
+Return the minimum number of substrings that you can partition s into.
+
+Note: A balanced string is a string where each character in the string occurs the same number of times.
+
+ 
+
+Example 1:
+
+Input: s = "fabccddg"
+
+Output: 3
+
+Explanation:
+
+We can partition the string s into 3 substrings in one of the following ways: ("fab, "ccdd", "g"), or ("fabc", "cd", "dg").
+
+Example 2:
+
+Input: s = "abababaccddb"
+
+Output: 2
+
+Explanation:
+
+We can partition the string s into 2 substrings like so: ("abab", "abaccddb").
+
+ 
+
+Constraints:
+
+1 <= s.length <= 1000
+s consists only of English lowercase letters.
+
+
+Solution 1:
+
+class Solution:
+    def minimumSubstringsInPartition(self, s: str) -> int:
+        n = len(s)
+        dp = [-1] * n
+
+        def solve(i):
+            if i == n:
+                return 0
+
+            if dp[i] != -1:
+                return dp[i]
+
+            ans = n - i
+            count = defaultdict(int)
+            for j in range(i, n):
+                flag = True
+                count[s[j]] += 1
+                for ch in count:
+                    if count[ch] != count[s[j]]:
+                        flag = False
+                        break
+                if flag:
+                    ans = min(ans, 1 + solve(j  + 1))
+
+            dp[i] = ans
+            return ans
+
+        return solve(0)
+
+
+Solution 2:
+
+class Solution:
+    def minimumSubstringsInPartition(self, s: str) -> int:
+        n = len(s)
+        dp = [n] * (n + 1)
+        dp[n] = 0
+
+        for i in range(n - 1, -1, -1):
+            count = defaultdict(int)
+            for j in range(i, n):
+                flag = True
+                count[s[j]] += 1
+                for ch in count:
+                    if count[ch] != count[s[j]]:
+                        flag = False
+                        break
+                if flag:
+                    dp[i] = min(dp[i], 1 + dp[j  + 1])
+
+        return dp[0]
+
+
+Solution 3:
+
+class Solution:
+    def minimumSubstringsInPartition(self, s: str) -> int:
+        n = len(s)
+        dp = [n] * n
+
+        for i in range(n):
+            count = defaultdict(int)
+            for j in range(i, -1, -1):
+                count[s[j]] += 1
+                if len(set(count.values())) == 1:
+                    dp[i] = min(dp[i], 1 + dp[j - 1] if j > 0 else 1)
+
+        return dp[n - 1]
+
+
+Solution 4:
+
+class Solution:
+    def minimumSubstringsInPartition(self, s: str) -> int:
+        n = len(s)
+        dp = [-1] * n
+
+        def solve(i):
+            if i == n:
+                return 0
+            
+            if dp[i] != -1:
+                return dp[i]
+            
+            dp[i] = n - i
+            count = [0] * (n - i + 1)
+            freq = [0] * 26
+            unique = 0
+
+            for j in range(i, n):
+                ch = ord(s[j]) - ord('a')
+                freq[ch] += 1
+
+                prev_count = freq[ch] - 1
+                curr_count = freq[ch]
+
+                if prev_count > 0:
+                    count[prev_count] -= 1
+                    if count[prev_count] == 0:
+                        unique -= 1
+                count[curr_count] += 1
+                if count[curr_count] == 1:
+                    unique += 1
+
+                if unique == 1:
+                    dp[i] = min(dp[i], 1 + solve(j + 1))
+            
+            return dp[i]
+
+        return solve(0)
+
+
+Solution 5:
+
+class Solution:
+    def minimumSubstringsInPartition(self, s: str) -> int:
+        n = len(s)
+        dp = [n] * (n + 1)
+        dp[n] = 0
+
+        for i in range(n - 1, -1, -1):
+            count = [0] * (n - i + 1)
+            freq = [0] * 26
+            unique = 0
+
+            for j in range(i, n):
+                ch = ord(s[j]) - ord('a')
+                freq[ch] += 1
+
+                prev_count = freq[ch] - 1
+                curr_count = freq[ch]
+
+                if prev_count > 0:
+                    count[prev_count] -= 1
+                    if count[prev_count] == 0:
+                        unique -= 1
+                count[curr_count] += 1
+                if count[curr_count] == 1:
+                    unique += 1
+
+                if unique == 1:
+                    dp[i] = min(dp[i], 1 + dp[j + 1])
+
+        return dp[0]
