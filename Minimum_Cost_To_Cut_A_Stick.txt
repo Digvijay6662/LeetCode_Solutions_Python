@@ -89,3 +89,70 @@ class Solution:
         return dfs(0, n)
 
 
+Solution 3:
+
+class Solution:
+    def minCost(self, n: int, cuts: List[int]) -> int:
+        cuts = [0] + sorted(cuts) + [n]
+        size = len(cuts)
+        dp = [[-1] * (size) for _ in range(size)]
+
+        def solve(l, r):
+            if l + 1 == r:
+                return 0
+
+            if dp[l][r] != -1:
+                return dp[l][r]
+
+            cost = float('inf')
+            for i in range(l + 1, r):
+                left_cost = solve(l, i)
+                right_cost = solve(i, r)
+                cost = min(cost, cuts[r] - cuts[l] + left_cost + right_cost)
+
+            dp[l][r] = cost
+            return cost
+
+
+        return solve(0, size - 1)
+
+
+Solution 4:
+
+class Solution:
+    def minCost(self, n: int, cuts: List[int]) -> int:
+        cuts = [0] + sorted(cuts) + [n]
+        size = len(cuts)
+        dp = [[float('inf')] * (size) for _ in range(size)]
+
+        for l in range(size - 1):
+            dp[l][l + 1] = 0
+
+        for l in range(size - 1, -1, -1):
+            for r in range(l + 2, size):
+                for i in range(l + 1, r):
+                    left_cost = dp[l][i]
+                    right_cost = dp[i][r]
+                    dp[l][r] = min(dp[l][r], cuts[r] - cuts[l] + left_cost + right_cost)
+
+        return dp[0][size - 1]
+
+
+Solution 5:
+
+class Solution:
+    def minCost(self, n: int, cuts: List[int]) -> int:
+        cuts = [0] + sorted(cuts) + [n]
+        size = len(cuts)
+        dp = [[float('inf')] * size for _ in range(size)]
+
+        for i in range(size - 1):
+            dp[i][i + 1] = 0
+
+        for length in range(2, size):
+            for l in range(size - length):
+                r = l + length
+                for i in range(l + 1, r):
+                    dp[l][r] = min(dp[l][r], cuts[r] - cuts[l] + dp[l][i] + dp[i][r])
+
+        return dp[0][size - 1]
