@@ -1,0 +1,94 @@
+1442. Count Triplets That Can Form Two Arrays of Equal XOR
+Solved
+Medium
+Topics
+Companies
+Hint
+Given an array of integers arr.
+
+We want to select three indices i, j and k where (0 <= i < j <= k < arr.length).
+
+Let's define a and b as follows:
+
+a = arr[i] ^ arr[i + 1] ^ ... ^ arr[j - 1]
+b = arr[j] ^ arr[j + 1] ^ ... ^ arr[k]
+Note that ^ denotes the bitwise-xor operation.
+
+Return the number of triplets (i, j and k) Where a == b.
+
+ 
+
+Example 1:
+
+Input: arr = [2,3,1,6,7]
+Output: 4
+Explanation: The triplets are (0,1,2), (0,2,2), (2,3,4) and (2,4,4)
+Example 2:
+
+Input: arr = [1,1,1,1,1]
+Output: 10
+ 
+
+Constraints:
+
+1 <= arr.length <= 300
+1 <= arr[i] <= 108
+
+
+Solution 1:
+
+class Solution:
+    def countTriplets(self, arr: List[int]) -> int:
+        n = len(arr)
+        result = 0
+        
+        for i in range(n):
+            xor = arr[i]
+            for j in range(i + 1, n):
+                xor ^= arr[j]
+                if xor == 0:
+                    result += j - i
+
+        return result
+
+
+Solution 2:
+
+class Solution:
+    def countTriplets(self, arr: List[int]) -> int:
+        n = len(arr)
+        result = 0
+        prefix_xor = [0] * (n + 1)
+        
+        for i in range(n):
+            prefix_xor[i + 1] = prefix_xor[i] ^ arr[i]
+        
+        count = {}
+        total = {}
+        
+        for k in range(n):
+            if prefix_xor[k + 1] in count:
+                result += count[prefix_xor[k + 1]] * k - total[prefix_xor[k + 1]]
+            
+            count[prefix_xor[k]] = count.get(prefix_xor[k], 0) + 1
+            total[prefix_xor[k]] = total.get(prefix_xor[k], 0) + k
+        
+        return result
+
+
+Solution 3:
+
+class Solution:
+    def countTriplets(self, arr: List[int]) -> int:
+        n = len(arr)
+        result = prefix = 0
+        count = {0: 1}
+        total = {}
+
+        for i in range(n):
+            prefix ^= arr[i]
+            result += count.get(prefix, 0) * i - total.get(prefix, 0)
+            count[prefix] = count.get(prefix, 0) + 1
+            total[prefix] = total.get(prefix, 0) + i + 1
+
+        return result

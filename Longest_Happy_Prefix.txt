@@ -1,0 +1,71 @@
+1392. Longest Happy Prefix
+Solved
+Hard
+Topics
+Companies
+Hint
+A string is called a happy prefix if is a non-empty prefix which is also a suffix (excluding itself).
+
+Given a string s, return the longest happy prefix of s. Return an empty string "" if no such prefix exists.
+
+ 
+
+Example 1:
+
+Input: s = "level"
+Output: "l"
+Explanation: s contains 4 prefix excluding itself ("l", "le", "lev", "leve"), and suffix ("l", "el", "vel", "evel"). The largest prefix which is also suffix is given by "l".
+Example 2:
+
+Input: s = "ababab"
+Output: "abab"
+Explanation: "abab" is the largest prefix which is also suffix. They can overlap in the original string.
+ 
+
+Constraints:
+
+1 <= s.length <= 105
+s contains only lowercase English letters.
+
+
+Solution 1:
+
+class Solution:
+    def longestPrefix(self, s: str) -> str:
+        n = len(s)
+        lps = [0] * n
+        p = 0
+
+        for i in range(1, n):
+            while p and s[i] != s[p]:
+                p = lps[p - 1]
+            if s[i] == s[p]:
+                p += 1
+                lps[i] = p
+
+        return s[:lps[-1]]
+
+
+
+Solution 2:
+
+class Solution:
+    def longestPrefix(self, s: str) -> str:
+        n = len(s)
+        base = 31
+        mod = 10**9 + 7
+        
+        prefix_hash = 0
+        suffix_hash = 0
+        base_power = 1
+        longest = 0
+        
+        for i in range(n - 1):
+            prefix_hash = (prefix_hash * base + ord(s[i])) % mod
+            suffix_hash = (suffix_hash + ord(s[n - 1 - i]) * base_power) % mod
+            base_power = (base_power * base) % mod
+            
+            if prefix_hash == suffix_hash:
+                longest = i + 1
+        
+        return s[:longest]

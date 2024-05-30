@@ -1,0 +1,126 @@
+3165. Maximum Sum of Subsequence With Non-adjacent Elements
+Solved
+Hard
+Topics
+Companies
+Hint
+You are given an array nums consisting of integers. You are also given a 2D array queries, where queries[i] = [posi, xi].
+
+For query i, we first set nums[posi] equal to xi, then we calculate the answer to query i which is the maximum sum of a 
+subsequence
+ of nums where no two adjacent elements are selected.
+
+Return the sum of the answers to all queries.
+
+Since the final answer may be very large, return it modulo 109 + 7.
+
+A subsequence is an array that can be derived from another array by deleting some or no elements without changing the order of the remaining elements.
+
+ 
+
+Example 1:
+
+Input: nums = [3,5,9], queries = [[1,-2],[0,-3]]
+
+Output: 21
+
+Explanation:
+After the 1st query, nums = [3,-2,9] and the maximum sum of a subsequence with non-adjacent elements is 3 + 9 = 12.
+After the 2nd query, nums = [-3,-2,9] and the maximum sum of a subsequence with non-adjacent elements is 9.
+
+Example 2:
+
+Input: nums = [0,-1], queries = [[0,-5]]
+
+Output: 0
+
+Explanation:
+After the 1st query, nums = [-5,-1] and the maximum sum of a subsequence with non-adjacent elements is 0 (choosing an empty subsequence).
+
+ 
+
+Constraints:
+
+1 <= nums.length <= 5 * 104
+-105 <= nums[i] <= 105
+1 <= queries.length <= 5 * 104
+queries[i] == [posi, xi]
+0 <= posi <= nums.length - 1
+-105 <= xi <= 105
+
+
+Solution 1: Segment Tree
+
+class SegmentTree:
+    def __init__(self, n):
+        self.tree = [[[0, 0], [0, 0]] for _ in range(4 * n)]
+
+    def buildTree(self, l, r, i, nums):
+        if l == r:
+            self.tree[i][0][0] = 0
+            self.tree[i][0][1] = -inf
+            self.tree[i][1][0] = -inf
+            self.tree[i][1][1] = nums[l]
+            return
+
+        m = (l + r) // 2
+        self.buildTree(l, m, 2 * i + 1, nums)
+        self.buildTree(m + 1, r, 2 * i + 2, nums)
+
+        self.merge(i)
+
+    def update(self, l, r, i, idx, val):
+        if idx < l or idx > r:
+            return 
+    
+        if l == r:
+            self.tree[i][0][0] = 0
+            self.tree[i][1][1] = val
+            return
+
+        m = (l + r) // 2
+        if idx <= m:
+            self.update(l, m, 2 * i + 1, idx, val)
+        else:
+            self.update(m + 1, r, 2 * i + 2, idx, val)
+        
+        self.merge(i)
+
+    def merge(self, i):
+        self.tree[i][0][0] = max(
+            self.tree[2 * i + 1][0][0] + self.tree[2 * i + 2][0][0],
+            self.tree[2 * i + 1][0][1] + self.tree[2 * i + 2][0][0],
+            self.tree[2 * i + 1][0][0] + self.tree[2 * i + 2][1][0]
+        )
+        self.tree[i][0][1] = max(
+            self.tree[2 * i + 1][0][0] + self.tree[2 * i + 2][0][1],
+            self.tree[2 * i + 1][0][1] + self.tree[2 * i + 2][0][1],
+            self.tree[2 * i + 1][0][0] + self.tree[2 * i + 2][1][1]
+        )
+        self.tree[i][1][0] = max(
+            self.tree[2 * i + 1][1][0] + self.tree[2 * i + 2][0][0],
+            self.tree[2 * i + 1][1][1] + self.tree[2 * i + 2][0][0],
+            self.tree[2 * i + 1][1][0] + self.tree[2 * i + 2][1][0]
+        )
+        self.tree[i][1][1] = max(
+            self.tree[2 * i + 1][1][0] + self.tree[2 * i + 2][0][1],
+            self.tree[2 * i + 1][1][1] + self.tree[2 * i + 2][0][1],
+            self.tree[2 * i + 1][1][0] + self.tree[2 * i + 2][1][1]
+        )
+
+    def query(self):
+        return max(self.tree[0][0][0], self.tree[0][0][1], self.tree[0][1][0], self.tree[0][1][1])
+
+class Solution:
+    def maximumSumSubsequence(self, nums: List[int], queries: List[List[int]]) -> int:
+        n = len(nums)
+        t = SegmentTree(n)
+        t.buildTree(0, n - 1, 0, nums)
+        mod = 1000000007
+        result = 0
+
+        for idx, val in queries:
+            t.update(0, n - 1, 0, idx, val)
+            result = (result + t.query()) % mod
+
+        return result
