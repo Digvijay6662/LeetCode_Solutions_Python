@@ -1,0 +1,124 @@
+2484. Count Palindromic Subsequences
+Solved
+Hard
+Topics
+Companies
+Hint
+Given a string of digits s, return the number of palindromic subsequences of s having length 5. Since the answer may be very large, return it modulo 109 + 7.
+
+Note:
+
+A string is palindromic if it reads the same forward and backward.
+A subsequence is a string that can be derived from another string by deleting some or no characters without changing the order of the remaining characters.
+ 
+
+Example 1:
+
+Input: s = "103301"
+Output: 2
+Explanation: 
+There are 6 possible subsequences of length 5: "10330","10331","10301","10301","13301","03301". 
+Two of them (both equal to "10301") are palindromic.
+Example 2:
+
+Input: s = "0000000"
+Output: 21
+Explanation: All 21 subsequences are "00000", which is palindromic.
+Example 3:
+
+Input: s = "9999900000"
+Output: 2
+Explanation: The only two palindromic subsequences are "99999" and "00000".
+ 
+
+Constraints:
+
+1 <= s.length <= 104
+s consists of digits.
+
+
+Solution 1:
+
+class Solution:
+    def countPalindromes(self, s: str) -> int:
+        n = len(s)
+        mod = 10**9 + 7
+        dp = [[[[-1] * 6 for _ in range(11)] for _ in range(11)] for _ in range(n)]
+
+        def solve(idx, first, second, i):
+            if i == 5:
+                return 1
+
+            if idx == n:
+                return 0
+                
+            if dp[idx][first][second][i] != -1:
+                return dp[idx][first][second][i]
+
+            res = solve(idx + 1, first, second, i)
+
+            if i == 0:
+                res += solve(idx + 1, int(s[idx]), second, i + 1)
+                res %= mod
+            elif i == 1:
+                res += solve(idx + 1, first, int(s[idx]), i + 1)
+                res %= mod
+            elif i == 2:
+                res += solve(idx + 1, first, second, i + 1)
+                res %= mod
+            elif i == 3:
+                if int(s[idx]) == second:
+                    res += solve(idx + 1, first, second, i + 1)
+                    res %= mod
+            elif i == 4:
+                if int(s[idx]) == first:
+                    res += solve(idx + 1, first, second, i + 1)
+                    res %= mod
+
+            dp[idx][first][second][i] = res
+            return res
+
+        return solve(0, 10, 10, 0)
+
+
+Solution 2:
+
+
+class Solution:
+    def countPalindromes(self, s: str) -> int:
+        MOD = 10**9 + 7
+        n = len(s)
+        result = 0
+        
+        prefix = [[[0] * 10 for _ in range(10)] for _ in range(n)]
+        count = [0] * 10
+        
+        for i in range(n):
+            digit = int(s[i])
+            if i > 0:
+                for j in range(10):
+                    for k in range(10):
+                        prefix[i][j][k] = prefix[i - 1][j][k]
+                        if k == digit:
+                            prefix[i][j][k] += count[j]
+            count[digit] += 1
+        
+        suffix = [[[0] * 10 for _ in range(10)] for _ in range(n)]
+        count = [0] * 10
+        
+        for i in range(n - 1, -1, -1):
+            digit = int(s[i])
+            if i < n - 1:
+                for j in range(10):
+                    for k in range(10):
+                        suffix[i][j][k] = suffix[i + 1][j][k]
+                        if k == digit:
+                            suffix[i][j][k] += count[j]
+            count[digit] += 1
+        
+        for i in range(2, n - 2):
+            for j in range(10):
+                for k in range(10):
+                    result += prefix[i - 1][j][k] * suffix[i + 1][j][k]
+        
+        return result % MOD
