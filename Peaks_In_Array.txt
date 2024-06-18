@@ -1,0 +1,292 @@
+3187. Peaks in Array
+Solved
+Hard
+Topics
+Companies
+Hint
+A peak in an array arr is an element that is greater than its previous and next element in arr.
+
+You are given an integer array nums and a 2D integer array queries.
+
+You have to process queries of two types:
+
+queries[i] = [1, li, ri], determine the count of peak elements in the 
+subarray
+ nums[li..ri].
+queries[i] = [2, indexi, vali], change nums[indexi] to vali.
+Return an array answer containing the results of the queries of the first type in order.
+
+Notes:
+
+The first and the last element of an array or a subarray cannot be a peak.
+ 
+
+Example 1:
+
+Input: nums = [3,1,4,2,5], queries = [[2,3,4],[1,0,4]]
+
+Output: [0]
+
+Explanation:
+
+First query: We change nums[3] to 4 and nums becomes [3,1,4,4,5].
+
+Second query: The number of peaks in the [3,1,4,4,5] is 0.
+
+Example 2:
+
+Input: nums = [4,1,4,2,1,5], queries = [[2,2,4],[1,0,2],[1,0,4]]
+
+Output: [0,1]
+
+Explanation:
+
+First query: nums[2] should become 4, but it is already set to 4.
+
+Second query: The number of peaks in the [4,1,4] is 0.
+
+Third query: The second 4 is a peak in the [4,1,4,2,1].
+
+ 
+
+Constraints:
+
+3 <= nums.length <= 105
+1 <= nums[i] <= 105
+1 <= queries.length <= 105
+queries[i][0] == 1 or queries[i][0] == 2
+For all i that:
+queries[i][0] == 1: 0 <= queries[i][1] <= queries[i][2] <= nums.length - 1
+queries[i][0] == 2: 0 <= queries[i][1] <= nums.length - 1, 1 <= queries[i][2] <= 105
+
+
+Solution 1: Segment Tree
+
+class SegmentTree:
+    def __init__(self, n):
+        self.tree = [0] * (4 * n)
+
+    def buildTree(self, l, r, i, arr):
+        if l == r:
+            self.tree[i] = arr[l]
+            return
+
+        m = (l + r) // 2
+        self.buildTree(l, m, 2 * i + 1, arr)
+        self.buildTree(m + 1, r, 2 * i + 2, arr)
+
+        self.tree[i] = self.tree[2 * i + 1] + self.tree[2 * i + 2]
+
+    def update(self, l, r, i, idx, val):
+        if idx < l or idx > r:
+            return 
+    
+        if l == r:
+            self.tree[i] = val
+            return
+
+        m = (l + r) // 2
+        if idx <= m:
+            self.update(l, m, 2 * i + 1, idx, val)
+        else:
+            self.update(m + 1, r, 2 * i + 2, idx, val)
+
+        self.tree[i] = self.tree[2 * i + 1] + self.tree[2 * i + 2]
+
+    def query(self, l, r, i, lo, hi):
+        if lo > r or hi < l:
+            return 0
+
+        if l >= lo and r <= hi:
+            return self.tree[i]
+
+        m = (l + r) // 2
+        left_sum = self.query(l, m, 2 * i + 1, lo, hi)
+        right_sum = self.query(m + 1, r, 2 * i + 2, lo, hi)
+        return left_sum + right_sum
+    
+
+class Solution:
+    def countOfPeaks(self, nums: List[int], queries: List[List[int]]) -> List[int]:
+        n = len(nums)
+        peaks = [0] * n
+
+        for i in range(1, n - 1):
+            if nums[i] > nums[i - 1] and nums[i] > nums[i + 1]:
+                peaks[i] = 1
+                
+                
+        tree = SegmentTree(n)
+        tree.buildTree(0, n - 1, 0, peaks)
+        result = []
+
+        for query in queries:
+            if query[0] == 1:
+                l, r = query[1], query[2]
+                if l + 1 >= r:
+                    result.append(0)
+                else:
+                    result.append(tree.query(0, n - 1, 0, l + 1, r - 1))
+            else:
+                idx, val = query[1], query[2]
+                nums[idx] = val
+                if 0 < idx < n - 1:
+                    peaks[idx] = 1 if nums[idx] > nums[idx - 1] and nums[idx] > nums[idx + 1] else 0
+                    tree.update(0, n - 1, 0, idx, peaks[idx])
+                if idx > 1:
+                    peaks[idx - 1] = 1 if nums[idx - 1] > nums[idx - 2] and nums[idx - 1] > nums[idx] else 0
+                    tree.update(0, n - 1, 0, idx - 1, peaks[idx - 1])
+                if idx < n - 2:
+                    peaks[idx + 1] = 1 if nums[idx + 1] > nums[idx] and nums[idx + 1] > nums[idx + 2] else 0
+                    tree.update(0, n - 1, 0, idx + 1, peaks[idx + 1])
+
+        return result
+    
+
+
+Solution 2:
+
+class SegmentTree:
+    def __init__(self, n):
+        self.tree = [0] * (4 * n)
+    
+    def merge(self, i):
+        self.tree[i] = self.tree[2 * i + 1] + self.tree[2 * i + 2]
+
+    def buildTree(self, l, r, i, arr):
+        if l == r:
+            self.tree[i] = arr[l]
+            return
+        m = (l + r) >> 1
+        self.buildTree(l, m, 2*i + 1, arr)
+        self.buildTree(m + 1, r, 2*i + 2, arr)
+        self.merge(i)
+
+    def update(self, l, r, i, idx, val):
+        if idx < l or idx > r:
+            return
+
+        if l == r:
+            self.tree[i] = val
+            return
+
+        m = (l + r) >> 1
+        if idx <= m:
+            self.update(l, m, 2*i + 1, idx, val)
+        else:
+            self.update(m + 1, r, 2*i + 2, idx, val)
+
+        self.merge(i)
+        
+    def query(self, l, r, i, lo, hi):
+        if hi < l or lo > r:
+            return 0
+
+        if lo <= l and hi >= r:
+            return self.tree[i]
+
+        m = (l + r) >> 1
+        left = self.query(l, m, 2*i + 1, lo, hi)
+        right = self.query(m + 1, r, 2*i + 2, lo, hi)
+        return left + right
+
+class Solution:
+    def countOfPeaks(self, nums: List[int], queries: List[List[int]]) -> List[int]:
+        n = len(nums)
+
+        def isPeak(i):
+            return nums[i] > nums[i - 1] and nums[i] > nums[i + 1]
+
+        def updatePeak(idx):
+            if 0 < idx < n - 1:
+                if isPeak(idx):
+                    tree.update(0, n - 1, 0, idx, 1)
+                else:
+                    tree.update(0, n - 1, 0, idx, 0)
+        
+        tree = SegmentTree(n)
+        for i in range(1, n - 1):
+            if isPeak(i):
+                updatePeak(i)
+        
+        result = []
+        for q in queries:
+            if q[0] == 1:
+                l, r = q[1], q[2]
+                if l + 1 >= r:
+                    result.append(0)
+                else:
+                    result.append(tree.query(0, n - 1, 0, l + 1, r - 1))
+            else:
+                i, val = q[1], q[2]
+                nums[i] = val
+
+                updatePeak(i)
+                updatePeak(i - 1)
+                updatePeak(i + 1)
+
+        return result
+
+
+
+Solution 3: FenwickTree or BIT
+
+class FenwickTree:
+    def __init__(self, size):
+        self.size = size
+        self.tree = [0] * (size + 1)
+
+    def update(self, index, delta):
+        while index <= self.size:
+            self.tree[index] += delta
+            index += index & -index
+
+    def query(self, index):
+        total = 0
+        while index > 0:
+            total += self.tree[index]
+            index -= index & -index
+        return total
+
+    def range_query(self, left, right):
+        return self.query(right) - self.query(left - 1)
+
+class Solution:
+    def countOfPeaks(self, nums: List[int], queries: List[List[int]]) -> List[int]:
+        n = len(nums)
+        
+        def isPeak(i):
+            return nums[i] > nums[i - 1] and nums[i] > nums[i + 1]
+
+        def updatePeak(idx):
+            if 0 < idx < n - 1:
+                if isPeak(idx):
+                    if BIT.query(idx + 1) - BIT.query(idx) == 0: # not a peak before
+                        BIT.update(idx + 1, 1)
+                else:
+                    if BIT.query(idx + 1) - BIT.query(idx) == 1: # was a peak before
+                        BIT.update(idx + 1, -1)
+
+        BIT = FenwickTree(n)
+        
+        for i in range(1, n - 1):
+            if isPeak(i):
+                BIT.update(i + 1, 1) # BIT is 1-indexed
+        
+        result = []
+        for q in queries:
+            if q[0] == 1:
+                l, r = q[1], q[2]
+                if l + 1 >= r:
+                    result.append(0)
+                else:
+                    result.append(BIT.range_query(l + 2, r)) # BIT is 1-indexed
+            else:
+                i, val = q[1], q[2]
+                nums[i] = val
+                updatePeak(i)
+                updatePeak(i - 1)
+                updatePeak(i + 1)
+        
+        return result
+

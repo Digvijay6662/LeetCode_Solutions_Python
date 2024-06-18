@@ -1,0 +1,92 @@
+945. Minimum Increment to Make Array Unique
+Solved
+Medium
+Topics
+Companies
+You are given an integer array nums. In one move, you can pick an index i where 0 <= i < nums.length and increment nums[i] by 1.
+
+Return the minimum number of moves to make every value in nums unique.
+
+The test cases are generated so that the answer fits in a 32-bit integer.
+
+ 
+
+Example 1:
+
+Input: nums = [1,2,2]
+Output: 1
+Explanation: After 1 move, the array could be [1, 2, 3].
+Example 2:
+
+Input: nums = [3,2,1,2,1,7]
+Output: 6
+Explanation: After 6 moves, the array could be [3, 4, 1, 2, 5, 7].
+It can be shown with 5 or less moves that it is impossible for the array to have all unique values.
+ 
+
+Constraints:
+
+1 <= nums.length <= 105
+0 <= nums[i] <= 105
+
+
+Solution 1:
+
+class Solution:
+    def minIncrementForUnique(self, nums: List[int]) -> int:
+        n = len(nums)
+        nums.sort()
+        result = 0
+
+        for i in range(1, n):
+            if nums[i] <= nums[i - 1]:
+                result += nums[i - 1] - nums[i] + 1 
+                nums[i] = nums[i - 1] + 1
+
+        return result
+
+
+Solution 2:
+
+class Solution:
+    def minIncrementForUnique(self, nums: List[int]) -> int:
+        n = len(nums)
+        MAX_VAL = max(nums)
+        count = [0] * (n + MAX_VAL + 1)
+
+        for num in nums:
+            count[num] += 1
+
+        result = 0
+        for i in range(len(count)):
+            if count[i] > 1:
+                excess = count[i] - 1
+                result += excess
+                count[i + 1] += excess
+                count[i] = 1
+
+        return result
+
+
+Solution 3:
+
+class Solution:
+    def minIncrementForUnique(self, nums: List[int]) -> int:
+        MAX_VAL = max(nums)
+        count = [0] * (MAX_VAL + 1)
+
+        for num in nums:
+            count[num] += 1
+
+        result = 0
+        for i in range(MAX_VAL):
+            if count[i] > 1:
+                excess = count[i] - 1
+                result += excess
+                count[i + 1] += excess
+                count[i] = 1
+
+        excess = count[MAX_VAL] - 1
+        result += (excess + 1) * excess // 2
+
+        return result
