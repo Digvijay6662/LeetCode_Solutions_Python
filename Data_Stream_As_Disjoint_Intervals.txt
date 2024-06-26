@@ -1,0 +1,211 @@
+352. Data Stream as Disjoint Intervals
+Solved
+Hard
+Topics
+Companies
+Given a data stream input of non-negative integers a1, a2, ..., an, summarize the numbers seen so far as a list of disjoint intervals.
+
+Implement the SummaryRanges class:
+
+SummaryRanges() Initializes the object with an empty stream.
+void addNum(int value) Adds the integer value to the stream.
+int[][] getIntervals() Returns a summary of the integers in the stream currently as a list of disjoint intervals [starti, endi]. The answer should be sorted by starti.
+ 
+
+Example 1:
+
+Input
+["SummaryRanges", "addNum", "getIntervals", "addNum", "getIntervals", "addNum", "getIntervals", "addNum", "getIntervals", "addNum", "getIntervals"]
+[[], [1], [], [3], [], [7], [], [2], [], [6], []]
+Output
+[null, null, [[1, 1]], null, [[1, 1], [3, 3]], null, [[1, 1], [3, 3], [7, 7]], null, [[1, 3], [7, 7]], null, [[1, 3], [6, 7]]]
+
+Explanation
+SummaryRanges summaryRanges = new SummaryRanges();
+summaryRanges.addNum(1);      // arr = [1]
+summaryRanges.getIntervals(); // return [[1, 1]]
+summaryRanges.addNum(3);      // arr = [1, 3]
+summaryRanges.getIntervals(); // return [[1, 1], [3, 3]]
+summaryRanges.addNum(7);      // arr = [1, 3, 7]
+summaryRanges.getIntervals(); // return [[1, 1], [3, 3], [7, 7]]
+summaryRanges.addNum(2);      // arr = [1, 2, 3, 7]
+summaryRanges.getIntervals(); // return [[1, 3], [7, 7]]
+summaryRanges.addNum(6);      // arr = [1, 2, 3, 6, 7]
+summaryRanges.getIntervals(); // return [[1, 3], [6, 7]]
+ 
+
+Constraints:
+
+0 <= value <= 104
+At most 3 * 104 calls will be made to addNum and getIntervals.
+At most 102 calls will be made to getIntervals.
+ 
+
+Follow up: What if there are lots of merges and the number of disjoint intervals is small compared to the size of the data stream?
+
+
+Solution 1:
+
+class SummaryRanges:
+
+    def __init__(self):
+        self.num_set = set()
+
+    def addNum(self, value: int) -> None:
+        self.num_set.add(value)
+        
+    def getIntervals(self) -> List[List[int]]:
+        nums = sorted(self.num_set)
+        n = len(nums)
+        result = []
+        i = 0
+        while i < n:
+            start = nums[i]
+            while i < n - 1 and nums[i] + 1 == nums[i + 1]:
+                i += 1
+            result.append([start, nums[i]])
+            i += 1
+
+        return result
+            
+
+        
+
+
+# Your SummaryRanges object will be instantiated and called as such:
+# obj = SummaryRanges()
+# obj.addNum(value)
+# param_2 = obj.getIntervals()
+
+
+Solution 2:
+
+from sortedcontainers import SortedSet
+class SummaryRanges:
+
+    def __init__(self):
+        self.num_set = SortedSet()
+
+    def addNum(self, value: int) -> None:
+        self.num_set.add(value)
+        
+    def getIntervals(self) -> List[List[int]]:
+        n = len(self.num_set)
+        result = []
+        i = 0
+        while i < n:
+            start = self.num_set[i]
+            while i < n - 1 and self.num_set[i] + 1 == self.num_set[i + 1]:
+                i += 1
+            result.append([start, self.num_set[i]])
+            i += 1
+
+        return result
+            
+
+        
+
+
+# Your SummaryRanges object will be instantiated and called as such:
+# obj = SummaryRanges()
+# obj.addNum(value)
+# param_2 = obj.getIntervals()
+
+
+Solution 3:
+
+class SummaryRanges:
+
+    def __init__(self):
+        self.num_set = set()
+        self.intervals = []
+
+    def addNum(self, value: int) -> None:
+        if value in self.num_set:
+            return
+        
+        self.num_set.add(value)
+        n = len(self.intervals)
+        new_interval = [value, value]
+
+        left, right = 0, n - 1
+        while left <= right:
+            mid = (left + right) // 2
+            if self.intervals[mid][0] <= value <= self.intervals[mid][1]:
+                return
+            elif self.intervals[mid][0] > value:
+                right = mid - 1
+            else:
+                left = mid + 1
+
+        insert_pos = left
+        merge_left = insert_pos > 0 and self.intervals[insert_pos - 1][1] + 1 == value
+        merge_right = insert_pos < n and self.intervals[insert_pos][0] - 1 == value
+
+        if merge_left and merge_right:
+            self.intervals[insert_pos - 1][1] = self.intervals[insert_pos][1]
+            self.intervals.pop(insert_pos)
+        elif merge_left:
+            self.intervals[insert_pos - 1][1] += 1
+        elif merge_right:
+            self.intervals[insert_pos][0] -= 1
+        else:
+            self.intervals.insert(insert_pos, new_interval)
+        
+    def getIntervals(self) -> List[List[int]]:
+        return self.intervals.copy()
+
+
+# Your SummaryRanges object will be instantiated and called as such:
+# obj = SummaryRanges()
+# obj.addNum(value)
+# param_2 = obj.getIntervals()
+
+
+Solution 4: UnionFind
+
+class SummaryRanges:
+    def __init__(self):
+        self.parent = {}
+        self.range_map = {}
+
+    def find(self, x):
+        while self.parent[x] != x:
+            self.parent[x] = self.parent[self.parent[x]]
+            x = self.parent[x]
+        return x
+
+    def union(self, x, y):
+        rootX = self.find(x)
+        rootY = self.find(y)
+        if rootX != rootY:
+            self.parent[rootY] = rootX
+            self.range_map[rootX][0] = min(self.range_map[rootX][0], self.range_map[rootY][0])
+            self.range_map[rootX][1] = max(self.range_map[rootX][1], self.range_map[rootY][1])
+            del self.range_map[rootY]
+        
+
+    def addNum(self, value: int) -> None:
+        if value in self.parent:
+            return
+
+        self.parent[value] = value
+        self.range_map[value] = [value, value]
+
+        if value - 1 in self.parent:
+            self.union(value, value - 1)
+        if value + 1 in self.parent:
+            self.union(value, value + 1)
+
+    def getIntervals(self) -> List[List[int]]:
+        intervals = list(self.range_map.values())
+        intervals.sort()
+        return intervals
+
+        
+
+
+# Your SummaryRanges object will be instantiated and called as such:
+# obj = SummaryRanges()
+# obj.addNum(value)
+# param_2 = obj.getIntervals()

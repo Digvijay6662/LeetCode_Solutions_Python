@@ -1,0 +1,222 @@
+3197. Find the Minimum Area to Cover All Ones II
+Solved
+Hard
+Topics
+Companies
+Hint
+You are given a 2D binary array grid. You need to find 3 non-overlapping rectangles having non-zero areas with horizontal and vertical sides such that all the 1's in grid lie inside these rectangles.
+
+Return the minimum possible sum of the area of these rectangles.
+
+Note that the rectangles are allowed to touch.
+
+ 
+
+Example 1:
+
+Input: grid = [[1,0,1],[1,1,1]]
+
+Output: 5
+
+Explanation:
+
+
+
+The 1's at (0, 0) and (1, 0) are covered by a rectangle of area 2.
+The 1's at (0, 2) and (1, 2) are covered by a rectangle of area 2.
+The 1 at (1, 1) is covered by a rectangle of area 1.
+Example 2:
+
+Input: grid = [[1,0,1,0],[0,1,0,1]]
+
+Output: 5
+
+Explanation:
+
+
+
+The 1's at (0, 0) and (0, 2) are covered by a rectangle of area 3.
+The 1 at (1, 1) is covered by a rectangle of area 1.
+The 1 at (1, 3) is covered by a rectangle of area 1.
+ 
+
+Constraints:
+
+1 <= grid.length, grid[i].length <= 30
+grid[i][j] is either 0 or 1.
+The input is generated such that there are at least three 1's in grid.
+
+
+Solution 1:
+
+
+class Solution:
+    def minimumSum(self, grid: List[List[int]]) -> int:
+        n, m = len(grid), len(grid[0])
+        result = float('inf')
+
+        def minArea(u, d, l, r):
+            min_i = min_j = float('inf')
+            max_i = max_j = float('-inf')
+            
+            for i in range(u, d):
+                for j in range(l, r):
+                    if grid[i][j]:
+                        min_i = min(min_i, i)
+                        min_j = min(min_j, j)
+                        max_i = max(max_i, i)
+                        max_j = max(max_j, j)
+            
+            if max_i == float('-inf'):
+                return float('inf')
+
+            length, breadth = max_j - min_j + 1, max_i - min_i + 1
+            return length * breadth
+
+        """
+        -------------
+        |    (1)    |
+        |           |
+        -------------
+        | (2) | (3) |
+        |     |     |
+        -------------
+        """
+        for i in range(1, n):
+            one = minArea(0, i, 0, m)
+            for j in range(1, m):
+                two = minArea(i, n, 0, j)
+                three = minArea(i, n, j, m)
+                result = min(result, one + two + three)
+
+        """
+        -------------
+        |     | (2) |
+        |     |     |
+          (1) -------
+        |     |     |
+        |     | (3) |
+        -------------
+        """
+        for j in range(1, m):
+            one = minArea(0, n, 0, j)
+            for i in range(1, n):
+                two = minArea(0, i, j, m)
+                three = minArea(i, n, j, m)
+                result = min(result, one + two + three)
+
+        """
+        -------------
+        |     |     |
+        | (2) |     |
+        ------- (1) |
+        |     |     |
+        | (3) |     |
+        -------------
+        """
+        for j in range(1, m):
+            one = minArea(0, n, j, m)
+            for i in range(1, n):
+                two = minArea(0, i, 0, j)
+                three = minArea(i, n, 0, j)
+                result = min(result, one + two + three)
+        
+        """
+        -------------
+        | (2) | (3) |
+        |     |     |
+        ------------
+        |           |
+        |    (1)    |
+        -------------
+        """
+        for i in range(1, n):
+            one = minArea(i, n, 0, m)
+            for j in range(1, m):
+                two = minArea(0, i, 0, j)
+                three = minArea(0, i, j, m)
+                result = min(result, one + two + three)
+        
+        """
+        -------------
+        |    (1)    |
+        -------------
+        |    (2)    |
+        -------------
+        |    (3)    |
+        -------------
+        """
+        for i in range(1, n):
+            for j in range(i + 1, n):
+                one = minArea(0, i, 0, m)
+                two = minArea(i, j, 0, m)
+                three = minArea(j, n, 0, m)
+                result = min(result, one + two + three)
+
+        """
+        -------------
+        |   |   |   |
+        |   |   |   |
+        |(1)|(2)|(3)|
+        |   |   |   |
+        |   |   |   |
+        -------------
+        """    
+        for i in range(1, m):
+            for j in range(i + 1, m):
+                one = minArea(0, n, 0, i)
+                two = minArea(0, n, i, j)
+                three = minArea(0, n, j, m)
+                result = min(result, one + two + three)
+
+        return result
+
+
+Solution 2:
+
+class Solution:
+    def minimumSum(self, grid: List[List[int]]) -> int:
+        n, m = len(grid), len(grid[0])
+
+        @cache
+        def one(top, down, left, right):
+            min_i, min_j = float('inf') , float('inf')
+            max_i, max_j = float('-inf') , float('-inf')
+            
+            for i in range(top, down + 1):
+                for j in range(left, right + 1):
+                    if grid[i][j]:
+                        min_i = min(min_i, i)
+                        min_j = min(min_j, j)
+                        max_i = max(max_i, i)
+                        max_j = max(max_j, j)
+
+            if min_i == float('inf'):
+                return float('inf')
+            return (max_i - min_i + 1) * (max_j - min_j + 1)
+
+        @cache
+        def two(top, down, left, right):
+            result = float('inf')
+            # horizontal split
+            for r in range(top, down):
+                result = min(result, one(top, r, left, right) + one(r+1, down, left, right))
+            # vertical split
+            for c in range(left, right):
+                result = min(result, one(top, down, left, c) + one(top, down, c+1, right))
+            return result
+            
+        @cache
+        def three(top, down, left, right):
+            result = float('inf')
+            # all the cominations through primary horizontal split
+            for r in range(top, down):
+                result = min(result, two(top, r, left, right) + one(r+1, down, left, right))
+                result = min(result, one(top, r, left, right) + two(r+1, down, left, right))
+            # all cominations through primary vertical split
+            for c in range(left, right):
+                result = min(result, two(top, down, left, c) + one(top, down, c+1, right))
+                result = min(result, one(top, down, left, c) + two(top, down, c+1, right))
+            return result
+
+        return three(0, n - 1, 0, m - 1)
