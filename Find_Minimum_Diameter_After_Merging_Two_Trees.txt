@@ -1,0 +1,195 @@
+3203. Find Minimum Diameter After Merging Two Trees
+Solved
+Hard
+Companies
+Hint
+There exist two undirected trees with n and m nodes, numbered from 0 to n - 1 and from 0 to m - 1, respectively. You are given two 2D integer arrays edges1 and edges2 of lengths n - 1 and m - 1, respectively, where edges1[i] = [ai, bi] indicates that there is an edge between nodes ai and bi in the first tree and edges2[i] = [ui, vi] indicates that there is an edge between nodes ui and vi in the second tree.
+
+You must connect one node from the first tree with another node from the second tree with an edge.
+
+Return the minimum possible diameter of the resulting tree.
+
+The diameter of a tree is the length of the longest path between any two nodes in the tree.
+
+ 
+
+Example 1:
+
+Input: edges1 = [[0,1],[0,2],[0,3]], edges2 = [[0,1]]
+
+Output: 3
+
+Explanation:
+
+We can obtain a tree of diameter 3 by connecting node 0 from the first tree with any node from the second tree.
+
+Example 2:
+
+
+Input: edges1 = [[0,1],[0,2],[0,3],[2,4],[2,5],[3,6],[2,7]], edges2 = [[0,1],[0,2],[0,3],[2,4],[2,5],[3,6],[2,7]]
+
+Output: 5
+
+Explanation:
+
+We can obtain a tree of diameter 5 by connecting node 0 from the first tree with node 0 from the second tree.
+
+ 
+
+Constraints:
+
+1 <= n, m <= 105
+edges1.length == n - 1
+edges2.length == m - 1
+edges1[i].length == edges2[i].length == 2
+edges1[i] = [ai, bi]
+0 <= ai, bi < n
+edges2[i] = [ui, vi]
+0 <= ui, vi < m
+The input is generated such that edges1 and edges2 represent valid trees.
+
+
+Solution 1:
+
+class Solution:
+    def minimumDiameterAfterMerge(self, edges1: List[List[int]], edges2: List[List[int]]) -> int:
+
+        def bfs(start, graph):
+            n = len(graph)
+            dist = [-1] * n
+            queue = deque([start])
+            dist[start] = 0
+            farthest_node = start
+            
+            while queue:
+                node = queue.popleft()
+                for neighbor in graph[node]:
+                    if dist[neighbor] == -1:
+                        dist[neighbor] = dist[node] + 1
+                        queue.append(neighbor)
+                        if dist[neighbor] > dist[farthest_node]:
+                            farthest_node = neighbor
+            
+            return farthest_node, dist[farthest_node]
+        
+        def find_diameter(edges):
+            graph = defaultdict(list)
+            for u, v in edges:
+                graph[u].append(v)
+                graph[v].append(u)
+            
+            farthest_node, _ = bfs(0, graph)
+
+            farthest_node, diameter = bfs(farthest_node, graph)
+            
+            return diameter
+        
+        diameter1 = find_diameter(edges1) if edges1 else 0
+        diameter2 = find_diameter(edges2) if edges2 else 0
+        
+        return max(diameter1, diameter2, (diameter1 + 1) // 2 + (diameter2 + 1) // 2 + 1)
+        
+
+Solution 2:
+
+class Solution:
+    def minimumDiameterAfterMerge(self, edges1: List[List[int]], edges2: List[List[int]]) -> int:
+
+        def bfs(start, graph):
+            queue = deque([start])
+            distances = {start: 0}
+            farthest_node = start
+            while queue:
+                node = queue.popleft()
+                for neighbor in graph[node]:
+                    if neighbor not in distances:
+                        distances[neighbor] = distances[node] + 1
+                        queue.append(neighbor)
+                        farthest_node = neighbor
+            return farthest_node, distances[farthest_node]
+
+        def findDiameter(edges):
+            graph = defaultdict(list)
+            for u, v in edges:
+                graph[u].append(v)
+                graph[v].append(u)
+
+            farthest_node, _ = bfs(0, graph)
+            farthest_node, diameter = bfs(farthest_node, graph)
+            
+            return diameter
+
+        diameter1 = findDiameter(edges1)
+        diameter2 = findDiameter(edges2)
+        
+        return max(diameter1, diameter2, (diameter1 + 1) // 2 + (diameter2 + 1) // 2 + 1)
+
+
+Solution 3:
+
+class Solution:
+    def minimumDiameterAfterMerge(self, edges1: List[List[int]], edges2: List[List[int]]) -> int:
+        def dfs(start, graph):
+            stack = [(start, 0)]
+            distances = {start: 0}
+            farthest_node = start
+
+            while stack:
+                node, dist = stack.pop()
+                for neighbor in graph[node]:
+                    if neighbor not in distances:
+                        distances[neighbor] = dist + 1
+                        stack.append((neighbor, dist + 1))
+                        if distances[neighbor] > distances[farthest_node]:
+                            farthest_node = neighbor
+            return farthest_node, distances[farthest_node]
+
+        def findDiameter(edges):
+            graph = defaultdict(list)
+            for u, v in edges:
+                graph[u].append(v)
+                graph[v].append(u)
+
+            farthest_node, _ = dfs(0, graph)
+            farthest_node, diameter = dfs(farthest_node, graph)
+            
+            return diameter
+
+        diameter1 = findDiameter(edges1)
+        diameter2 = findDiameter(edges2)
+        
+        return max(diameter1, diameter2, (diameter1 + 1) // 2 + (diameter2 + 1) // 2 + 1)
+        
+
+Solution 4:
+
+class Solution:
+    def minimumDiameterAfterMerge(self, edges1: List[List[int]], edges2: List[List[int]]) -> int:
+        
+        def dfs(node, par, graph, dist):
+            farthest_node = node
+            for nei in graph[node]:
+                if nei != par:
+                    dist[nei] = dist[node] + 1
+                    candidate_node, _ = dfs(nei, node, graph, dist)
+                    if dist[candidate_node] > dist[farthest_node]:
+                        farthest_node = candidate_node
+            return farthest_node, dist[farthest_node]
+
+        def findDiameter(edges):
+            graph = defaultdict(list)
+            for u, v in edges:
+                graph[u].append(v)
+                graph[v].append(u)
+
+            dist = {0: 0}
+            farthest_node, _ = dfs(0, -1, graph, dist)
+            dist = {farthest_node: 0}
+            farthest_node, diameter = dfs(farthest_node, -1, graph, dist)
+            
+            return diameter
+
+        diameter1 = findDiameter(edges1)
+        diameter2 = findDiameter(edges2)
+        
+        return max(diameter1, diameter2, (diameter1 + 1) // 2 + (diameter2 + 1) // 2 + 1)

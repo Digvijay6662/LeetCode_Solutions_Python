@@ -1,0 +1,104 @@
+3202. Find the Maximum Length of Valid Subsequence II
+Solved
+Medium
+Companies
+Hint
+You are given an integer array nums and a positive integer k.
+A 
+subsequence
+ sub of nums with length x is called valid if it satisfies:
+
+(sub[0] + sub[1]) % k == (sub[1] + sub[2]) % k == ... == (sub[x - 2] + sub[x - 1]) % k.
+Return the length of the longest valid subsequence of nums.
+ 
+
+Example 1:
+
+Input: nums = [1,2,3,4,5], k = 2
+
+Output: 5
+
+Explanation:
+
+The longest valid subsequence is [1, 2, 3, 4, 5].
+
+Example 2:
+
+Input: nums = [1,4,2,3,1,4], k = 3
+
+Output: 4
+
+Explanation:
+
+The longest valid subsequence is [1, 4, 1, 4].
+
+ 
+
+Constraints:
+
+2 <= nums.length <= 103
+1 <= nums[i] <= 107
+1 <= k <= 103
+
+
+Solution 1:
+
+class Solution:
+    def maximumLength(self, nums: List[int], k: int) -> int:
+        n = len(nums)
+        dp = [[1 for _ in range(k)] for _ in range(n)]
+        result = 2
+
+        for i in range(1, n):
+            for j in range(i):
+                rem = (nums[i] + nums[j]) % k
+                dp[i][rem] = max(dp[i][rem], 1 + dp[j][rem])
+                result = max(result, dp[i][rem])
+        return result
+
+
+Solution 2:
+
+class Solution:
+    def maximumLength(self, nums: List[int], k: int) -> int:
+        dp = [[0] * k for _ in range(k)]
+        result = 2
+
+        for num in nums:
+            curr = num % k
+            for r in range(k):
+                prev = (r - curr + k) % k
+                dp[curr][r] = max(dp[curr][r] , 1 + dp[prev][r])
+                result = max(result , dp[curr][r])
+        return result
+
+
+Solution 3:
+
+class Solution:
+    def maximumLength(self, nums: List[int], k: int) -> int:
+        p = [[] for _ in range(k)]
+        for i in range(len(nums)):
+            p[nums[i] % k].append(i)
+        
+        p.sort(key=lambda x: len(x), reverse=True)
+        
+        result = max(2, len(p[0]))
+        
+        for i in range(len(p)):
+            for j in range(i + 1, len(p)):
+                if len(p[i]) + len(p[j]) <= result:
+                    break
+                
+                result_ij = (p[i][0] < p[j][0]) + (p[i][-1] < p[j][-1])
+                
+                l = 0
+                for k in range(len(p[i])):
+                    if l < len(p[j]) and p[j][l] < p[i][k]:
+                        result_ij += 2
+                    while l < len(p[j]) and p[j][l] < p[i][k]:
+                        l += 1
+                
+                result = max(result, result_ij)
+        
+        return result

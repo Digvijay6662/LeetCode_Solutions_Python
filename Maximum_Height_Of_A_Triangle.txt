@@ -1,0 +1,111 @@
+3200. Maximum Height of a Triangle
+Solved
+Easy
+Companies
+Hint
+You are given two integers red and blue representing the count of red and blue colored balls. You have to arrange these balls to form a triangle such that the 1st row will have 1 ball, the 2nd row will have 2 balls, the 3rd row will have 3 balls, and so on.
+
+All the balls in a particular row should be the same color, and adjacent rows should have different colors.
+
+Return the maximum height of the triangle that can be achieved.
+
+ 
+
+Example 1:
+
+Input: red = 2, blue = 4
+
+Output: 3
+
+Explanation:
+
+
+
+The only possible arrangement is shown above.
+
+Example 2:
+
+Input: red = 2, blue = 1
+
+Output: 2
+
+Explanation:
+
+
+The only possible arrangement is shown above.
+
+Example 3:
+
+Input: red = 1, blue = 1
+
+Output: 1
+
+Example 4:
+
+Input: red = 10, blue = 1
+
+Output: 2
+
+Explanation:
+
+
+The only possible arrangement is shown above.
+
+ 
+
+Constraints:
+
+1 <= red, blue <= 100
+
+
+Solution 1:
+
+class Solution:
+    def maxHeightOfTriangle(self, red: int, blue: int) -> int:
+
+        def helper(b1, b2):
+            height = 0
+            while True:
+                needed_balls = height + 1
+                if height % 2 == 0:
+                    if b1 >= needed_balls:
+                        b1 -= needed_balls
+                    else:
+                        break
+                else:
+                    if b2 >= needed_balls:
+                        b2 -= needed_balls
+                    else:
+                        break
+                height += 1
+            
+            return height
+
+        return max(helper(red, blue), helper(blue, red))
+
+
+Solution 2:
+
+class Solution:
+    def maxHeightOfTriangle(self, red: int, blue: int) -> int:
+
+        def check(b1, b2):
+            if b1 <= blue and b2 <= red:
+                return True
+            return False
+
+        l, r = 1, blue + red
+        while l <= r:
+            m = (l + r) >> 1
+            odd_rows = (m + 1) // 2
+            even_rows = m // 2
+
+            odd_row_balls = odd_rows ** 2  # Sn = n/2 × [1 + (2n - 1)]
+            even_row_balls = m * (m + 1) // 2 - odd_row_balls
+
+            if check(odd_row_balls, even_row_balls) or check(even_row_balls, odd_row_balls):
+                l = m + 1
+            else:
+                r = m - 1
+
+        return r
