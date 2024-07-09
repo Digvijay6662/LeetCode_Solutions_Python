@@ -73,3 +73,10 @@ class Solution:
             total_drunk += numBottles
             numBottles += remainder
         return total_drunk
+
+
+Solution 4:
+
+class Solution:
+    def numWaterBottles(self, numBottles: int, numExchange: int) -> int:
+        return numBottles + (numBottles - 1) // (numExchange - 1)

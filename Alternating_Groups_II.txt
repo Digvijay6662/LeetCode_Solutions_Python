@@ -1,0 +1,125 @@
+3208. Alternating Groups II
+Solved
+Medium
+Companies
+Hint
+There is a circle of red and blue tiles. You are given an array of integers colors and an integer k. The color of tile i is represented by colors[i]:
+
+colors[i] == 0 means that tile i is red.
+colors[i] == 1 means that tile i is blue.
+An alternating group is every k contiguous tiles in the circle with alternating colors (each tile in the group except the first and last one has a different color from its left and right tiles).
+
+Return the number of alternating groups.
+
+Note that since colors represents a circle, the first and the last tiles are considered to be next to each other.
+
+ 
+
+Example 1:
+
+Input: colors = [0,1,0,1,0], k = 3
+
+Output: 3
+
+Explanation:
+
+
+
+Alternating groups:
+
+
+
+Example 2:
+
+Input: colors = [0,1,0,0,1,0,1], k = 6
+
+Output: 2
+
+Explanation:
+
+
+
+Alternating groups:
+
+
+
+Example 3:
+
+Input: colors = [1,1,0,1], k = 4
+
+Output: 0
+
+Explanation:
+
+
+
+ 
+
+Constraints:
+
+3 <= colors.length <= 105
+0 <= colors[i] <= 1
+3 <= k <= colors.length
+
+
+Solution 1:
+
+class Solution:
+    def numberOfAlternatingGroups(self, colors: List[int], k: int) -> int:
+        n = len(colors)
+        colors += colors
+        dp = [1] * (2 * n)
+        
+        for i in range(2 * n - 2, -1, -1):
+            dp[i] = 1 if colors[i] == colors[i + 1] else 1 + dp[i + 1]
+
+        result = 0
+        for i in range(n):
+            if dp[i] >= k:
+                result += 1
+                
+        return result
+        
+
+Solution 2:
+
+class Solution:
+    def numberOfAlternatingGroups(self, colors: List[int], k: int) -> int:
+        n = len(colors)
+        arr = [0] * n
+    
+        for i in range(n):
+            if colors[i] != colors[(i + 1) % n]:
+                arr[i] = 1
+        
+        result = 0
+        curr_sum = sum(arr[:k - 1])
+        
+        for i in range(n):
+            if curr_sum == k - 1:
+                result += 1 
+            
+            curr_sum -= arr[i]
+            curr_sum += arr[(i + k - 1) % n]
+        
+        return result
+
+
+Solution 3:
+
+class Solution:
+    def numberOfAlternatingGroups(self, colors: List[int], k: int) -> int:
+        n = len(colors)
+        streak = 1
+        result = 0
+
+        for i in range(1, n + k - 1):
+            if colors[i % n] != colors[(i - 1) % n]:
+                streak += 1
+            else:
+                streak = 1
+
+            if streak >= k:
+                result += 1
+
+        return result
