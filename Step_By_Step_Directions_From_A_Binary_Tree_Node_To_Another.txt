@@ -1,0 +1,183 @@
+2096. Step-By-Step Directions From a Binary Tree Node to Another
+Solved
+Medium
+Topics
+Companies
+Hint
+You are given the root of a binary tree with n nodes. Each node is uniquely assigned a value from 1 to n. You are also given an integer startValue representing the value of the start node s, and a different integer destValue representing the value of the destination node t.
+
+Find the shortest path starting from node s and ending at node t. Generate step-by-step directions of such path as a string consisting of only the uppercase letters 'L', 'R', and 'U'. Each letter indicates a specific direction:
+
+'L' means to go from a node to its left child node.
+'R' means to go from a node to its right child node.
+'U' means to go from a node to its parent node.
+Return the step-by-step directions of the shortest path from node s to node t.
+
+ 
+
+Example 1:
+
+
+Input: root = [5,1,2,3,null,6,4], startValue = 3, destValue = 6
+Output: "UURL"
+Explanation: The shortest path is: 3 → 1 → 5 → 2 → 6.
+Example 2:
+
+
+Input: root = [2,1], startValue = 2, destValue = 1
+Output: "L"
+Explanation: The shortest path is: 2 → 1.
+ 
+
+Constraints:
+
+The number of nodes in the tree is n.
+2 <= n <= 105
+1 <= Node.val <= n
+All the values in the tree are unique.
+1 <= startValue, destValue <= n
+startValue != destValue
+
+
+Solution 1:
+
+# Definition for a binary tree node.
+# class TreeNode:
+#     def __init__(self, val=0, left=None, right=None):
+#         self.val = val
+#         self.left = left
+#         self.right = right
+class Solution:
+    def getDirections(self, root: Optional[TreeNode], startValue: int, destValue: int) -> str:
+        graph = defaultdict(list)
+        src_node = None
+
+        def buildGraph(node, parent):
+            nonlocal src_node
+            if not node:
+                return
+            if node.val == startValue:
+                src_node = node
+            if parent:
+                graph[node.val].append((parent.val, 'U'))
+                graph[parent.val].append((node.val, 'L' if parent.left == node else 'R'))
+            buildGraph(node.left, node)
+            buildGraph(node.right, node)
+          
+        buildGraph(root, None)
+        q = deque([(startValue, "")])
+        visited = set()
+
+        while q:
+            node, path = q.popleft()
+            if node == destValue:
+                return path
+            if node in visited:
+                continue
+            visited.add(node)
+            for neighbor, direction in graph[node]:
+                if neighbor not in visited:
+                    q.append((neighbor, path + direction))
+
+        return ""
+
+
+Solution 2:
+
+# Definition for a binary tree node.
+# class TreeNode:
+#     def __init__(self, val=0, left=None, right=None):
+#         self.val = val
+#         self.left = left
+#         self.right = right
+class Solution:
+    def getDirections(self, root: Optional[TreeNode], startValue: int, destValue: int) -> str:
+        
+        def findLCA(node, src, dest):
+            if not node:
+                return None
+
+            if node.val == src or node.val == dest:
+                return node
+
+            left = findLCA(node.left, src, dest)
+            right = findLCA(node.right, src, dest)
+
+            if left and right:
+                return node
+
+            return left if left else right
+
+        def findPath(node, target, path):
+            if not node:
+                return False
+            if node.val == target:
+                return True
+            
+            path.append("L")
+            if findPath(node.left, target, path):
+                return True
+            path.pop()
+
+            path.append("R")
+            if findPath(node.right, target, path):
+                return True
+            path.pop()
+
+            return False
+
+        lca = findLCA(root, startValue, destValue)
+
+        lcaToSrc = []
+        lcaToDest = []
+
+        findPath(lca, startValue, lcaToSrc)
+        findPath(lca, destValue, lcaToDest)
+
+        path = "U" * len(lcaToSrc) + "".join(lcaToDest)
+
+        return path
+
+
+Solution 3:
+
+# Definition for a binary tree node.
+# class TreeNode:
+#     def __init__(self, val=0, left=None, right=None):
+#         self.val = val
+#         self.left = left
+#         self.right = right
+class Solution:
+    def getDirections(self, root: Optional[TreeNode], startValue: int, destValue: int) -> str:
+
+        def findPath(node, target, path):
+            if not node:
+                return False
+            if node.val == target:
+                return True
+            
+            path.append("L")
+            if findPath(node.left, target, path):
+                return True
+            path.pop()
+
+            path.append("R")
+            if findPath(node.right, target, path):
+                return True
+            path.pop()
+
+            return False
+
+        rootToSrc = []
+        rootToDest = []
+
+        findPath(root, startValue, rootToSrc)
+        findPath(root, destValue, rootToDest)
+
+        l = 0
+        while l < len(rootToSrc) and l < len(rootToDest) and rootToSrc[l] == rootToDest[l]:
+            l += 1
+
+        path = 'U' * len(rootToSrc[l:]) + "".join(rootToDest[l:])
+
+        return path
