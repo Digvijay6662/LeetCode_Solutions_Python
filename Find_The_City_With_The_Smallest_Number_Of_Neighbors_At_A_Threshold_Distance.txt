@@ -49,7 +49,7 @@ edges[i].length == 3
 All pairs (fromi, toi) are distinct.
 
 
-Solution 1:
+Solution 1: Floyd-Warshall Algorithm
 
 class Solution:
     def findTheCity(self, n: int, edges: List[List[int]], distanceThreshold: int) -> int:
@@ -66,7 +66,8 @@ class Solution:
             for i in range(n):
                 if dist[i][k] != float('inf'):
                     for j in range(n):
-                        dist[i][j] = min(dist[i][j], dist[i][k] + dist[k][j])
+                        if dist[k][j] != float('inf'):
+                            dist[i][j] = min(dist[i][j], dist[i][k] + dist[k][j])
 
         least_count = n
         result = -1
@@ -79,10 +80,85 @@ class Solution:
                 if dist[i][j] <= distanceThreshold:
                     count += 1
 
-            if count < least_count:
+            if count <= least_count:
                 least_count = count
                 result = i
-            elif count == least_count:
+
+        return result
+
+
+Solution 2: Dijkstra's Algorithm
+
+class Solution:
+    def findTheCity(self, n: int, edges: List[List[int]], distanceThreshold: int) -> int:
+        def dijkstra(start):
+            distances = [float('inf')] * n
+            distances[start] = 0
+            min_heap = [(0, start)]
+
+            while min_heap:
+                current_dist, u = heapq.heappop(min_heap)
+
+                if current_dist > distances[u]:
+                    continue
+
+                for v, w in adj[u]:
+                    if distances[u] + w < distances[v]:
+                        distances[v] = distances[u] + w
+                        heapq.heappush(min_heap, (distances[v], v))
+
+            return distances
+
+        adj = [[] for _ in range(n)]
+        for u, v, w in edges:
+            adj[u].append((v, w))
+            adj[v].append((u, w))
+
+        min_count = n
+        result = -1
+
+        for i in range(n):
+            distances = dijkstra(i)
+            count = sum(1 for dist in distances if dist <= distanceThreshold)
+
+            if count <= min_count:
+                min_count = count
+                result = i
+
+        return result
+
+
+Solution 3: Bellman-Ford
+
+class Solution:
+    def findTheCity(self, n: int, edges: List[List[int]], distanceThreshold: int) -> int:
+        
+        def bellmanFord(start):
+            dist = [float('inf')] * n
+            dist[start] = 0
+            
+            for i in range(n-1):
+                updated = False
+                for u, v, w in edges:
+                    if dist[u] != float('inf') and dist[u] + w < dist[v]:
+                        dist[v] = dist[u] + w
+                        updated = True
+                    if dist[v] != float('inf') and dist[v] + w < dist[u]:
+                        dist[u] = dist[v] + w
+                        updated = True
+                if not updated:
+                    break
+            return dist
+
+        min_count = n
+        result = -1
+
+        for i in range(n):
+            distances = bellmanFord(i)
+            count = sum(1 for dist in distances if dist <= distanceThreshold)
+
+            if count <= min_count:
+                min_count = count
                 result = i
 
         return result

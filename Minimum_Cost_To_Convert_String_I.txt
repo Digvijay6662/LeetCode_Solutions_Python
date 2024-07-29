@@ -46,7 +46,7 @@ original[i], changed[i] are lowercase English letters.
 original[i] != changed[i]
 
 
-Solution 1:
+Solution 1: Floyd-Warshall Algorithm
 
 class Solution:
     def minimumCost(self, source: str, target: str, original: List[str], changed: List[str], cost: List[int]) -> int:
@@ -85,7 +85,7 @@ class Solution:
         return result
                 
 
-Solution 2:
+Solution 2: Dijkstra's algorithm
 
 class Solution:
     def minimumCost(self, source: str, target: str, original: List[str], changed: List[str], cost: List[int]) -> int:

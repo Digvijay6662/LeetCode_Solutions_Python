@@ -1,0 +1,205 @@
+3235. Check if the Rectangle Corner Is Reachable
+Solved
+Hard
+Companies
+Hint
+You are given two positive integers X and Y, and a 2D array circles, where circles[i] = [xi, yi, ri] denotes a circle with center at (xi, yi) and radius ri.
+
+There is a rectangle in the coordinate plane with its bottom left corner at the origin and top right corner at the coordinate (X, Y). You need to check whether there is a path from the bottom left corner to the top right corner such that the entire path lies inside the rectangle, does not touch or lie inside any circle, and touches the rectangle only at the two corners.
+
+Return true if such a path exists, and false otherwise.
+
+ 
+
+Example 1:
+
+Input: X = 3, Y = 4, circles = [[2,1,1]]
+
+Output: true
+
+Explanation:
+
+
+
+The black curve shows a possible path between (0, 0) and (3, 4).
+
+Example 2:
+
+Input: X = 3, Y = 3, circles = [[1,1,2]]
+
+Output: false
+
+Explanation:
+
+
+
+No path exists from (0, 0) to (3, 3).
+
+Example 3:
+
+Input: X = 3, Y = 3, circles = [[2,1,1],[1,2,1]]
+
+Output: false
+
+Explanation:
+
+
+
+No path exists from (0, 0) to (3, 3).
+
+ 
+
+Constraints:
+
+3 <= X, Y <= 109
+1 <= circles.length <= 1000
+circles[i].length == 3
+1 <= xi, yi, ri <= 109
+
+
+Solution 1:
+
+class UnionFind:
+    def __init__(self, n):
+        self.parent = [i for i in range(n)]
+        self.size = [1] * n
+        # -x, +x, -y, +y
+        self.bound = [[False] * 4 for _ in range(n)]
+    
+    def find(self, node):
+        while node != self.parent[node]:
+            self.parent[node] = self.parent[self.parent[node]]
+            node = self.parent[node]
+        return node
+
+    def union(self, node1, node2):
+        p1, p2 = self.find(node1), self.find(node2)
+        if p1 == p2:
+            return False
+
+        if self.size[p1] > self.size[p2]:
+            self.parent[p2] = p1
+            self.size[p1] += self.size[p2]
+            for k in range(4):
+                self.bound[p1][k] = self.bound[p1][k] or self.bound[p2][k]
+        else:
+            self.parent[p1] = p2
+            self.size[p2] += self.size[p1]
+            for k in range(4):
+                self.bound[p2][k] = self.bound[p2][k] or self.bound[p1][k]
+
+        return True
+
+class Solution:
+    def canReachCorner(self, X: int, Y: int, circles: List[List[int]]) -> bool:
+        n = len(circles)
+        uf = UnionFind(n)
+        # -x, +x, -y, +y
+        # self.bound = [[False] * 4 for _ in range(n)]
+
+        for i in range(n):
+            x, y, r = circles[i]
+            if x - r <= 0:
+                uf.bound[i][0] = True
+            if x + r >= X:
+                uf.bound[i][1] = True
+            if y - r <= 0:
+                uf.bound[i][2] = True
+            if y + r >= Y:
+                uf.bound[i][3] = True
+
+        def intersect(i, j):
+            x1, y1, r1 = circles[i]
+            x2, y2, r2 = circles[j]
+            return (x1 - x2) ** 2 + (y1 - y2) ** 2 <= (r1 + r2) ** 2
+
+        for i in range(n):
+            for j in range(i + 1, n):
+                if intersect(i, j):
+                    uf.union(i, j)
+        
+        for i in range(n):
+            # -x and -y / left and bottom
+            if uf.bound[i][0] and uf.bound[i][2]:
+                return False
+            # +x and +y / right and top  
+            elif uf.bound[i][1] and uf.bound[i][3]:
+                return False
+            # -x and +x / left and right  
+            elif uf.bound[i][0] and uf.bound[i][1]:
+                return False
+            # -y and +y / bottom and top  
+            elif uf.bound[i][2] and uf.bound[i][3]:
+                return False
+
+        return True
+
+
+Solution 2:
+
+class UnionFind:
+    def __init__(self, n):
+        self.parent = [i for i in range(n)]
+        self.size = [1] * n
+    
+    def find(self, node):
+        while node != self.parent[node]:
+            self.parent[node] = self.parent[self.parent[node]]
+            node = self.parent[node]
+        return node
+
+    def union(self, node1, node2):
+        p1, p2 = self.find(node1), self.find(node2)
+        if p1 == p2:
+            return False
+
+        if self.size[p1] > self.size[p2]:
+            self.parent[p2] = p1
+            self.size[p1] += self.size[p2]
+        else:
+            self.parent[p1] = p2
+            self.size[p2] += self.size[p1]
+
+        return True
+
+class Solution:
+    def canReachCorner(self, X: int, Y: int, circles: List[List[int]]) -> bool:
+        n = len(circles)
+        uf = UnionFind(n)
+
+        def intersect(i, j):
+            x1, y1, r1 = circles[i]
+            x2, y2, r2 = circles[j]
+            return (x1 - x2) ** 2 + (y1 - y2) ** 2 <= (r1 + r2) ** 2
+
+        for i in range(n):
+            for j in range(i + 1, n):
+                if intersect(i, j):
+                    uf.union(i, j)
+
+        groups = defaultdict(list)
+        for i in range(n):
+            groups[uf.find(i)].append(i)
+            
+        for parent in groups:
+            min_x = min_y = float('inf')
+            max_x = max_y = float('-inf')
+            for i in groups[parent]:
+                x, y, r = circles[i]
+                min_x, max_x = min(min_x, x - r), max(max_x, x + r)
+                min_y, max_y = min(min_y, y - r), max(max_y, y + r)
+
+            # -x and -y / left and bottom
+            if min_x <= 0 and min_y <= 0:
+                return False
+            # +x and +y / right and top  
+            elif max_x >= X and max_y >= Y:
+                return False
+            # -x and +x / left and right  
+            elif min_x <= 0 and max_x >= X:
+                return False
+            # -y and +y / bottom and top  
+            elif min_y <= 0 and max_y >= Y:
+                return False
+            
+        return True

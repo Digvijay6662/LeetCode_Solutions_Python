@@ -96,3 +96,39 @@ class Solution:
 
         dfs(root, True)
         return result
+
+
+Solution 3:
+
+# Definition for a binary tree node.
+# class TreeNode:
+#     def __init__(self, val=0, left=None, right=None):
+#         self.val = val
+#         self.left = left
+#         self.right = right
+class Solution:
+    def delNodes(self, root: Optional[TreeNode], to_delete: List[int]) -> List[TreeNode]:
+        delete_set = set(to_delete)
+        result = []
+
+        def solve(node):
+            if not node:
+                return None
+
+            node.left = solve(node.left)
+            node.right = solve(node.right)
+
+            if node.val in delete_set:
+                if node.left:
+                    result.append(node.left)
+                if node.right:
+                    result.append(node.right)
+                return None
+            else:
+                return node
+                
+        root = solve(root)
+        if root:
+            result.append(root)
+
+        return result
