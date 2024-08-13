@@ -1,0 +1,116 @@
+959. Regions Cut By Slashes
+Solved
+Medium
+Topics
+Companies
+An n x n grid is composed of 1 x 1 squares where each 1 x 1 square consists of a '/', '\', or blank space ' '. These characters divide the square into contiguous regions.
+
+Given the grid grid represented as a string array, return the number of regions.
+
+Note that backslash characters are escaped, so a '\' is represented as '\\'.
+
+ 
+
+Example 1:
+
+
+Input: grid = [" /","/ "]
+Output: 2
+Example 2:
+
+
+Input: grid = [" /","  "]
+Output: 1
+Example 3:
+
+
+Input: grid = ["/\\","\\/"]
+Output: 5
+Explanation: Recall that because \ characters are escaped, "\\/" refers to \/, and "/\\" refers to /\.
+ 
+
+Constraints:
+
+n == grid.length == grid[i].length
+1 <= n <= 30
+grid[i][j] is either '/', '\', or ' '.
+
+
+Solution 1:
+
+class Solution:
+    def regionsBySlashes(self, grid: List[str]) -> int:
+        n = len(grid)
+        rows = cols = 3 * n
+        matrix = [[0 for _ in range(cols)] for _ in range(rows)]
+
+        for i in range(n):
+            for j in range(n):
+                r, c = 3 * i, 3 * j
+                if grid[i][j] == '\\':
+                    matrix[r][c] = 1
+                    matrix[r + 1][c + 1] = 1
+                    matrix[r + 2][c + 2] = 1
+                elif grid[i][j] == '/':
+                    matrix[r][c + 2] = 1
+                    matrix[r + 1][c + 1] = 1
+                    matrix[r + 2][c] = 1
+
+        directions = [(0, 1), (1, 0), (0, -1), (-1, 0)]
+        def dfs(i, j):
+            for dr, dc in directions:
+                r, c = i + dr, j + dc
+                if 0 <= r < rows and 0 <= c < cols and matrix[r][c] == 0 and (r, c) not in visited:
+                    visited.add((r, c))
+                    dfs(r, c)
+        
+        result = 0
+        visited = set()
+
+        for i in range(rows):
+            for j in range(cols):
+                if matrix[i][j] == 0 and (i, j) not in visited:
+                    visited.add((i, j))
+                    dfs(i, j)
+                    result += 1
+
+        return result
+
+
+Solution 2:
+
+class Solution:
+    def regionsBySlashes(self, grid: List[str]) -> int:
+        n = len(grid)
+        rows = cols = 3 * n
+        matrix = [[0 for _ in range(cols)] for _ in range(rows)]
+
+        for i in range(n):
+            for j in range(n):
+                r, c = 3 * i, 3 * j
+                if grid[i][j] == '\\':
+                    matrix[r][c] = 1
+                    matrix[r + 1][c + 1] = 1
+                    matrix[r + 2][c + 2] = 1
+                elif grid[i][j] == '/':
+                    matrix[r][c + 2] = 1
+                    matrix[r + 1][c + 1] = 1
+                    matrix[r + 2][c] = 1
+
+        directions = [(0, 1), (1, 0), (0, -1), (-1, 0)]
+        def dfs(i, j):
+            for dr, dc in directions:
+                r, c = i + dr, j + dc
+                if 0 <= r < rows and 0 <= c < cols and matrix[r][c] == 0:
+                    matrix[r][c] = 1
+                    dfs(r, c)
+        
+        result = 0
+        for i in range(rows):
+            for j in range(cols):
+                if matrix[i][j] == 0:
+                    matrix[i][j] = 1
+                    dfs(i, j)
+                    result += 1
+
+        return result

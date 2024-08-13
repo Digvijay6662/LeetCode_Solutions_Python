@@ -43,7 +43,7 @@ The given input represents a valid tree.
 
 
 
-Solution 1:
+Solution 1: Re-rooting Technique / Tree DP
 
 class Solution:
     def sumOfDistancesInTree(self, n: int, edges: List[List[int]]) -> List[int]:
@@ -71,4 +71,41 @@ class Solution:
         dfs(0, -1)
         dfs2(0, -1)
 
+        return result
+
+
+Solution 2: Re-rooting Technique / Tree DP
+
+class Solution:
+    def sumOfDistancesInTree(self, n: int, edges: List[List[int]]) -> List[int]:
+        graph = defaultdict(list)
+
+        for u, v in edges:
+            graph[u].append(v)
+            graph[v].append(u)
+
+        def dfs1(node, par, depth):
+            dist = depth
+            nodes[node] = 1
+            for nei in graph[node]:
+                if nei == par:
+                    continue
+                dist += dfs1(nei, node, depth + 1)
+                nodes[node] += nodes[nei]
+            return dist
+
+        def dfs2(node, par):
+            for nei in graph[node]:
+                if nei == par:
+                    continue
+                result[nei] = result[node] - nodes[nei] + (n - nodes[nei])
+                dfs2(nei, node)
+        
+        result = [0] * n
+        nodes = [0] * n
+        
+        result[0] = dfs1(0, -1, 0)
+
+        dfs2(0, -1)
+        
         return result

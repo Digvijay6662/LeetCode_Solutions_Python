@@ -1,0 +1,128 @@
+2049. Count Nodes With the Highest Score
+Solved
+Medium
+Topics
+Companies
+Hint
+There is a binary tree rooted at 0 consisting of n nodes. The nodes are labeled from 0 to n - 1. You are given a 0-indexed integer array parents representing the tree, where parents[i] is the parent of node i. Since node 0 is the root, parents[0] == -1.
+
+Each node has a score. To find the score of a node, consider if the node and the edges connected to it were removed. The tree would become one or more non-empty subtrees. The size of a subtree is the number of the nodes in it. The score of the node is the product of the sizes of all those subtrees.
+
+Return the number of nodes that have the highest score.
+
+ 
+
+Example 1:
+
+example-1
+Input: parents = [-1,2,0,2,0]
+Output: 3
+Explanation:
+- The score of node 0 is: 3 * 1 = 3
+- The score of node 1 is: 4 = 4
+- The score of node 2 is: 1 * 1 * 2 = 2
+- The score of node 3 is: 4 = 4
+- The score of node 4 is: 4 = 4
+The highest score is 4, and three nodes (node 1, node 3, and node 4) have the highest score.
+Example 2:
+
+example-2
+Input: parents = [-1,2,0]
+Output: 2
+Explanation:
+- The score of node 0 is: 2 = 2
+- The score of node 1 is: 2 = 2
+- The score of node 2 is: 1 * 1 = 1
+The highest score is 2, and two nodes (node 0 and node 1) have the highest score.
+ 
+
+Constraints:
+
+n == parents.length
+2 <= n <= 105
+parents[0] == -1
+0 <= parents[i] <= n - 1 for i != 0
+parents represents a valid binary tree.
+
+
+Solution 1:
+
+class Solution:
+    def countHighestScoreNodes(self, parents: List[int]) -> int:
+        n = len(parents)
+        graph = defaultdict(list)
+
+        for i in range(1, n):
+            graph[parents[i]].append(i)
+
+        def dfs(node):
+            for child in graph[node]:
+                dfs(child)
+                count[node] += count[child]
+
+        count = [1] * n
+        dfs(0)
+
+        max_product = 0
+        result = 0
+
+        for i in range(n):
+            sub_product = 1
+            for child in graph[i]:
+                sub_product *= count[child]
+
+            if parents[i] != -1:
+                parent_count = n - count[i]
+                if parent_count > 0:
+                    sub_product *= parent_count
+
+            if sub_product > max_product:
+                max_product = sub_product
+                result = 1
+            elif sub_product == max_product:
+                result += 1
+
+        return result
+
+
+Solution 2:
+
+class Solution:
+    def countHighestScoreNodes(self, parents: List[int]) -> int:
+        n = len(parents)
+        graph = defaultdict(list)
+        
+        for i in range(1, n):
+            graph[parents[i]].append(i)
+        
+        count = [1] * n
+        max_product = 0
+        result = 0
+
+        def dfs(node):
+            nonlocal max_product, result
+            sub_product = 1
+            total_subtree_size = 1
+            
+            for child in graph[node]:
+                subtree_size = dfs(child)
+                sub_product *= subtree_size
+                total_subtree_size += subtree_size
+            
+            if parents[node] != -1:
+                parent_count = n - total_subtree_size
+                if parent_count > 0:
+                    sub_product *= parent_count
+            
+            count[node] = total_subtree_size
+            
+            if sub_product > max_product:
+                max_product = sub_product
+                result = 1
+            elif sub_product == max_product:
+                result += 1
+            
+            return count[node]
+        
+        dfs(0)
+        return result
