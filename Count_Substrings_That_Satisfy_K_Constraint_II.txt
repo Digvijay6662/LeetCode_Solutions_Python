@@ -1,0 +1,115 @@
+3261. Count Substrings That Satisfy K-Constraint II
+Solved
+Hard
+Topics
+Companies
+Hint
+You are given a binary string s and an integer k.
+
+You are also given a 2D integer array queries, where queries[i] = [li, ri].
+
+A binary string satisfies the k-constraint if either of the following conditions holds:
+
+The number of 0's in the string is at most k.
+The number of 1's in the string is at most k.
+Return an integer array answer, where answer[i] is the number of 
+substrings
+ of s[li..ri] that satisfy the k-constraint.
+
+ 
+
+Example 1:
+
+Input: s = "0001111", k = 2, queries = [[0,6]]
+
+Output: [26]
+
+Explanation:
+
+For the query [0, 6], all substrings of s[0..6] = "0001111" satisfy the k-constraint except for the substrings s[0..5] = "000111" and s[0..6] = "0001111".
+
+Example 2:
+
+Input: s = "010101", k = 1, queries = [[0,5],[1,4],[2,3]]
+
+Output: [15,9,3]
+
+Explanation:
+
+The substrings of s with a length greater than 3 do not satisfy the k-constraint.
+
+ 
+
+Constraints:
+
+1 <= s.length <= 105
+s[i] is either '0' or '1'.
+1 <= k <= s.length
+1 <= queries.length <= 105
+queries[i] == [li, ri]
+0 <= li <= ri < s.length
+All queries are distinct.
+
+
+Solution 1:
+
+class Solution:
+    def countKConstraintSubstrings(self, s: str, k: int, queries: List[List[int]]) -> List[int]:
+        n = len(s)
+        right_valid_idx = [-1] * n
+        ones = zeros = 0
+        r = n - 1
+
+        # Precompute rightmost valid indices for each starting index
+        for l in range(n - 1, -1, -1):
+            if s[l] == '1':
+                ones += 1
+            else:
+                zeros += 1
+            
+            while ones > k and zeros > k:
+                if s[r] == '1':
+                    ones -= 1
+                else:
+                    zeros -= 1
+                r -= 1
+
+            right_valid_idx[l] = r
+        
+        # Compute prefix sums of valid substring lengths
+        prefix = [0] * n
+        ones = zeros = l = 0
+
+        for r in range(n):
+            if s[r] == '1':
+                ones += 1
+            else:
+                zeros += 1
+            
+            while ones > k and zeros > k:
+                if s[l] == '1':
+                    ones -= 1
+                else:
+                    zeros -= 1
+                l += 1
+
+            prefix[r] = r - l + 1
+
+        for i in range(1, n):
+            prefix[i] += prefix[i - 1]
+
+        result = []
+        for l, r in queries:
+            # l......r......valid_idx
+            if right_valid_idx[l] >= r:
+                length = r - l + 1
+                result.append(length * (length + 1) // 2)
+            # l......valid_idx.......r
+            else:
+                length = right_valid_idx[l] - l + 1
+                count = length * (length + 1) // 2
+                # Added valid substring b/w valid_idx and r
+                count = count +  prefix[r] - prefix[right_valid_idx[l]]
+                result.append(count)
+
+        return result

@@ -1,0 +1,151 @@
+3256. Maximum Value Sum by Placing Three Rooks I
+Solved
+Hard
+Topics
+Companies
+Hint
+You are given a m x n 2D array board representing a chessboard, where board[i][j] represents the value of the cell (i, j).
+
+Rooks in the same row or column attack each other. You need to place three rooks on the chessboard such that the rooks do not attack each other.
+
+Return the maximum sum of the cell values on which the rooks are placed.
+
+ 
+
+Example 1:
+
+Input: board = [[-3,1,1,1],[-3,1,-3,1],[-3,2,1,1]]
+
+Output: 4
+
+Explanation:
+
+
+
+We can place the rooks in the cells (0, 2), (1, 3), and (2, 1) for a sum of 1 + 1 + 2 = 4.
+
+Example 2:
+
+Input: board = [[1,2,3],[4,5,6],[7,8,9]]
+
+Output: 15
+
+Explanation:
+
+We can place the rooks in the cells (0, 0), (1, 1), and (2, 2) for a sum of 1 + 5 + 9 = 15.
+
+Example 3:
+
+Input: board = [[1,1,1],[1,1,1],[1,1,1]]
+
+Output: 3
+
+Explanation:
+
+We can place the rooks in the cells (0, 2), (1, 1), and (2, 0) for a sum of 1 + 1 + 1 = 3.
+
+ 
+
+Constraints:
+
+3 <= m == board.length <= 100
+3 <= n == board[i].length <= 100
+-109 <= board[i][j] <= 109
+
+
+Solution 1:
+
+class Solution:
+    def maximumValueSum(self, board: List[List[int]]) -> int:
+        n = len(board)
+
+        # Preprocess the board to store the top 3 values and their indices for each row
+        mat = [
+            sorted([(val, i) for i, val in enumerate(row)], reverse=True)[:3]
+            for row in board
+        ]
+
+        @cache
+        def solve(row: int, count: int, prev_col1: int, prev_col2: int) -> int:
+            # Base case: if we've selected 3 values, return 0
+            if count == 3:
+                return 0
+            
+            # If we've processed all rows, return negative infinity (no valid solution)
+            if row == n:
+                return float('-inf')
+
+            # Start by not picking any value from the current row
+            max_sum = solve(row + 1, count, prev_col1, prev_col2)
+
+            # Try picking each of the top 3 values from the current row
+            for value, col in mat[row]:
+                if col != prev_col1 and col != prev_col2:
+                    # Determine which columns to pass forward
+                    if prev_col1 == -1:
+                        max_sum = max(max_sum, value + solve(row + 1, count + 1, col, prev_col2))
+                    elif prev_col2 == -1:
+                        max_sum = max(max_sum, value + solve(row + 1, count + 1, prev_col1, col))
+                    else:
+                        max_sum = max(max_sum, value + solve(row + 1, count + 1, prev_col1, prev_col2))
+
+            return max_sum
+
+        # Start the recursion with the first row, no values picked yet, and no columns restricted
+        return solve(0, 0, -1, -1)
+
+
+Solution 2:
+
+class Solution:
+    def maximumValueSum(self, board: List[List[int]]) -> int:
+        n, m = len(board), len(board[0])
+
+        # Initialize the list to store the top 3 elements for each row
+        rows = []
+        for i in range(n):
+            heap = []
+            for j in range(m):
+                if len(heap) < 3:
+                    heapq.heappush(heap, (board[i][j], i, j))
+                else:
+                    heapq.heappushpop(heap, (board[i][j], i, j))
+            rows.extend(heap)
+
+        # Initialize the list to store the top 3 elements for each column
+        cols = []
+        for j in range(m):
+            heap = []
+            for i in range(n):
+                if len(heap) < 3:
+                    heapq.heappush(heap, (board[i][j], i, j))
+                else:
+                    heapq.heappushpop(heap, (board[i][j], i, j))
+            cols.extend(heap)
+
+        combined = set(rows) & set(cols)
+        top_elements = []
+
+        for element in combined:
+            if len(top_elements) < 11:
+                heapq.heappush(top_elements, (element[0], element[1], element[2]))
+            else:
+                heapq.heappushpop(top_elements, (element[0], element[1], element[2]))
+
+        result = float("-inf")
+        length = len(top_elements)
+
+        # Use three nested loops to iterate through all combinations of three elements
+        for i in range(length):
+            for j in range(i + 1, length):
+                for k in range(j + 1, length):
+                    x, y, z = top_elements[i], top_elements[j], top_elements[k]
+                    # Check if the elements are in different rows and columns
+                    if len({x[1], y[1], z[1]}) == 3 and len({x[2], y[2], z[2]}) == 3:
+                        # Calculate the sum of the values
+                        current_sum = x[0] + y[0] + z[0]
+                        # Update the result if the current sum is larger
+                        result = max(result, current_sum)
+
+        # Return the maximum sum
+        return result
