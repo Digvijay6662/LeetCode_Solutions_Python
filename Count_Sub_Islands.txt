@@ -1,0 +1,201 @@
+1905. Count Sub Islands
+Solved
+Medium
+Topics
+Companies
+Hint
+You are given two m x n binary matrices grid1 and grid2 containing only 0's (representing water) and 1's (representing land). An island is a group of 1's connected 4-directionally (horizontal or vertical). Any cells outside of the grid are considered water cells.
+
+An island in grid2 is considered a sub-island if there is an island in grid1 that contains all the cells that make up this island in grid2.
+
+Return the number of islands in grid2 that are considered sub-islands.
+
+ 
+
+Example 1:
+
+
+Input: grid1 = [[1,1,1,0,0],[0,1,1,1,1],[0,0,0,0,0],[1,0,0,0,0],[1,1,0,1,1]], grid2 = [[1,1,1,0,0],[0,0,1,1,1],[0,1,0,0,0],[1,0,1,1,0],[0,1,0,1,0]]
+Output: 3
+Explanation: In the picture above, the grid on the left is grid1 and the grid on the right is grid2.
+The 1s colored red in grid2 are those considered to be part of a sub-island. There are three sub-islands.
+Example 2:
+
+
+Input: grid1 = [[1,0,1,0,1],[1,1,1,1,1],[0,0,0,0,0],[1,1,1,1,1],[1,0,1,0,1]], grid2 = [[0,0,0,0,0],[1,1,1,1,1],[0,1,0,1,0],[0,1,0,1,0],[1,0,0,0,1]]
+Output: 2 
+Explanation: In the picture above, the grid on the left is grid1 and the grid on the right is grid2.
+The 1s colored red in grid2 are those considered to be part of a sub-island. There are two sub-islands.
+ 
+
+Constraints:
+
+m == grid1.length == grid2.length
+n == grid1[i].length == grid2[i].length
+1 <= m, n <= 500
+grid1[i][j] and grid2[i][j] are either 0 or 1.
+
+
+Solution 1:
+
+class Solution:
+    def countSubIslands(self, grid1: List[List[int]], grid2: List[List[int]]) -> int:
+        n, m = len(grid1), len(grid1[0])
+        directions = [(-1, 0), (0, 1), (1, 0), (0, -1)]
+
+        def solve(i, j):
+            for dr, dc in directions:
+                r, c = i + dr, j + dc
+                if 0 <= r < n and 0 <= c < m and grid2[r][c] == 1 and (r, c) not in visited:
+                    visited.add((r, c))
+                    curr.add((r, c))
+                    solve(r, c)
+
+        
+        visited = set()
+        result = 0
+
+        for i in range(n):
+            for j in range(m):
+                if grid2[i][j] == 1 and (i, j) not in visited:
+                    curr = set()
+                    visited.add((i, j))
+                    curr.add((i, j))
+                    solve(i, j)
+                    
+                    flag = True
+                    for r, c in curr:
+                        if grid1[r][c] != 1:
+                            flag = False
+                            break
+
+                    if flag:
+                        result += 1
+
+        return result
+        
+
+
+Solution 2:
+
+class Solution:
+    def countSubIslands(self, grid1: List[List[int]], grid2: List[List[int]]) -> int:
+        n, m = len(grid1), len(grid1[0])
+        directions = [(-1, 0), (0, 1), (1, 0), (0, -1)]
+
+        def solve(i, j):
+            is_sub_island = True
+            visited.add((i, j))
+            if grid1[i][j] == 0:
+                is_sub_island = False
+
+            for dr, dc in directions:
+                r, c = i + dr, j + dc
+                if 0 <= r < n and 0 <= c < m and grid2[r][c] == 1 and (r, c) not in visited:
+                    if not solve(r, c):
+                        is_sub_island = False
+            
+            return is_sub_island
+
+        visited = set()
+        result = 0
+
+        for i in range(n):
+            for j in range(m):
+                if grid2[i][j] == 1 and (i, j) not in visited:
+                    if solve(i, j):
+                        result += 1
+
+        return result
+
+
+Solution 3:
+
+class Solution:
+    def countSubIslands(self, grid1: List[List[int]], grid2: List[List[int]]) -> int:
+        n, m = len(grid1), len(grid1[0])
+        directions = [(-1, 0), (0, 1), (1, 0), (0, -1)]
+        
+        def dfs(r, c):
+            stack = [(r, c)]
+            is_sub_island = True
+            
+            while stack:
+                x, y = stack.pop()
+                if grid1[x][y] == 0:
+                    is_sub_island = False
+                grid2[x][y] = 0
+                for dr, dc in directions:
+                    nr, nc = x + dr, y + dc
+                    if 0 <= nr < n and 0 <= nc < m and grid2[nr][nc] == 1:
+                        stack.append((nr, nc))
+            return is_sub_island
+        
+        result = 0
+        for i in range(n):
+            for j in range(m):
+                if grid2[i][j] == 1:
+                    if dfs(i, j):
+                        result += 1
+
+        return result
+
+
+Solution 4:
+
+class UnionFind:
+    def __init__(self, n):
+        self.parent = [i for i in range(n)]
+        self.size = [1] * n
+
+    def find(self, node):
+        while node != self.parent[node]:
+            self.parent[node] = self.parent[self.parent[node]]
+            node = self.parent[node]
+        return node
+
+    def union(self, node1, node2):
+        p1, p2 = self.find(node1), self.find(node2)
+        if p1 == p2:
+            return False
+
+        if self.size[p1] > self.size[p2]:
+            self.parent[p2] = p1
+            self.size[p1] += self.size[p2]
+        else:
+            self.parent[p1] = p2
+            self.size[p2] += self.size[p1]
+
+        return True
+
+class Solution:
+    def countSubIslands(self, grid1: List[List[int]], grid2: List[List[int]]) -> int:
+        n, m = len(grid1), len(grid1[0])
+        directions = [(-1, 0), (0, 1), (1, 0), (0, -1)]
+        
+        def index(x, y):
+            return x * m + y
+        
+        uf = UnionFind(n * m)
+
+        for i in range(n):
+            for j in range(m):
+                if grid2[i][j] == 1:
+                    for dr, dc in directions:
+                        r, c = i + dr, j + dc
+                        if 0 <= r < n and 0 <= c < m and grid2[r][c] == 1:
+                            uf.union(index(i, j), index(r, c))
+        
+        root_to_cells = defaultdict(list)
+        for i in range(n):
+            for j in range(m):
+                if grid2[i][j] == 1:
+                    root = uf.find(index(i, j))
+                    root_to_cells[root].append((i, j))
+        
+        result = 0
+        for cells in root_to_cells.values():
+            if all(grid1[i][j] == 1 for i, j in cells):
+                result += 1
+        
+        return result

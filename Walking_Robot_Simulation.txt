@@ -87,3 +87,39 @@ class Solution:
             max_distance = max(max_distance, x ** 2 + y ** 2)
 
         return max_distance
+
+
+Solution 2:
+
+class Solution:
+    def robotSim(self, commands: List[int], obstacles: List[List[int]]) -> int:
+        # Directions represent North, East, South, and West respectively
+        directions = [(0, 1), (1, 0), (0, -1), (-1, 0)]
+        obstacle_set = set(map(tuple, obstacles))  # Convert obstacles list to a set for quick lookup
+        d = 0  # Starting direction: North
+        x = y = 0  # Initial position
+
+        result = 0  # To keep track of the maximum Euclidean distance squared
+
+        for c in commands:
+            if c == -1:  # Turn right
+                d = (d + 1) % 4
+            elif c == -2:  # Turn left
+                d = (d - 1) % 4
+            else:
+                for _ in range(c):
+                    # Calculate the next position
+                    next_x = x + directions[d][0]
+                    next_y = y + directions[d][1]
+
+                    # If the next position is an obstacle, stop
+                    if (next_x, next_y) in obstacle_set:
+                        break
+
+                    # Otherwise, update the current position
+                    x, y = next_x, next_y
+
+                # Update the maximum distance squared
+                result = max(result, x ** 2 + y ** 2)
+
+        return result

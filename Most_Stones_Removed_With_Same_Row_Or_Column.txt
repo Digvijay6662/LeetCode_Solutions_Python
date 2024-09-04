@@ -47,6 +47,31 @@ No two stones are at the same coordinate point.
 
 Solution 1:
 
+class Solution:
+    def removeStones(self, stones: List[List[int]]) -> int:
+        n = len(stones)
+
+        def dfs(i):
+            visited.add(i)
+            for j in range(n):
+                if j not in visited and \
+                (stones[i][0] == stones[j][0] or stones[i][1] == stones[j][1]):
+                    dfs(j)
+
+        visited = set()
+        components = 0
+
+        for i in range(n):
+            if i in visited:
+                continue
+            dfs(i)
+            components += 1
+
+        return n - components
+
+
+Solution 2:
+
 class DSU:
     def __init__(self, n):
         self.parent = [i for i in range(n)]
@@ -98,3 +123,53 @@ class Solution:
                 components += 1
 
         return n - components
+
+
+Solution 3:
+
+class UnionFind:
+    def __init__(self, n):
+        self.parent = [i for i in range(n)]
+        self.size = [1] * n
+        self.component_count = n
+
+    def find(self, node):
+        while node != self.parent[node]:
+            self.parent[node] = self.parent[self.parent[node]]
+            node = self.parent[node]
+        return node
+
+    def union(self, node1, node2):
+        p1, p2 = self.find(node1), self.find(node2)
+        if p1 == p2:
+            return False
+
+        if self.size[p1] > self.size[p2]:
+            self.parent[p2] = p1
+            self.size[p1] += self.size[p2]
+        else:
+            self.parent[p1] = p2
+            self.size[p2] += self.size[p1]
+
+        self.component_count -= 1
+        return True
+
+class Solution:
+    def removeStones(self, stones: List[List[int]]) -> int:
+        n = len(stones)
+        uf = UnionFind(n)
+
+        rows = defaultdict(set)
+        cols = defaultdict(set)
+
+        for i in range(n):
+            x, y = stones[i]
+            for j in rows[x]:
+                uf.union(i, j)
+            for j in cols[y]:
+                uf.union(i, j)
+
+            rows[x].add(i)
+            cols[y].add(i)
+
+        return n - uf.component_count
