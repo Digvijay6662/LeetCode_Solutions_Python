@@ -1,0 +1,76 @@
+1371. Find the Longest Substring Containing Vowels in Even Counts
+Solved
+Medium
+Topics
+Companies
+Hint
+Given the string s, return the size of the longest substring containing each vowel an even number of times. That is, 'a', 'e', 'i', 'o', and 'u' must appear an even number of times.
+
+ 
+
+Example 1:
+
+Input: s = "eleetminicoworoep"
+Output: 13
+Explanation: The longest substring is "leetminicowor" which contains two each of the vowels: e, i and o and zero of the vowels: a and u.
+Example 2:
+
+Input: s = "leetcodeisgreat"
+Output: 5
+Explanation: The longest substring is "leetc" which contains two e's.
+Example 3:
+
+Input: s = "bcbcbc"
+Output: 6
+Explanation: In this case, the given string "bcbcbc" is the longest because all vowels: a, e, i, o and u appear zero times.
+ 
+
+Constraints:
+
+1 <= s.length <= 5 x 10^5
+s contains only lowercase English letters.
+
+
+Solution 1:
+
+class Solution:
+    def findTheLongestSubstring(self, s: str) -> int:
+        n = len(s)
+        prefix = 0
+        count = {0: -1}
+        longest_substring = 0
+
+        for i in range(n):
+            if s[i] in "aeiou":
+                vowel_idx = ord(s[i]) - 97
+                prefix = prefix ^ (1 << vowel_idx)
+                
+            if prefix in count:
+                longest_substring = max(longest_substring, i - count[prefix])
+            else:
+                count[prefix] = i
+
+        return longest_substring
+
+
+Solution 2:
+
+class Solution:
+    def findTheLongestSubstring(self, s: str) -> int:
+        vowel_to_bit = {'a': 1, 'e': 2, 'i': 4, 'o': 8, 'u': 16}
+        n = len(s)
+        mask = 0
+        longest_substring = 0
+        mask_dict = {0: -1}
+        
+        for i in range(n):
+            if s[i] in vowel_to_bit:
+                mask ^= vowel_to_bit[s[i]]
+                
+            if mask in mask_dict:
+                longest_substring = max(longest_substring, i - mask_dict[mask])
+            else:
+                mask_dict[mask] = i
+        
+        return longest_substring
+        

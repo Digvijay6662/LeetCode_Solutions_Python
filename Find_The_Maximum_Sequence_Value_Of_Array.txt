@@ -1,0 +1,194 @@
+3287. Find the Maximum Sequence Value of Array
+Solved
+Hard
+Companies
+Hint
+You are given an integer array nums and a positive integer k.
+
+The value of a sequence seq of size 2 * x is defined as:
+
+(seq[0] OR seq[1] OR ... OR seq[x - 1]) XOR (seq[x] OR seq[x + 1] OR ... OR seq[2 * x - 1]).
+Return the maximum value of any 
+subsequence
+ of nums having size 2 * k.
+
+ 
+
+Example 1:
+
+Input: nums = [2,6,7], k = 1
+
+Output: 5
+
+Explanation:
+
+The subsequence [2, 7] has the maximum value of 2 XOR 7 = 5.
+
+Example 2:
+
+Input: nums = [4,2,5,6,7], k = 2
+
+Output: 2
+
+Explanation:
+
+The subsequence [4, 5, 6, 7] has the maximum value of (4 OR 5) XOR (6 OR 7) = 2.
+
+ 
+
+Constraints:
+
+2 <= nums.length <= 400
+1 <= nums[i] < 27
+1 <= k <= nums.length / 2
+
+
+Solution 1:
+
+class Solution:
+    def maxValue(self, nums: List[int], k: int) -> int:
+        n = len(nums)
+        prefix = [[(float('inf'), 0) for _ in range(128)] for _ in range(n)]
+        suffix = [[(float('inf'), 0) for _ in range(128)] for _ in range(n)]
+
+        self._compute_prefix(nums, prefix)
+        self._compute_suffix(nums, suffix)
+
+        max_value = 0
+        for left_or in range(1, 128):
+            for right_or in range(1, 128):
+                if self._is_possible(left_or, right_or, k, n, prefix, suffix):
+                    max_value = max(max_value, left_or ^ right_or)
+
+        return max_value
+
+    def _compute_prefix(self, nums: List[int], prefix: List[List[Tuple[float, int]]]) -> None:
+        n = len(nums)
+        prefix[0][nums[0]] = (1, 1)
+        for j in range(1, n):
+            prefix[j] = prefix[j - 1][:]
+            prefix[j][nums[j]] = (1, 1)
+            for val in range(1, 128):
+                if prefix[j - 1][val][0] == float('inf'):
+                    continue
+                new_val = val | nums[j]
+                prefix[j][new_val] = (
+                    min(prefix[j][new_val][0], 1 + prefix[j - 1][val][0]),
+                    max(prefix[j][new_val][1], 1 + prefix[j - 1][val][1]),
+                )
+
+    def _compute_suffix(self, nums: List[int], suffix: List[List[Tuple[float, int]]]) -> None:
+        n = len(nums)
+        suffix[n - 1][nums[n - 1]] = (1, 1)
+        for j in range(n - 2, -1, -1):
+            suffix[j] = suffix[j + 1][:]
+            suffix[j][nums[j]] = (1, 1)
+            for val in range(1, 128):
+                if suffix[j + 1][val][0] == float('inf'):
+                    continue
+                new_val = val | nums[j]
+                suffix[j][new_val] = (
+                    min(suffix[j][new_val][0], 1 + suffix[j + 1][val][0]),
+                    max(suffix[j][new_val][1], 1 + suffix[j + 1][val][1]),
+                )
+
+    def _is_possible(self, left_or: int, right_or: int, k: int, n: int, prefix: List[List[Tuple[float, int]]], suffix: List[List[Tuple[float, int]]]) -> bool:
+        for l in range(n - 1):
+            left = prefix[l][left_or]
+            right = suffix[l + 1][right_or]
+            if left[0] <= k <= left[1] and right[0] <= k <= right[1]:
+                return True
+        return False
+        
+
+
+Solution 2:
+
+class Solution:
+    def maxValue(self, nums: List[int], k: int) -> int:
+        n = len(nums)
+
+        def generate_or_map(arr):
+            first = {}
+            dp = [set() for _ in range(k)]
+            dp[0].add(0)
+
+            for i, num in enumerate(arr):
+                for val in dp[k - 1]:
+                    if (val | num) not in first:
+                        first[val | num] = i + 1
+
+                for j in range(k - 2, -1, -1):
+                    for val in dp[j]:
+                        dp[j + 1].add(val | num)
+
+            return first
+
+        prefix_or_map = generate_or_map(nums)
+        suffix_or_map = generate_or_map(reversed(nums))
+
+        max_value = 0
+
+        for u, n1 in prefix_or_map.items():
+            for v, n2 in suffix_or_map.items():
+                if n1 + n2 <= n:
+                    max_value = max(max_value, u ^ v)
+
+        return max_value
+
+
+Solution 3:
+
+class Solution:
+    def maxValue(self, nums: List[int], k: int) -> int:
+        n = len(nums)
+        
+        # prefix_OR[i][j] is the set of ORs achievable by selecting j elements from first i elements
+        prefix_OR = [[set() for _ in range(k + 1)] for _ in range(n + 1)]
+        prefix_OR[0][0].add(0)
+        
+        for i in range(1, n + 1):
+            num = nums[i - 1]
+            for j in range(0, k + 1):
+                # First, carry over the previous ORs
+                prefix_OR[i][j].update(prefix_OR[i - 1][j])
+                # Then, if we can select this element
+                if j > 0:
+                    for s in prefix_OR[i - 1][j - 1]:
+                        prefix_OR[i][j].add(s | num)
+        
+        # Initialize suffix_OR
+        # suffix_OR[i][j] is the set of ORs achievable by selecting j elements from last n - i elements
+        suffix_OR = [[set() for _ in range(k + 1)] for _ in range(n + 1)]
+        suffix_OR[n][0].add(0)
+        
+        for i in range(n - 1, -1, -1):
+            num = nums[i]
+            for j in range(0, k + 1):
+                # First, carry over the previous ORs
+                suffix_OR[i][j].update(suffix_OR[i + 1][j])
+                # Then, if we can select this element
+                if j > 0:
+                    for s in suffix_OR[i + 1][j - 1]:
+                        suffix_OR[i][j].add(s | num)
+        
+        max_xor = 0
+        # Iterate over all possible split points
+        # We need at least k elements on the left and k on the right
+        for i in range(k, n - k +1):
+            # Get all possible ORs for the first k elements from first i elements
+            left_ORs = prefix_OR[i][k]
+            # Get all possible ORs for the last k elements from last n - i elements
+            right_ORs = suffix_OR[i][k]
+            # Compute the maximum XOR between any pair from left_ORs and right_ORs
+            for or1 in left_ORs:
+                # To optimize, iterate through right_ORs and compute or1 ^ or2
+                # Keep track of the maximum
+                for or2 in right_ORs:
+                    current_xor = or1 ^ or2
+                    if current_xor > max_xor:
+                        max_xor = current_xor
+                        # Early exit if maximum possible XOR is achieved
+                        if max_xor == 127:  # since nums[i] < 128
+                            return max_xor
+        return max_xor
