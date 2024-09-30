@@ -1,0 +1,135 @@
+3306. Count of Substrings Containing Every Vowel and K Consonants II
+Solved
+Medium
+Companies
+Hint
+You are given a string word and a non-negative integer k.
+
+Return the total number of 
+substrings
+ of word that contain every vowel ('a', 'e', 'i', 'o', and 'u') at least once and exactly k consonants.
+
+ 
+
+Example 1:
+
+Input: word = "aeioqq", k = 1
+
+Output: 0
+
+Explanation:
+
+There is no substring with every vowel.
+
+Example 2:
+
+Input: word = "aeiou", k = 0
+
+Output: 1
+
+Explanation:
+
+The only substring with every vowel and zero consonants is word[0..4], which is "aeiou".
+
+Example 3:
+
+Input: word = "ieaouqqieaouqq", k = 1
+
+Output: 3
+
+Explanation:
+
+The substrings with every vowel and one consonant are:
+
+word[0..5], which is "ieaouq".
+word[6..11], which is "qieaou".
+word[7..12], which is "ieaouq".
+ 
+
+Constraints:
+
+5 <= word.length <= 2 * 105
+word consists only of lowercase English letters.
+0 <= k <= word.length - 5
+
+
+Solution 1:
+
+class Solution:
+    def countOfSubstrings(self, word: str, k: int) -> int:
+        n = len(word)
+        vowel_set = set('aeiou')
+        next_consonant = [n] * n
+        last_idx = n
+
+        for i in range(n - 1, -1, -1):
+            next_consonant[i] = last_idx
+            if word[i] not in vowel_set:
+                last_idx = i
+
+        result = 0
+        consonant = left = 0
+        vowel_map_count = defaultdict(int)
+
+        for right in range(n):
+            if word[right] in vowel_set:
+                vowel_map_count[word[right]] += 1
+            else:
+                consonant += 1
+            
+            while consonant > k:
+                if word[left] in vowel_set:
+                    vowel_map_count[word[left]] -= 1
+                    if vowel_map_count[word[left]] == 0:
+                        del vowel_map_count[word[left]]
+                else:
+                    consonant -= 1
+                left += 1
+            
+            while len(vowel_map_count) == 5 and consonant == k:
+                next_valid_idx = next_consonant[right]
+                result += next_valid_idx - right
+                if word[left] in vowel_set:
+                    vowel_map_count[word[left]] -= 1
+                    if vowel_map_count[word[left]] == 0:
+                        del vowel_map_count[word[left]]
+                else:
+                    consonant -= 1
+                left += 1
+        
+        return result
+
+
+Solution 2:
+
+class Solution:
+    def countOfSubstrings(self, word: str, k: int) -> int:
+        def countAtLeastMConsonants(m):
+            n = len(word)
+            vowels = ('a', 'e', 'i', 'o', 'u')
+            vowels_map = defaultdict(int)
+            num_consonants = 0
+            count = 0
+            l = 0
+            r = 0
+            while r < n or l < n:
+                if len(vowels_map) == 5 and num_consonants >= m:
+                    count += n - r + 1
+                    if word[l] not in vowels:
+                        num_consonants -= 1
+                    else:
+                        vowels_map[word[l]] -= 1
+                        if vowels_map[word[l]] == 0:
+                            del vowels_map[word[l]]
+                    l += 1
+                else:
+                    if r == n:
+                        break
+                    if word[r] not in vowels:
+                        num_consonants += 1
+                    else:
+                        vowels_map[word[r]] += 1
+                    r += 1
+            return count
+        
+        return countAtLeastMConsonants(k) - countAtLeastMConsonants(k + 1)
