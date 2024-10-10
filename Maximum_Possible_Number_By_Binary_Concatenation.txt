@@ -1,0 +1,93 @@
+3309. Maximum Possible Number by Binary Concatenation
+Solved
+Medium
+Topics
+Companies
+Hint
+You are given an array of integers nums of size 3.
+
+Return the maximum possible number whose binary representation can be formed by concatenating the binary representation of all elements in nums in some order.
+
+Note that the binary representation of any number does not contain leading zeros.
+
+ 
+
+Example 1:
+
+Input: nums = [1,2,3]
+
+Output: 30
+
+Explanation:
+
+Concatenate the numbers in the order [3, 1, 2] to get the result "11110", which is the binary representation of 30.
+
+Example 2:
+
+Input: nums = [2,8,16]
+
+Output: 1296
+
+Explanation:
+
+Concatenate the numbers in the order [2, 8, 16] to get the result "10100010000", which is the binary representation of 1296.
+
+ 
+
+Constraints:
+
+nums.length == 3
+1 <= nums[i] <= 127
+
+
+Solution 1:
+
+class Solution:
+    def maxGoodNumber(self, nums: List[int]) -> int:
+        result = 0
+
+        for i in range(3):
+            for j in range(3):
+                if i != j:
+                    for k in range(3):
+                        if i != k and j != k:
+                            a = bin(nums[i])[2:]
+                            b = bin(nums[j])[2:]
+                            c = bin(nums[k])[2:]
+
+                            result = max(result, int(a + b + c, 2))
+
+        return result
+
+
+Solution 2:
+
+class Solution:
+    def maxGoodNumber(self, nums: List[int]) -> int:
+        def comparator(a, b):
+            bin_a = bin(a)[2:]
+            bin_b = bin(b)[2:]
+
+            return int(bin_a + bin_b, 2) - int(bin_b + bin_a, 2)
+
+        sorted_nums = sorted(nums, key=cmp_to_key(comparator), reverse = True)
+
+        binary_str = "".join(bin(x)[2:] for x in sorted_nums)
+
+        return int(binary_str, 2)
+
+
+Solution 3:
+
+class Solution:
+    def maxGoodNumber(self, nums: List[int]) -> int:
+        def cmp(a, b):
+            if a + b > b + a:
+                return -1
+            return 1
+        
+        nums = [bin(num)[2:] for num in nums]
+        nums.sort(key = cmp_to_key(cmp))
+
+        result = ''.join(nums)
+        return int(result, 2)

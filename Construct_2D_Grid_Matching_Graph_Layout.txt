@@ -1,0 +1,310 @@
+3311. Construct 2D Grid Matching Graph Layout
+Solved
+Hard
+Topics
+Companies
+Hint
+You are given a 2D integer array edges representing an undirected graph having n nodes, where edges[i] = [ui, vi] denotes an edge between nodes ui and vi.
+
+Construct a 2D grid that satisfies these conditions:
+
+The grid contains all nodes from 0 to n - 1 in its cells, with each node appearing exactly once.
+Two nodes should be in adjacent grid cells (horizontally or vertically) if and only if there is an edge between them in edges.
+It is guaranteed that edges can form a 2D grid that satisfies the conditions.
+
+Return a 2D integer array satisfying the conditions above. If there are multiple solutions, return any of them.
+
+ 
+
+Example 1:
+
+Input: n = 4, edges = [[0,1],[0,2],[1,3],[2,3]]
+
+Output: [[3,1],[2,0]]
+
+Explanation:
+
+
+
+Example 2:
+
+Input: n = 5, edges = [[0,1],[1,3],[2,3],[2,4]]
+
+Output: [[4,2,3,1,0]]
+
+Explanation:
+
+
+
+Example 3:
+
+Input: n = 9, edges = [[0,1],[0,4],[0,5],[1,7],[2,3],[2,4],[2,5],[3,6],[4,6],[4,7],[6,8],[7,8]]
+
+Output: [[8,6,3],[7,4,2],[1,0,5]]
+
+Explanation:
+
+
+
+ 
+
+Constraints:
+
+2 <= n <= 5 * 104
+1 <= edges.length <= 105
+edges[i] = [ui, vi]
+0 <= ui < vi < n
+All the edges are distinct.
+The input is generated such that edges can form a 2D grid that satisfies the conditions.
+
+
+Solution 1:
+
+class Solution:
+    def constructGridLayout(self, n: int, edges: List[List[int]]) -> List[List[int]]:
+        # Step 1: Build the adjacency list and calculate the degrees
+        graph = defaultdict(list)
+        indegree = [0] * n
+
+        for u, v in edges:
+            graph[u].append(v)
+            graph[v].append(u)
+            indegree[u] += 1
+            indegree[v] += 1
+
+        # Step 2: Find the node with the minimum degree (either 1 or 2)
+        min_degree_node = min(range(n), key=lambda x: indegree[x])
+
+        # Step 3: If we have a 1D path (min degree is 1), we create a single row grid
+        if indegree[min_degree_node] == 1:
+            # Construct a single row 1D path by DFS
+            visited = set()
+            path = []
+            def dfs(node):
+                path.append(node)
+                visited.add(node)
+                for neighbor in graph[node]:
+                    if neighbor not in visited:
+                        dfs(neighbor)
+            dfs(min_degree_node)
+            return [path]
+
+        # Step 4: Identify the 4 corner nodes (nodes with degree 2 in a 2D grid)
+        corner_nodes = {i for i in range(n) if indegree[i] == 2}
+
+        # Step 5: Find the distance and destination node from the start node
+        def bfs(src):
+            queue = deque([src])
+            visited = set([src])
+            dist = 0
+            while queue:
+                for _ in range(len(queue)):
+                    node = queue.popleft()
+                    # Look for another corner node to establish grid dimensions
+                    if node in corner_nodes and node != src:
+                        return (dist + 1, node)  # Return distance + 1 (columns), and dest node
+                    for neighbor in graph[node]:
+                        if neighbor not in visited:
+                            visited.add(neighbor)
+                            queue.append(neighbor)
+                dist += 1
+            return (0, -1)  # Should never reach here due to problem constraints
+
+        cols, dest_node = bfs(min_degree_node)
+        rows = n // cols
+
+        # Step 6: Find the shortest path between the two corner nodes to form the first row
+        def find_shortest_path(start, end):
+            queue = deque([(start, [start])])
+            visited = set([start])
+            while queue:
+                node, path = queue.popleft()
+                if node == end:
+                    return path
+                for neighbor in graph[node]:
+                    if neighbor not in visited:
+                        visited.add(neighbor)
+                        queue.append((neighbor, path + [neighbor]))
+            return []
+
+        first_row = find_shortest_path(min_degree_node, dest_node)
+
+        # Step 7: Build the grid row by row using the graph connections
+        grid = [first_row]
+        placed_nodes = set(first_row)
+
+        for i in range(1, rows):
+            new_row = []
+            for col in range(cols):
+                # For each cell in the new row, find its neighbor from the above row
+                node_above = grid[i - 1][col]
+                # Find a neighbor node of `node_above` not placed yet
+                for neighbor in graph[node_above]:
+                    if neighbor not in placed_nodes:
+                        new_row.append(neighbor)
+                        placed_nodes.add(neighbor)
+                        break
+            grid.append(new_row)
+
+        return grid
+
+
+Solution 2:
+
+class Solution:
+    def constructGridLayout(self, n: int, edges: List[List[int]]) -> List[List[int]]:
+        # Step 1: Build the adjacency list and calculate the degrees
+        graph = defaultdict(list)
+        indegree = [0] * n
+
+        for u, v in edges:
+            graph[u].append(v)
+            graph[v].append(u)
+            indegree[u] += 1
+            indegree[v] += 1
+
+        # Step 2: Find the node with the minimum degree (either 1 or 2)
+        min_degree_node = min(range(n), key=lambda x: indegree[x])
+
+        # Step 3: If we have a 1D path (min degree is 1), we create a single row grid
+        if indegree[min_degree_node] == 1:
+            # Construct a single row 1D path by DFS
+            visited = set()
+            path = []
+            def dfs(node):
+                path.append(node)
+                visited.add(node)
+                for neighbor in graph[node]:
+                    if neighbor not in visited:
+                        dfs(neighbor)
+            dfs(min_degree_node)
+            return [path]
+
+        # Step 4: Identify the 4 corner nodes (nodes with degree 2 in a 2D grid)
+        corner_nodes = {i for i in range(n) if indegree[i] == 2}
+
+        # Step 5: Find the distance and destination node from the start node
+        def bfs(src):
+            queue = deque([src])
+            visited = set([src])
+            dist = 0
+            while queue:
+                for _ in range(len(queue)):
+                    node = queue.popleft()
+                    # Look for another corner node to establish grid dimensions
+                    if node in corner_nodes and node != src:
+                        return (dist + 1, node)  # Return distance + 1 (columns), and dest node
+                    for neighbor in graph[node]:
+                        if neighbor not in visited:
+                            visited.add(neighbor)
+                            queue.append(neighbor)
+                dist += 1
+            return (0, -1)  # Should never reach here due to problem constraints
+
+        cols, dest_node = bfs(min_degree_node)
+        rows = n // cols
+
+        # Step 6: Find the shortest path between the two corner nodes to form the first row
+        def find_shortest_path(src, dest):
+            def bfs(src):
+                visited = {src}
+                from_node = [-1] * n
+                q = deque([src])
+                
+                while q:
+                    u = q.popleft()
+                    for v in graph[u]:
+                        if v not in visited:
+                            visited.add(v)
+                            from_node[v] = u
+                            q.append(v)
+                
+                return from_node
+
+            from_node = bfs(src)
+            path = []
+            node = dest
+            
+            while node != -1:
+                path.append(node)
+                node = from_node[node]
+                
+            return path
+
+        first_row = find_shortest_path(min_degree_node, dest_node)
+
+        # Step 7: Build the grid row by row using the graph connections
+        grid = [first_row]
+        placed_nodes = set(first_row)
+
+        for i in range(1, rows):
+            new_row = []
+            for col in range(cols):
+                # For each cell in the new row, find its neighbor from the above row
+                node_above = grid[i - 1][col]
+                # Find a neighbor node of `node_above` not placed yet
+                for neighbor in graph[node_above]:
+                    if neighbor not in placed_nodes:
+                        new_row.append(neighbor)
+                        placed_nodes.add(neighbor)
+            grid.append(new_row)
+
+        return grid
+
+
+Solution 3:
+
+class Solution:
+    def constructGridLayout(self, n: int, edges: List[List[int]]) -> List[List[int]]:
+        # Step 1: Build adjacency list and find degrees of each node
+        graph = [[] for _ in range(n)]
+        for u, v in edges:
+            graph[u].append(v)
+            graph[v].append(u)
+
+        # Calculate the degree of each node
+        degrees = [len(neighbors) for neighbors in graph]
+
+        # Step 2: Find the node with the minimum degree to start building the path
+        start_node = degrees.index(min(degrees))
+
+        # Step 3: Build the first row path of the grid
+        def build_first_row_path(start_node):
+            path = [start_node]
+            visited = [False] * n
+            visited[start_node] = True
+
+            for node in path:
+                if len(path) >= 2 and degrees[path[-1]] == degrees[start_node]:
+                    break
+                # Sort the neighbors of `node` based on their degrees
+                graph[node].sort(key=lambda x: degrees[x])
+                for neighbor in graph[node]:
+                    if not visited[neighbor] and degrees[neighbor] <= degrees[start_node] + 1:
+                        path.append(neighbor)
+                        visited[neighbor] = True
+                        break
+
+            return path, visited
+
+        # Build the path for the first row and keep track of visited nodes
+        first_row, visited_nodes = build_first_row_path(start_node)
+
+        # Step 4: Determine grid dimensions
+        cols = len(first_row)  # Number of columns in the grid (length of the first row)
+        rows = n // cols       # Calculate number of rows
+
+        # Step 5: Create the grid and set the first row
+        grid = [[0] * cols for _ in range(rows)]
+        grid[0] = first_row
+
+        # Step 6: Fill the grid row by row
+        for r in range(1, rows):
+            for c in range(cols):
+                for neighbor in graph[grid[r - 1][c]]:
+                    if not visited_nodes[neighbor]:
+                        grid[r][c] = neighbor
+                        visited_nodes[neighbor] = True
+                        break
+
+        return grid
