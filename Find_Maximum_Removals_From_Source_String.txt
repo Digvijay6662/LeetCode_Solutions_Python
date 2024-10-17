@@ -1,0 +1,191 @@
+3316. Find Maximum Removals From Source String
+Solved
+Medium
+Topics
+Companies
+Hint
+You are given a string source of size n, a string pattern that is a 
+subsequence
+ of source, and a sorted integer array targetIndices that contains distinct numbers in the range [0, n - 1].
+
+We define an operation as removing a character at an index idx from source such that:
+
+idx is an element of targetIndices.
+pattern remains a 
+subsequence
+ of source after removing the character.
+Performing an operation does not change the indices of the other characters in source. For example, if you remove 'c' from "acb", the character at index 2 would still be 'b'.
+
+Return the maximum number of operations that can be performed.
+
+ 
+
+Example 1:
+
+Input: source = "abbaa", pattern = "aba", targetIndices = [0,1,2]
+
+Output: 1
+
+Explanation:
+
+We can't remove source[0] but we can do either of these two operations:
+
+Remove source[1], so that source becomes "a_baa".
+Remove source[2], so that source becomes "ab_aa".
+Example 2:
+
+Input: source = "bcda", pattern = "d", targetIndices = [0,3]
+
+Output: 2
+
+Explanation:
+
+We can remove source[0] and source[3] in two operations.
+
+Example 3:
+
+Input: source = "dda", pattern = "dda", targetIndices = [0,1,2]
+
+Output: 0
+
+Explanation:
+
+We can't remove any character from source.
+
+Example 4:
+
+Input: source = "yeyeykyded", pattern = "yeyyd", targetIndices = [0,2,3,4]
+
+Output: 2
+
+Explanation:
+
+We can remove source[2] and source[3] in two operations.
+
+ 
+
+Constraints:
+
+1 <= n == source.length <= 3 * 103
+1 <= pattern.length <= n
+1 <= targetIndices.length <= n
+targetIndices is sorted in ascending order.
+The input is generated such that targetIndices contains distinct elements in the range [0, n - 1].
+source and pattern consist only of lowercase English letters.
+The input is generated such that pattern appears as a subsequence in source.
+
+
+Solution 1:
+
+class Solution:
+    def maxRemovals(self, source: str, pattern: str, targetIndices: List[int]) -> int:
+        n, m = len(source), len(pattern)
+        target_set = set(targetIndices)
+
+        @cache
+        def solve(i, j):
+            if i == n:
+                return 0 if j == m else float('-inf')
+            if j == m:
+                return 1 + solve(i + 1, j) if i in target_set else solve(i + 1, j)
+
+            ans = float('-inf')
+            if i in target_set:
+                ans = max(ans, 1 + solve(i + 1, j))
+            if source[i] == pattern[j]:
+                ans = max(ans, solve(i + 1, j + 1))
+            else:
+                ans = max(ans, solve(i + 1, j))
+            return ans
+        
+        return solve(0, 0)
+
+
+Solution 2:
+
+class Solution:
+    def maxRemovals(self, source: str, pattern: str, targetIndices: List[int]) -> int:
+        n, m = len(source), len(pattern)
+        target_set = set(targetIndices)
+
+        # Initialize dp table with negative infinity
+        dp = [[float('-inf') for _ in range(m + 1)] for _ in range(n + 1)]
+        dp[n][m] = 0  # Base case: when both `source` and `pattern` are fully matched
+
+        # Base case for when the pattern is fully matched
+        for i in range(n - 1, -1, -1):
+            dp[i][m] = 1 + dp[i + 1][m] if i in target_set else dp[i + 1][m]
+
+        # Fill dp table for each subproblem
+        for i in range(n - 1, -1, -1):
+            for j in range(m - 1, -1, -1):
+                # If the character can be removed
+                if i in target_set:
+                    dp[i][j] = max(dp[i][j], 1 + dp[i + 1][j])
+
+                # If the current characters match, continue matching both
+                if source[i] == pattern[j]:
+                    dp[i][j] = max(dp[i][j], dp[i + 1][j + 1])
+                else:
+                    dp[i][j] = max(dp[i][j], dp[i + 1][j])
+
+        # Return the result from the first state
+        return dp[0][0] if dp[0][0] != float('-inf') else 0
+
+
+Solution 3:
+
+class Solution:
+    def maxRemovals(self, source: str, pattern: str, targetIndices: List[int]) -> int:
+        n, m = len(source), len(pattern)
+        target_set = set(targetIndices)
+
+        # Initialize dp array for current state and next state
+        dp = [float('-inf')] * (m + 1)
+        dp[m] = 0  # Base case: when both `source` and `pattern` are fully matched
+
+        # Iterate backwards over source to fill dp values
+        for i in range(n - 1, -1, -1):
+            next_dp = dp[:]  # Copy the current dp values for the next iteration
+            
+            # Base case when the pattern is fully matched (j == m)
+            if i in target_set:
+                next_dp[m] = 1 + dp[m]
+            else:
+                next_dp[m] = dp[m]
+
+            # Fill dp array for matching subproblems
+            for j in range(m - 1, -1, -1):
+                # If the character can be removed
+                if i in target_set:
+                    next_dp[j] = max(next_dp[j], 1 + dp[j])
+
+                # If the current characters match, continue matching both
+                if source[i] == pattern[j]:
+                    next_dp[j] = max(next_dp[j], dp[j + 1])
+                else:
+                    next_dp[j] = max(next_dp[j], dp[j])
+
+            dp = next_dp  # Move to the next state
+
+        # Return the result from the first state
+        return dp[0] if dp[0] != float('-inf') else 0
+
+
+Solution 4:
+
+class Solution:
+    def maxRemovals(self, source: str, pattern: str, targetIndices: List[int]) -> int:
+        n, m = len(source), len(pattern)
+        target_set = set(targetIndices)
+
+        dp = [float('-inf')] * (m + 1)
+        dp[m] = 0
+
+        for i in range(n - 1, -1, -1):
+            for j in range(m + 1):
+                dp[j] += i in target_set
+                if j < m and source[i] == pattern[j]:
+                    dp[j] = max(dp[j], dp[j + 1])
+
+        return dp[0]

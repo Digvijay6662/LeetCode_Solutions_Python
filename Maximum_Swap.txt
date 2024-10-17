@@ -1,0 +1,65 @@
+670. Maximum Swap
+Solved
+Medium
+Topics
+Companies
+You are given an integer num. You can swap two digits at most once to get the maximum valued number.
+
+Return the maximum valued number you can get.
+
+ 
+
+Example 1:
+
+Input: num = 2736
+Output: 7236
+Explanation: Swap the number 2 and the number 7.
+Example 2:
+
+Input: num = 9973
+Output: 9973
+Explanation: No swap.
+ 
+
+Constraints:
+
+0 <= num <= 108
+
+
+Solution 1:
+
+class Solution:
+    def maximumSwap(self, num: int) -> int:
+        s = list(str(num))
+        n = len(s)
+        idx_map = {int(ch) : i for i, ch in enumerate(s)}
+
+        for i in range(n):
+            for digit in range(9, int(s[i]), -1):
+                if digit in  idx_map and idx_map[digit] > i:
+                    s[i], s[idx_map[digit]] = s[idx_map[digit]], s[i]
+                    return int("".join(s))
+
+        return int("".join(s))
+
+
+Solution 2:
+
+class Solution:
+    def maximumSwap(self, num: int) -> int:
+        s = list(str(num))
+        n = len(s)
+        swap_i = swap_j = max_idx = -1
+        
+        for i in range(n - 1, -1, -1):
+            if max_idx == -1 or s[i] > s[max_idx]:
+                max_idx = i
+            elif s[i] < s[max_idx]:
+                swap_i = i
+                swap_j = max_idx
+
+        
+        if swap_i != -1 and swap_j != -1:
+            s[swap_i], s[swap_j] = s[swap_j], s[swap_i]
+        
+        return int("".join(s))
