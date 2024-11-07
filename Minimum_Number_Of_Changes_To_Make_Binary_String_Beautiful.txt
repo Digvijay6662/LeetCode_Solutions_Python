@@ -1,6 +1,7 @@
 2914. Minimum Number of Changes to Make Binary String Beautiful
 Solved
 Medium
+Topics
 Companies
 Hint
 You are given a 0-indexed binary string s having an even length.
@@ -12,20 +13,6 @@ Each substring contains only 1's or only 0's.
 You can change any character in s to 0 or 1.
 
 Return the minimum number of changes required to make the string s beautiful.
-
-
-Solution 1:
-
-class Solution:
-    def minChanges(self, s: str) -> int:
-        n = len(s)
-        count = 0
-        
-        for i in range(0, n, 2):
-            if s[i] != s[i + 1]:
-                count += 1
-                
-        return count
 
  
 
@@ -55,3 +42,18 @@ Constraints:
 2 <= s.length <= 105
 s has an even length.
 s[i] is either '0' or '1'.
+
+
+
+Solution 1:
+
+class Solution:
+    def minChanges(self, s: str) -> int:
+        n = len(s)
+        result = 0
+
+        for i in range(1, n, 2):
+            if s[i] != s[i - 1]:
+                result += 1
+
+        return result
