@@ -80,6 +80,32 @@ Solution 2:
 class Solution:
     def resultsArray(self, nums: List[int], k: int) -> List[int]:
         n = len(nums)
+        result = []
+        q = deque()
+
+        for i in range(n):
+            if len(q) == k:
+                q.popleft()
+            
+            if q and q[-1] != nums[i] - 1:
+                q.clear()
+            
+            q.append(nums[i])
+
+            if i >= k - 1:
+                if len(q) == k:
+                    result.append(nums[i])
+                else:
+                    result.append(-1)
+
+        return result
+
+
+Solution 3:
+
+class Solution:
+    def resultsArray(self, nums: List[int], k: int) -> List[int]:
+        n = len(nums)
         curr = 0
         result = []
 
