@@ -1,0 +1,230 @@
+2014. Longest Subsequence Repeated k Times
+Solved
+Hard
+Topics
+premium lock icon
+Companies
+Hint
+You are given a string s of length n, and an integer k. You are tasked to find the longest subsequence repeated k times in string s.
+
+A subsequence is a string that can be derived from another string by deleting some or no characters without changing the order of the remaining characters.
+
+A subsequence seq is repeated k times in the string s if seq * k is a subsequence of s, where seq * k represents a string constructed by concatenating seq k times.
+
+For example, "bba" is repeated 2 times in the string "bababcba", because the string "bbabba", constructed by concatenating "bba" 2 times, is a subsequence of the string "bababcba".
+Return the longest subsequence repeated k times in string s. If multiple such subsequences are found, return the lexicographically largest one. If there is no such subsequence, return an empty string.
+
+ 
+
+Example 1:
+
+example 1
+Input: s = "letsleetcode", k = 2
+Output: "let"
+Explanation: There are two longest subsequences repeated 2 times: "let" and "ete".
+"let" is the lexicographically largest one.
+Example 2:
+
+Input: s = "bb", k = 2
+Output: "b"
+Explanation: The longest subsequence repeated 2 times is "b".
+Example 3:
+
+Input: s = "ab", k = 2
+Output: ""
+Explanation: There is no subsequence repeated 2 times. Empty string is returned.
+ 
+
+Constraints:
+
+n == s.length
+2 <= n, k <= 2000
+2 <= n < k * 8
+s consists of lowercase English letters.
+
+
+Solution 1:
+
+class Solution:
+    def longestSubsequenceRepeatedK(self, s: str, k: int) -> str:
+        n = len(s)
+        freq = Counter(s)
+
+        # avail[ch] = how many times ch can appear in the base subsequence
+        avail = {ch: freq[ch] // k for ch in freq if freq[ch] >= k}
+        if not avail:
+            return ""
+
+        # theoretical upper‐bound on length of the subsequence
+        maxlen = n // k
+
+        # We'll keep track of the best answer found so far
+        result = ""
+
+        # Pre-sort keys in descending lex order
+        # so that, when lengths tie, we naturally favor lex‐larger.
+        chars = sorted(avail.keys(), reverse=True)
+
+        def isSubseq(seq: str) -> bool:
+            """Return True if (seq * k) is a subsequence of s."""
+            m = len(seq)
+            if m == 0:
+                return True
+            need = m * k
+            j = 0
+            for c in s:
+                if c == seq[j % m]:
+                    j += 1
+                    if j == need:
+                        return True
+            return False
+
+        def backtrack(curr):
+            nonlocal result
+
+            # 1) Prune if curr is already too long
+            if len(curr) > maxlen:
+                return
+
+            # 2) Prune if curr*k can't fit as a subsequence
+            if not isSubseq(curr):
+                return
+
+            # 3) Update result if curr is strictly better
+            #    (longer or same‐length but lex‐larger)
+            if (len(curr) > len(result)) or (
+               len(curr) == len(result) and curr > result):
+                result = curr
+
+            # 4) Try appending one more character
+            for ch in chars:
+                if avail[ch] > 0:
+                    avail[ch] -= 1
+                    backtrack(curr + ch)
+                    avail[ch] += 1
+
+        # Kick off recursion
+        backtrack("")
+        return result
+
+
+Solution 2:
+
+class Solution:
+    def longestSubsequenceRepeatedK(self, s: str, k: int) -> str:
+        n = len(s)
+        freq = Counter(s)
+
+        # avail[ch] = how many times ch can appear in the base subsequence
+        avail = {ch: freq[ch] // k for ch in freq if freq[ch] >= k}
+        if not avail:
+            return ""
+
+        # Theoretical upper-bound on length of the subsequence
+        maxlen = n // k
+
+        # Pre-sort keys in descending lex order for lexicographically larger results
+        chars = sorted(avail.keys(), reverse=True)
+
+        def isSubseq(seq: str) -> bool:
+            """Return True if (seq * k) is a subsequence of s."""
+            m = len(seq)
+            if m == 0:
+                return True
+            need = m * k
+            j = 0
+            for c in s:
+                if c == seq[j % m]:
+                    j += 1
+                    if j == need:
+                        return True
+            return False
+
+        result = ""
+        q = deque([("")])  # Queue stores strings to explore
+        while q:
+            string = q.popleft()
+            if len(string) > maxlen:
+                continue
+            
+            # Count characters in current string
+            curr_freq = Counter(string)
+            
+            for ch in chars:
+                if curr_freq.get(ch, 0) < avail[ch]:  # Ensure we don't exceed avail[ch]
+                    temp = string + ch
+                    if isSubseq(temp):
+                        if len(temp) > len(result) or (len(temp) == len(result) and temp > result):
+                            result = temp
+                        if len(temp) < maxlen:
+                            q.append(temp)
+
+        return result
+
+
+Solution 3:
+
+class Solution:
+    def longestSubsequenceRepeatedK(self, s: str, k: int) -> str:
+        n = len(s)
+        freq = Counter(s)
+
+        # 1) Compute how many times each character can appear in the base subsequence
+        #    (i.e. floor(total_occurrences / k))
+        avail = {ch: freq[ch] // k for ch in freq if freq[ch] >= k}
+        if not avail:
+            return ""
+
+        # 2) The absolute upper-bound on the length of any valid subsequence
+        maxlen = sum(avail.values())
+
+        # 3) Build a "next occurrence" table so we can test subsequence-ness in O(k·|seq|)
+        ALPHA = 26
+        next_pos = [[n] * ALPHA for _ in range(n + 1)]
+        for i in range(n - 1, -1, -1):
+            for c in range(ALPHA):
+                next_pos[i][c] = next_pos[i + 1][c]
+            next_pos[i][ord(s[i]) - 97] = i
+
+        def can_embed(seq) :
+            pos = 0
+            for _ in range(k):
+                for ch in seq:
+                    idx = ord(ch) - 97
+                    nxt = next_pos[pos][idx]
+                    if nxt == n:
+                        return False
+                    pos = nxt + 1
+            return True
+
+        # 4) Prepare to try lengths from maxlen down to 1,
+        #    and within each length, build lex-largest first.
+        chars = sorted(avail.keys(), reverse=True)
+
+        def dfs(curr, used, target_len):
+            if len(curr) == target_len:
+                return curr
+
+            for ch in chars:
+                if used[ch] < avail[ch]:
+                    cand = curr + ch
+                    # prune if this prefix can't be repeated k-times in s
+                    if not can_embed(cand):
+                        continue
+                    used[ch] += 1
+                    res = dfs(cand, used, target_len)
+                    if res:
+                        return res
+                    used[ch] -= 1
+
+            return ""
+
+        # 5) Main loop: try the longest possible length first.
+        for L in range(maxlen, 0, -1):
+            used = {ch: 0 for ch in avail}
+            result = dfs("", used, L)
+            if result:
+                return result
+
+        # Nothing works except the empty subsequence
+        return ""

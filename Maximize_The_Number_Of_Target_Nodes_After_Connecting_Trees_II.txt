@@ -1,0 +1,164 @@
+3373. Maximize the Number of Target Nodes After Connecting Trees II
+Solved
+Hard
+Topics
+premium lock icon
+Companies
+Hint
+There exist two undirected trees with n and m nodes, labeled from [0, n - 1] and [0, m - 1], respectively.
+
+You are given two 2D integer arrays edges1 and edges2 of lengths n - 1 and m - 1, respectively, where edges1[i] = [ai, bi] indicates that there is an edge between nodes ai and bi in the first tree and edges2[i] = [ui, vi] indicates that there is an edge between nodes ui and vi in the second tree.
+
+Node u is target to node v if the number of edges on the path from u to v is even. Note that a node is always target to itself.
+
+Return an array of n integers answer, where answer[i] is the maximum possible number of nodes that are target to node i of the first tree if you had to connect one node from the first tree to another node in the second tree.
+
+Note that queries are independent from each other. That is, for every query you will remove the added edge before proceeding to the next query.
+
+ 
+
+Example 1:
+
+Input: edges1 = [[0,1],[0,2],[2,3],[2,4]], edges2 = [[0,1],[0,2],[0,3],[2,7],[1,4],[4,5],[4,6]]
+
+Output: [8,7,7,8,8]
+
+Explanation:
+
+For i = 0, connect node 0 from the first tree to node 0 from the second tree.
+For i = 1, connect node 1 from the first tree to node 4 from the second tree.
+For i = 2, connect node 2 from the first tree to node 7 from the second tree.
+For i = 3, connect node 3 from the first tree to node 0 from the second tree.
+For i = 4, connect node 4 from the first tree to node 4 from the second tree.
+
+Example 2:
+
+Input: edges1 = [[0,1],[0,2],[0,3],[0,4]], edges2 = [[0,1],[1,2],[2,3]]
+
+Output: [3,6,6,6,6]
+
+Explanation:
+
+For every i, connect node i of the first tree with any node of the second tree.
+
+
+ 
+
+Constraints:
+
+2 <= n, m <= 105
+edges1.length == n - 1
+edges2.length == m - 1
+edges1[i].length == edges2[i].length == 2
+edges1[i] = [ai, bi]
+0 <= ai, bi < n
+edges2[i] = [ui, vi]
+0 <= ui, vi < m
+The input is generated such that edges1 and edges2 represent valid trees.
+
+
+Solution 1:
+
+class Solution:
+    def maxTargetNodes(self, edges1: List[List[int]], edges2: List[List[int]]) -> List[int]:
+        
+        def build_graph(edges):
+            graph = defaultdict(list)
+            
+            for u, v in edges:
+                graph[u].append(v)
+                graph[v].append(u)
+
+            return graph
+
+        def dfs(node, parent, graph, depth, d):
+            depth[node] = d
+            for nei in graph[node]:
+                if nei == parent:
+                    continue
+                dfs(nei, node, graph, depth, d + 1)
+        
+        graph1 = build_graph(edges1)
+        n = len(edges1) + 1
+        depth1 = [0] * n
+        dfs(0, -1, graph1, depth1, 0)
+        
+        count_even1 = count_odd1 = 0
+
+        for d in depth1:
+            if d % 2 == 0:
+                count_even1 += 1
+            else:
+                count_odd1 += 1
+
+        graph2 = build_graph(edges2)
+        m = len(edges2) + 1
+        depth2 = [0] * m
+        dfs(0, -1, graph2, depth2, 0)
+
+        count_even2 = count_odd2 = 0
+
+        for d in depth2:
+            if d % 2 == 0:
+                count_even2 += 1
+            else:
+                count_odd2 += 1
+
+        max_nodes = max(count_even2, count_odd2)
+        return [count_even1 + max_nodes if d % 2 == 0 else count_odd1 + max_nodes for d in depth1]
+
+
+Solution 2:
+
+class Solution:
+    def maxTargetNodes(self, edges1: List[List[int]], edges2: List[List[int]]) -> List[int]:
+        # Build adjacency list for both trees
+        def build_graph(edges):
+            graph = defaultdict(list)
+            for u, v in edges:
+                graph[u].append(v)
+                graph[v].append(u)
+            return graph
+        
+        # Compute depths and sizes for a tree
+        def compute_depths_and_sizes(graph, n, root):
+            depth = [-1] * n
+            size_even = 0
+            size_odd = 0
+            
+            def dfs(node, parent, d):
+                nonlocal size_even, size_odd
+                depth[node] = d
+                if d % 2 == 0:
+                    size_even += 1
+                else:
+                    size_odd += 1
+                for nei in graph[node]:
+                    if nei != parent:
+                        dfs(nei, node, d + 1)
+            
+            dfs(root, -1, 0)
+            return depth, size_even, size_odd
+        
+        # Number of nodes
+        n = len(edges1) + 1
+        m = len(edges2) + 1
+        
+        # Process Tree 1
+        graph1 = build_graph(edges1)
+        depth1, size_even1, size_odd1 = compute_depths_and_sizes(graph1, n, 0)
+        
+        # Compute count1 for each node in Tree 1
+        count1 = [size_even1 if depth1[i] % 2 == 0 else size_odd1 for i in range(n)]
+        
+        # Process Tree 2
+        graph2 = build_graph(edges2)
+        _, size_even2, size_odd2 = compute_depths_and_sizes(graph2, m, 0)
+        
+        # Maximum nodes targetable from any node in Tree 2
+        max_nodes2 = max(size_even2, size_odd2)
+        
+        # Compute answer for each node in Tree 1
+        answer = [count1[i] + max_nodes2 for i in range(n)]
+        
+        return answer

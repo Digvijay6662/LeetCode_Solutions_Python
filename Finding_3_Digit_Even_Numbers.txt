@@ -1,0 +1,136 @@
+2094. Finding 3-Digit Even Numbers
+Solved
+Easy
+Topics
+Companies
+Hint
+You are given an integer array digits, where each element is a digit. The array may contain duplicates.
+
+You need to find all the unique integers that follow the given requirements:
+
+The integer consists of the concatenation of three elements from digits in any arbitrary order.
+The integer does not have leading zeros.
+The integer is even.
+For example, if the given digits were [1, 2, 3], integers 132 and 312 follow the requirements.
+
+Return a sorted array of the unique integers.
+
+ 
+
+Example 1:
+
+Input: digits = [2,1,3,0]
+Output: [102,120,130,132,210,230,302,310,312,320]
+Explanation: All the possible integers that follow the requirements are in the output array. 
+Notice that there are no odd integers or integers with leading zeros.
+Example 2:
+
+Input: digits = [2,2,8,8,2]
+Output: [222,228,282,288,822,828,882]
+Explanation: The same digit can be used as many times as it appears in digits. 
+In this example, the digit 8 is used twice each time in 288, 828, and 882. 
+Example 3:
+
+Input: digits = [3,7,5]
+Output: []
+Explanation: No even integers can be formed using the given digits.
+ 
+
+Constraints:
+
+3 <= digits.length <= 100
+0 <= digits[i] <= 9
+
+
+Solution 1:
+
+class Solution:
+    def findEvenNumbers(self, digits: List[int]) -> List[int]:
+        n = len(digits)
+        result = set()
+        visited = [False] * n
+
+        def backtrack(curr, depth):
+            if depth == 3:
+                if curr % 2 == 0:
+                    result.add(curr)
+                return
+            for i in range(n):
+                if not visited[i]:
+                    if depth == 0 and digits[i] == 0:
+                        continue
+                    visited[i] = True
+                    backtrack(curr * 10 + digits[i], depth + 1)
+                    visited[i] = False
+
+        backtrack(0, 0)
+        return sorted(result)
+
+
+Solution 2:
+
+class Solution:
+    def findEvenNumbers(self, digits: List[int]) -> List[int]:
+        n = len(digits)
+        unique_even_numbers = set()
+        digit_counts = Counter(digits)
+
+        def backtrack(current_number, current_length, counts):
+            # Base Case: If we have formed a 3-digit number.
+            if current_length == 3:
+                # Check if the 3-digit number is even.
+                if current_number % 2 == 0:
+                    # Add the valid even number to the result set.
+                    unique_even_numbers.add(current_number)
+                return
+
+            # Recursive Step: Try adding each possible digit (0-9)
+            for digit in range(10):
+                # Check if this digit is available (count > 0).
+                # Also, prevent leading zeros: if we are adding the first digit (length 0),
+                # it cannot be 0.
+                if counts[digit] > 0 and (current_length > 0 or digit != 0):
+                    # If the digit is available and valid to place at the current position:
+
+                    # Decrement the count of the digit as we use it.
+                    counts[digit] -= 1
+
+                    # Recursively call backtrack to add the next digit.
+                    # Update the current number by appending the digit.
+                    backtrack(current_number * 10 + digit, current_length + 1, counts)
+
+                    # Backtrack: Restore the count of the digit for other possibilities.
+                    counts[digit] += 1
+
+        backtrack(0, 0, digit_counts)
+        return sorted(list(unique_even_numbers))
+
+
+Solution 3:
+
+class Solution:
+    def findEvenNumbers(self, digits: List[int]) -> List[int]:
+        # Count frequency of each digit
+        freq = Counter(digits)
+        result = set()
+        
+        # Try all possible combinations for hundreds, tens, and units
+        for h in range(1, 10):  # Hundreds digit cannot be 0
+            if h not in freq:
+                continue
+            for t in range(10):
+                if t not in freq:
+                    continue
+                for u in range(0, 10, 2):  # Units digit must be even
+                    if u not in freq:
+                        continue
+                    # Check if we have enough occurrences of each digit
+                    temp_freq = freq.copy()
+                    temp_freq[h] -= 1
+                    temp_freq[t] -= 1
+                    temp_freq[u] -= 1
+                    if temp_freq[h] >= 0 and temp_freq[t] >= 0 and temp_freq[u] >= 0:
+                        num = h * 100 + t * 10 + u
+                        result.add(num)
+        
+        return sorted(result)

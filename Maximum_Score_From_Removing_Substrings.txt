@@ -41,25 +41,40 @@ Solution 1:
 
 class Solution:
     def maximumGain(self, s: str, x: int, y: int) -> int:
-        if x > y:
-            first, second = "ab", "ba"
-            first_points, second_points = x, y
+        # Decide which substring removal gives more points and handle it first
+        # We’ll call the higher-point substring high_sub, the other low_sub
+        if x >= y:
+            high_sub, low_sub = "ab", "ba"
+            high_score, low_score = x, y
         else:
-            first, second = "ba", "ab"
-            first_points, second_points = y, x
-        
-        def remove_substring(s, sub, points):
+            high_sub, low_sub = "ba", "ab"
+            high_score, low_score = y, x
+
+        def remove_and_score(input_str: str, target_sub: str, points: int):
+            """
+            Walk through input_str using a stack to remove all occurrences of target_sub.
+            Each time target_sub is formed at the top of the stack, pop it and add points.
+            Returns the leftover string and the accumulated score.
+            """
             stack = []
-            score = 0
-            for char in s:
-                if stack and stack[-1] + char == sub:
-                    stack.pop()
-                    score += points
+            subtotal = 0
+
+            for ch in input_str:
+                # If the top of the stack + current char equals target_sub, we remove it
+                if stack and stack[-1] + ch == target_sub:
+                    stack.pop()           # remove the matching character
+                    subtotal += points    # add the reward
                 else:
-                    stack.append(char)
-            return "".join(stack), score
-        
-        remaining, score = remove_substring(s, first, first_points)
-        _, additional_score = remove_substring(remaining, second, second_points)
-        
-        return score + additional_score
+                    stack.append(ch)      # otherwise keep the character for future matches
+
+            # Rebuild remaining string and return with score from this pass
+            return "".join(stack), subtotal
+
+        # 1) First pass: remove all high‐value substrings ("ab" or "ba" whichever is worth more)
+        intermediate_str, primary_score = remove_and_score(s, high_sub, high_score)
+
+        # 2) Second pass: remove all remaining lower‐value substrings from the leftover
+        _, secondary_score = remove_and_score(intermediate_str, low_sub, low_score)
+
+        # Total score is sum of both removal phases
+        return primary_score + secondary_score

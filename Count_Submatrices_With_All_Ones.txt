@@ -1,0 +1,122 @@
+1504. Count Submatrices With All Ones
+Solved
+Medium
+Topics
+premium lock icon
+Companies
+Hint
+Given an m x n binary matrix mat, return the number of submatrices that have all ones.
+
+ 
+
+Example 1:
+
+
+Input: mat = [[1,0,1],[1,1,0],[1,1,0]]
+Output: 13
+Explanation: 
+There are 6 rectangles of side 1x1.
+There are 2 rectangles of side 1x2.
+There are 3 rectangles of side 2x1.
+There is 1 rectangle of side 2x2. 
+There is 1 rectangle of side 3x1.
+Total number of rectangles = 6 + 2 + 3 + 1 + 1 = 13.
+Example 2:
+
+
+Input: mat = [[0,1,1,0],[0,1,1,1],[1,1,1,0]]
+Output: 24
+Explanation: 
+There are 8 rectangles of side 1x1.
+There are 5 rectangles of side 1x2.
+There are 2 rectangles of side 1x3. 
+There are 4 rectangles of side 2x1.
+There are 2 rectangles of side 2x2. 
+There are 2 rectangles of side 3x1. 
+There is 1 rectangle of side 3x2. 
+Total number of rectangles = 8 + 5 + 2 + 4 + 2 + 2 + 1 = 24.
+ 
+
+Constraints:
+
+1 <= m, n <= 150
+mat[i][j] is either 0 or 1.
+
+
+Solution 1:
+
+class Solution:
+    def numSubmat(self, mat: List[List[int]]) -> int:
+        # n = number of rows, m = number of columns
+        n, m = len(mat), len(mat[0])
+
+        # Helper function to count the number of subarrays made up entirely of 1's
+        # within a given "count" array representing column heights of consecutive 1's.
+        def solve(count):
+            consecutive_ones = 0  # Track length of current streak of 1's
+            ans = 0  # Store total number of subarrays with all 1's in this row span
+            for c in count:
+                if c == 0:
+                    # Reset streak if a zero is found
+                    consecutive_ones = 0
+                else:
+                    # Extend current streak of consecutive 1's
+                    consecutive_ones += 1
+                # Add the streak length to answer — each additional 1 can form new submatrices
+                ans += consecutive_ones
+            return ans
+
+        result = 0  # Final count of all-1 submatrices
+
+        # r1 is the starting row of the submatrix
+        for r1 in range(n):
+            # count[j] will store whether column j has all 1's
+            # for rows from r1 to current r2
+            count = [1] * m
+
+            # r2 is the ending row of the submatrix (inclusive)
+            for r2 in range(r1, n):
+                # Update count[] to only keep 1 where all rows from r1 to r2 have 1's in that column
+                for c in range(m):
+                    count[c] &= mat[r2][c]
+                
+                # Add number of all-1 submatrices for current row span (r1..r2)
+                result += solve(count)
+        
+        return result
+
+
+Solution 2:
+
+class Solution:
+    def numSubmat(self, mat: List[List[int]]) -> int:
+        n, m = len(mat), len(mat[0])
+        heights = [0] * m
+        result = 0
+
+        for r in range(n):
+            # Step 1: Update histogram heights
+            for c in range(m):
+                if mat[r][c] == 0:
+                    heights[c] = 0
+                else:
+                    heights[c] += 1
+
+            # Step 2: Count submatrices ending at this row
+            stack = []
+            sum_ = [0] * m  # sum_[c] = number of submatrices ending at column c
+            for c in range(m):
+                # Maintain a monotonic stack (increasing heights)
+                while stack and heights[stack[-1]] >= heights[c]:
+                    stack.pop()
+
+                if stack:
+                    prev = stack[-1]
+                    sum_[c] = sum_[prev] + heights[c] * (c - prev)
+                else:
+                    sum_[c] = heights[c] * (c + 1)
+
+                result += sum_[c]
+                stack.append(c)
+
+        return result

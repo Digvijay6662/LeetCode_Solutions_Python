@@ -59,29 +59,47 @@ Solution 1:
 
 class Solution:
     def mostBooked(self, n: int, meetings: List[List[int]]) -> int:
+        # Sort meetings by start time to process them chronologically
         meetings.sort()
+        
+        # Min-heap of available room numbers (initially all rooms 0 to n-1)
         available = [i for i in range(n)]
+        heapq.heapify(available)  # Convert list to a heap for O(1) min access
+        
+        # Min-heap of occupied rooms as (end_time, room_number), sorted by end_time
         used = []
+        
+        # Array to count meetings per room
         count = [0] * n
 
+        # Process each meeting in order of start time
         for start, end in meetings:
+            # Free up rooms whose meetings have ended by the current start time
             while used and start >= used[0][0]:
-                _, room = heapq.heappop(used)
-                heapq.heappush(available, room)
+                end_time, room = heapq.heappop(used)  # Remove earliest-ending meeting
+                heapq.heappush(available, room)       # Return room to available pool
 
+            # Case 1: No available rooms, delay the meeting
             if not available:
+                # Get the room that will free up the earliest
                 end_time, room = heapq.heappop(used)
-                end = end_time + end - start
+                # Calculate new end time: start at end_time, keep original duration
+                end = end_time + (end - start)
+                # Make this room available for reassignment
                 heapq.heappush(available, room)
             
-            room = heapq.heappop(available)
-            heapq.heappush(used, (end, room))
-            count[room] += 1
+            # Assign the meeting to the lowest-numbered available room
+            room = heapq.heappop(available)      # Get smallest available room
+            heapq.heappush(used, (end, room))    # Add to used with new end time
+            count[room] += 1                     # Increment meeting count for this room
 
+        # Find the maximum number of meetings hosted by any room
         max_count = max(count)
 
+        # Return the smallest room number with the maximum meeting count
         for room in range(n):
             if count[room] == max_count:
                 return room
 
+        # This line is unreachable due to problem constraints (n >= 1)
         return -1

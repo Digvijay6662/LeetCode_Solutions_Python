@@ -1,0 +1,102 @@
+1007. Minimum Domino Rotations For Equal Row
+Solved
+Medium
+Topics
+Companies
+In a row of dominoes, tops[i] and bottoms[i] represent the top and bottom halves of the ith domino. (A domino is a tile with two numbers from 1 to 6 - one on each half of the tile.)
+
+We may rotate the ith domino, so that tops[i] and bottoms[i] swap values.
+
+Return the minimum number of rotations so that all the values in tops are the same, or all the values in bottoms are the same.
+
+If it cannot be done, return -1.
+
+ 
+
+Example 1:
+
+
+Input: tops = [2,1,2,4,2,2], bottoms = [5,2,6,2,3,2]
+Output: 2
+Explanation: 
+The first figure represents the dominoes as given by tops and bottoms: before we do any rotations.
+If we rotate the second and fourth dominoes, we can make every value in the top row equal to 2, as indicated by the second figure.
+Example 2:
+
+Input: tops = [3,5,1,2,3], bottoms = [3,6,3,3,4]
+Output: -1
+Explanation: 
+In this case, it is not possible to rotate the dominoes to make one row of values equal.
+ 
+
+Constraints:
+
+2 <= tops.length <= 2 * 104
+bottoms.length == tops.length
+1 <= tops[i], bottoms[i] <= 6
+
+
+Solution 1:
+
+class Solution:
+    def minDominoRotations(self, tops: List[int], bottoms: List[int]) -> int:
+        n = len(tops)
+        min_rotations = float('inf')
+
+        # Check each possible target value from 1 to 6
+        for target in range(1, 7):
+            top_rotations = 0  # Rotations to make all tops equal to target
+            bottom_rotations = 0  # Rotations to make all bottoms equal to target
+            possible = True
+
+            # Check each domino
+            for i in range(n):
+                # If target isn't on either side, it's impossible
+                if tops[i] != target and bottoms[i] != target:
+                    possible = False
+                    break
+                # Count rotations needed for top row
+                if tops[i] != target:
+                    top_rotations += 1
+                # Count rotations needed for bottom row
+                if bottoms[i] != target:
+                    bottom_rotations += 1
+
+            # If target is possible, update minimum rotations
+            if possible:
+                min_rotations = min(min_rotations, top_rotations, bottom_rotations)
+
+        # Return -1 if no solution exists, otherwise the minimum rotations
+        return -1 if min_rotations == float('inf') else min_rotations
+
+
+Solution 2:
+
+class Solution:
+    def minDominoRotations(self, tops: List[int], bottoms: List[int]) -> int:
+        
+        def check(candidate: int) -> int:
+            rotations_top = rotations_bottom = 0
+            for i in range(len(tops)):
+                # If neither side has the candidate, it's impossible.
+                if tops[i] != candidate and bottoms[i] != candidate:
+                    return float('inf')
+                # Count how many rotations needed for the top row.
+                if tops[i] != candidate:
+                    rotations_top += 1
+                # Count how many rotations needed for the bottom row.
+                if bottoms[i] != candidate:
+                    rotations_bottom += 1
+            # We choose the minimal rotations between aligning the top or the bottom.
+            return min(rotations_top, rotations_bottom)
+
+        # Only check the two candidates from the first domino.
+        candidate1 = tops[0]
+        candidate2 = bottoms[0]
+        
+        rotations1 = check(candidate1)
+        rotations2 = check(candidate2)
+        
+        # The answer is the minimum rotations required for either candidate.
+        result = min(rotations1, rotations2)
+        return -1 if result == float('inf') else result

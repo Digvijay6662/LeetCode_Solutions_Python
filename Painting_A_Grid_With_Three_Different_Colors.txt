@@ -1,0 +1,131 @@
+1931. Painting a Grid With Three Different Colors
+Solved
+Hard
+Topics
+Companies
+Hint
+You are given two integers m and n. Consider an m x n grid where each cell is initially white. You can paint each cell red, green, or blue. All cells must be painted.
+
+Return the number of ways to color the grid with no two adjacent cells having the same color. Since the answer can be very large, return it modulo 109 + 7.
+
+ 
+
+Example 1:
+
+
+Input: m = 1, n = 1
+Output: 3
+Explanation: The three possible colorings are shown in the image above.
+Example 2:
+
+
+Input: m = 1, n = 2
+Output: 6
+Explanation: The six possible colorings are shown in the image above.
+Example 3:
+
+Input: m = 5, n = 5
+Output: 580986
+ 
+
+Constraints:
+
+1 <= m <= 5
+1 <= n <= 1000
+
+
+Solution 1:
+
+class Solution:
+    def colorTheGrid(self, m: int, n: int) -> int:
+
+        def generatePattern(curr, columnStates):
+            if len(curr) == m:
+                columnStates.append(curr)
+                return
+            
+            for ch in ['R', 'G', 'B']:
+                if len(curr) == 0 or curr[-1] != ch:
+                    generatePattern(curr + ch, columnStates)
+            
+        
+        columnStates = []
+        generatePattern("", columnStates)
+        MOD = 1000000007
+        dp = [[-1] * n for _ in range(len(columnStates))]
+        
+        def solve(prevIdx, remainingColumns):            
+            if remainingColumns == 0:
+                return 1
+
+            if dp[prevIdx][remainingColumns] != -1:
+                return dp[prevIdx][remainingColumns]
+
+            ans = 0
+            for i in range(len(columnStates)):
+                if i == prevIdx:
+                    continue
+                valid = True
+                for j in range(m):
+                    if columnStates[prevIdx][j] == columnStates[i][j]:
+                        valid = False
+                        break
+                if valid:
+                    ans = (ans + solve(i, remainingColumns - 1)) % MOD
+            
+            dp[prevIdx][remainingColumns] = ans
+            return ans
+
+        result = 0
+        for i in range(len(columnStates)):
+            result = (result + solve(i, n - 1)) % MOD
+        
+        return result
+
+
+Solution 2:
+
+class Solution:
+    def colorTheGrid(self, m: int, n: int) -> int:
+        
+        def generatePattern(curr, columnStates):
+            if len(curr) == m:
+                columnStates.append(curr)
+                return
+            
+            for ch in ['R', 'G', 'B']:
+                if not curr or curr[-1] != ch:
+                    generatePattern(curr + ch, columnStates)
+        
+        # Generate all valid column colorings.
+        columnStates = []
+        generatePattern("", columnStates)
+        numStates = len(columnStates)
+        MOD = 1000000007
+
+        # Precompute valid transitions: for each state i, find all states j that are compatible.
+        validTransitions = [[] for _ in range(numStates)]
+        for i in range(numStates):
+            for j in range(numStates):
+                valid = True
+                # Check that each row has different colors between column states i and j.
+                for k in range(m):
+                    if columnStates[i][k] == columnStates[j][k]:
+                        valid = False
+                        break
+                if valid:
+                    validTransitions[i].append(j)
+        
+        # Initialize dp for the first column: every state is a valid starting configuration.
+        dp = [1] * numStates
+        
+        # Iteratively build the solution column by column.
+        for _ in range(1, n):
+            next_dp = [0] * numStates
+            for prev in range(numStates):
+                for nxt in validTransitions[prev]:
+                    next_dp[nxt] = (next_dp[nxt] + dp[prev]) % MOD
+            dp = next_dp
+        
+        # Sum over the last column's states.
+        return sum(dp) % MOD

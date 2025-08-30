@@ -44,14 +44,14 @@ class Solution:
     def eventualSafeNodes(self, graph: List[List[int]]) -> List[int]:
         n = len(graph)
         adj = defaultdict(list)
-        indegree = [0] * n
+        outdegree = [0] * n
 
         for i in range(n):
             for node in graph[i]:
                 adj[node].append(i)
-                indegree[i] += 1
+                outdegree[i] += 1
 
-        q = deque([node for node in range(n) if indegree[node] == 0])
+        q = deque([node for node in range(n) if outdegree[node] == 0])
 
         safeNodes = [False] * n
 
@@ -60,8 +60,8 @@ class Solution:
             safeNodes[node] = True
 
             for nei in adj[node]:
-                indegree[nei] -= 1
-                if indegree[nei] == 0:
+                outdegree[nei] -= 1
+                if outdegree[nei] == 0:
                     q.append(nei)
 
         res = []

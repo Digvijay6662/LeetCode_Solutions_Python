@@ -74,20 +74,36 @@ Solution 2:
 
 class Solution:
     def minimumDeletions(self, word: str, k: int) -> int:
+        # 1. Count how many times each character appears
         count = Counter(word)
+        # 2. Work with just the frequency values, sorted ascending
         arr = sorted(count.values())
+        
+        # 'deleted' accumulates the total freq of characters we've decided to wipe out completely
         deleted = 0
+        # best possible answer, start large and drive down
         result = float('inf')
         n = len(arr)
-
+        
+        # 3. Try using each distinct frequency arr[i] as the *floor* we keep
         for i in range(n):
+            # 'temp' will count deletions needed to trim *above*-floor letters
             temp = 0
+            
+            # 4. From the largest freq down to just above our pivot i
             for j in range(n - 1, i, -1):
+                # if arr[j] is already within k of arr[i], then all smaller j are also within
                 if arr[j] - arr[i] <= k:
                     break
-                temp += arr[j] - arr[i] - k
+                # otherwise delete the surplus above arr[i] + k
+                temp += arr[j] - (arr[i] + k)
             
-            result = min(temp + deleted, result)
+            # 5. Combine:
+            #    - 'deleted' for all letters below arr[i] (we already deleted them entirely)
+            #    - 'temp' for trimming high-frequency letters
+            result = min(result, temp + deleted)
+            
+            # 6. Now treat arr[i] as “below the next pivot,” so we add it to deleted
             deleted += arr[i]
-
+        
         return result

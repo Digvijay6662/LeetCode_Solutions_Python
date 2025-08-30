@@ -57,29 +57,35 @@ class Solution:
         n = len(grid)
         actual_sum = actual_sum_square = 0
 
+        # Compute the sum and sum of squares of all elements in the grid
         for i in range(n):
             for j in range(n):
                 actual_sum += grid[i][j]
                 actual_sum_square += grid[i][j] ** 2
 
+        # Total number of elements (n^2, since it's an n x n grid)
         n = n * n
+        
+        # Calculate expected sum and sum of squares for numbers 1 to n^2
         total_sum = n * (n + 1) // 2
         total_sum_square = n * (n + 1) * (2 * n + 1) // 6
 
-        # x: Missing Value, y: Repeated Value
-        # x - y = total_sum - actual_sum
-        # x2 - y2 = total_sum_square - actual_sum_square
-        # x + y = (total_sum_square - actual_sum_square + x - y) / (x - y)
+        # Define x as the missing value and y as the repeated value
+        # Difference between expected and actual sum: x - y = total_sum - actual_sum
         value1 = total_sum - actual_sum
+        
+        # Difference between expected and actual sum of squares gives (x^2 - y^2)
+        # Since x^2 - y^2 = (x - y)(x + y), then x + y = (total_sum_square - actual_sum_square) / (x - y)
         value2 = (total_sum_square - actual_sum_square) // value1
         
-        # From eq.1 and eq.4
+        # Solve for x (missing value) using (x + y) + (x - y) = 2x
         x = (value1 + value2) // 2
-        # From eq.4
+        
+        # Solve for y (repeated value) using (x + y) - x = y
         y = value2 - x
 
+        # Return [repeated value, missing value] as per the problem requirement
         return [y, x]
-
 
 Solution 3:
 

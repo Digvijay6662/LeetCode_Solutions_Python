@@ -1,0 +1,124 @@
+1900. The Earliest and Latest Rounds Where Players Compete
+Solved
+Hard
+Topics
+premium lock icon
+Companies
+Hint
+There is a tournament where n players are participating. The players are standing in a single row and are numbered from 1 to n based on their initial standing position (player 1 is the first player in the row, player 2 is the second player in the row, etc.).
+
+The tournament consists of multiple rounds (starting from round number 1). In each round, the ith player from the front of the row competes against the ith player from the end of the row, and the winner advances to the next round. When the number of players is odd for the current round, the player in the middle automatically advances to the next round.
+
+For example, if the row consists of players 1, 2, 4, 6, 7
+Player 1 competes against player 7.
+Player 2 competes against player 6.
+Player 4 automatically advances to the next round.
+After each round is over, the winners are lined back up in the row based on the original ordering assigned to them initially (ascending order).
+
+The players numbered firstPlayer and secondPlayer are the best in the tournament. They can win against any other player before they compete against each other. If any two other players compete against each other, either of them might win, and thus you may choose the outcome of this round.
+
+Given the integers n, firstPlayer, and secondPlayer, return an integer array containing two values, the earliest possible round number and the latest possible round number in which these two players will compete against each other, respectively.
+
+ 
+
+Example 1:
+
+Input: n = 11, firstPlayer = 2, secondPlayer = 4
+Output: [3,4]
+Explanation:
+One possible scenario which leads to the earliest round number:
+First round: 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11
+Second round: 2, 3, 4, 5, 6, 11
+Third round: 2, 3, 4
+One possible scenario which leads to the latest round number:
+First round: 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11
+Second round: 1, 2, 3, 4, 5, 6
+Third round: 1, 2, 4
+Fourth round: 2, 4
+Example 2:
+
+Input: n = 5, firstPlayer = 1, secondPlayer = 5
+Output: [1,1]
+Explanation: The players numbered 1 and 5 compete in the first round.
+There is no way to make them compete in any other round.
+ 
+
+Constraints:
+
+2 <= n <= 28
+1 <= firstPlayer < secondPlayer <= n
+
+
+Solution 1:
+
+class Solution:
+    def earliestAndLatest(self, n: int, firstPlayer: int, secondPlayer: int) -> List[int]:
+        # rename for clarity: leftmost and rightmost of our two star players
+        left, right = firstPlayer, secondPlayer
+
+        # if they face each other in round 1 (positions mirror across the lineup)
+        if left == n - right + 1:
+            return [1, 1]
+
+        # normalize so that our “left” star is always in the first half
+        if left > n - right + 1:
+            # mirror both players around the center
+            temp = n - left + 1
+            left = n - right + 1
+            right = temp
+
+        # we’ll track the best/earliest and worst/latest meeting rounds
+        minRound, maxRound = n, 1
+        # in the next round we’ll have ceil(n/2) players surviving
+        nextCount = (n + 1) // 2
+
+        # CASE 1: both stars survive on the same “side” of the bracket
+        if right <= nextCount:
+            # how many other players start to the left of our left star
+            countLeft = left - 1
+            # how many start strictly between the two stars
+            midCount = right - left - 1
+
+            # enumerate how many “unknown” survivors come from left and middle segments
+            for survivorsLeft in range(countLeft + 1):
+                for survivorsMid in range(midCount + 1):
+                    # new positions in next round:
+                    # our left star shifts right by whatever survived to its left
+                    pos1 = survivorsLeft + 1
+                    # our right star shifts right by survivorsLeft + survivorsMid + itself
+                    pos2 = pos1 + survivorsMid + 1
+
+                    # recurse on the smaller tournament
+                    e, l = self.earliestAndLatest(nextCount, pos1, pos2)
+                    # add 1 because we used up this round
+                    minRound = min(minRound, e + 1)
+                    maxRound = max(maxRound, l + 1)
+
+        # CASE 2: the stars are on opposite halves of the bracket
+        else:
+            # mirror the right star into the first half for counting
+            mirroredRight = n - right + 1
+            countLeft      = left - 1
+            # unknowns between left star and mirroredRight
+            midCount       = mirroredRight - left - 1
+            # unknowns between mirroredRight and actual right star
+            remainMidCount = right - mirroredRight - 1
+
+            # again enumerate how many unknown winners come from left/mid segments
+            for survivorsLeft in range(countLeft + 1):
+                for survivorsMid in range(midCount + 1):
+                    pos1 = survivorsLeft + 1
+                    # the right star’s new position folds in half of the 
+                    # players from the second-half-middle block
+                    pos2 = (
+                        pos1
+                        + survivorsMid
+                        + (remainMidCount + 1) // 2
+                        + 1
+                    )
+
+                    e, l = self.earliestAndLatest(nextCount, pos1, pos2)
+                    minRound = min(minRound, e + 1)
+                    maxRound = max(maxRound, l + 1)
+
+        return [minRound, maxRound]

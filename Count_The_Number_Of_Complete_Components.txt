@@ -1,0 +1,270 @@
+2685. Count the Number of Complete Components
+Solved
+Medium
+Topics
+Companies
+Hint
+You are given an integer n. There is an undirected graph with n vertices, numbered from 0 to n - 1. You are given a 2D integer array edges where edges[i] = [ai, bi] denotes that there exists an undirected edge connecting vertices ai and bi.
+
+Return the number of complete connected components of the graph.
+
+A connected component is a subgraph of a graph in which there exists a path between any two vertices, and no vertex of the subgraph shares an edge with a vertex outside of the subgraph.
+
+A connected component is said to be complete if there exists an edge between every pair of its vertices.
+
+ 
+
+Example 1:
+
+
+
+Input: n = 6, edges = [[0,1],[0,2],[1,2],[3,4]]
+Output: 3
+Explanation: From the picture above, one can see that all of the components of this graph are complete.
+Example 2:
+
+
+
+Input: n = 6, edges = [[0,1],[0,2],[1,2],[3,4],[3,5]]
+Output: 1
+Explanation: The component containing vertices 0, 1, and 2 is complete since there is an edge between every pair of two vertices. On the other hand, the component containing vertices 3, 4, and 5 is not complete since there is no edge between vertices 4 and 5. Thus, the number of complete components in this graph is 1.
+ 
+
+Constraints:
+
+1 <= n <= 50
+0 <= edges.length <= n * (n - 1) / 2
+edges[i].length == 2
+0 <= ai, bi <= n - 1
+ai != bi
+There are no repeated edges.
+
+
+Solution 1:
+
+class Solution:
+    def countCompleteComponents(self, n: int, edges: List[List[int]]) -> int:
+        graph = defaultdict(list)
+        for u, v in edges:
+            graph[u].append(v)
+            graph[v].append(u)
+        
+        visited = set()
+        result = 0
+
+        def dfs(node, component):
+            stack = [node]
+            component.append(node)
+            visited.add(node)
+            while stack:
+                current = stack.pop()
+                for neighbor in graph[current]:
+                    if neighbor not in visited:
+                        visited.add(neighbor)
+                        component.append(neighbor)
+                        stack.append(neighbor)
+            return component
+
+        for node in range(n):
+            if node not in visited:
+                component = list()
+                dfs(node, component)
+                m = len(component)
+                sum_deg = sum(len(graph[node]) for node in component)
+                if sum_deg == m * (m - 1):
+                    result += 1
+        
+        return result
+
+
+Solution 2:
+
+class Solution:
+    def countCompleteComponents(self, n: int, edges: List[List[int]]) -> int:
+        graph = defaultdict(list)
+
+        for u, v in edges:
+            graph[u].append(v)
+            graph[v].append(u)
+
+        visited = set()
+        result = 0
+
+        for node in range(n):
+            if node not in visited:
+                component_size = 0
+                component_edges = 0
+                stack = [node]
+                visited.add(node)
+
+                while stack:
+                    curr_node = stack.pop()
+                    component_size += 1
+                    for nei in graph[curr_node]:
+                        component_edges += 1
+                        if nei not in visited:
+                            stack.append(nei)
+                            visited.add(nei)
+
+                if component_edges == component_size * (component_size - 1):
+                    result += 1
+
+        return result
+
+
+Solution 3:
+
+class Solution:
+    def countCompleteComponents(self, n: int, edges: List[List[int]]) -> int:
+        graph = defaultdict(set)
+        for u, v in edges:
+            graph[u].add(v)
+            graph[v].add(u)
+        
+        visited = [False] * n
+        complete_count = 0
+
+        def bfs(start):
+            comp = []
+            queue = deque([start])
+            visited[start] = True
+            while queue:
+                node = queue.popleft()
+                comp.append(node)
+                for nei in graph[node]:
+                    if not visited[nei]:
+                        visited[nei] = True
+                        queue.append(nei)
+            return comp
+
+        for i in range(n):
+            if not visited[i]:
+                component = bfs(i)
+                size = len(component)
+                # A single isolated vertex is complete by definition.
+                is_complete = True
+                for node in component:
+                    # Count only neighbors that are in the same component.
+                    # (Since the component is isolated, all neighbors must be within it.)
+                    # If a node is missing an edge to some other node in the component,
+                    # then its degree (inside the component) must be less than size - 1.
+                    count = sum(1 for nei in graph[node] if nei in component)
+                    if count != size - 1:
+                        is_complete = False
+                        break
+                if is_complete:
+                    complete_count += 1
+
+        return complete_count
+
+
+Solution 4:
+
+class UnionFind:
+    def __init__(self, n):
+        self.parent = [i for i in range(n)]
+        self.size = [1] * n
+
+    def find(self, node):
+        while node != self.parent[node]:
+            self.parent[node] = self.parent[self.parent[node]]
+            node = self.parent[node]
+        return node
+
+    def union(self, node1, node2):
+        p1, p2 = self.find(node1), self.find(node2)
+        if p1 == p2:
+            return False
+
+        if self.size[p1] > self.size[p2]:
+            self.parent[p2] = p1
+            self.size[p1] += self.size[p2]
+        else:
+            self.parent[p1] = p2
+            self.size[p2] += self.size[p1]
+
+        return True
+
+class Solution:
+    def countCompleteComponents(self, n: int, edges: List[List[int]]) -> int:
+        edges_count = [0] * n
+        uf = UnionFind(n)
+
+        for u, v in edges:
+            uf.union(u, v)
+
+        for u, v in edges:
+            edges_count[uf.find(u)] += 1
+
+        complete_count = 0
+        for node in range(n):
+            if uf.find(node) == node:
+                no_of_nodes = uf.size[node]
+                no_of_edges = edges_count[node]
+
+                if no_of_edges == no_of_nodes * (no_of_nodes - 1) // 2:
+                    complete_count += 1
+
+        return complete_count
+
+
+Solution 5:
+
+from typing import List
+
+class UnionFind:
+    def __init__(self, n: int):
+        # Initialize each node as its own parent (separate component)
+        self.parent = list(range(n))
+        # Track size of each component (initially 1)
+        self.size = [1] * n
+        # Track number of edges in each component (initially 0)
+        self.edges_count = [0] * n
+
+    def find(self, node: int) -> int:
+        # Find the root of the component with path compression
+        while node != self.parent[node]:
+            self.parent[node] = self.parent[self.parent[node]]
+            node = self.parent[node]
+        return node
+
+    def union(self, node1: int, node2: int) -> bool:
+        # Merge two nodes/components
+        root1 = self.find(node1)
+        root2 = self.find(node2)
+        if root1 == root2:
+            # Nodes are already in the same component; add an edge
+            self.edges_count[root1] += 1
+            return False
+
+        # Merge smaller component into larger one
+        if self.size[root1] > self.size[root2]:
+            self.parent[root2] = root1
+            self.size[root1] += self.size[root2]
+            self.edges_count[root1] += self.edges_count[root2] + 1
+        else:
+            self.parent[root1] = root2
+            self.size[root2] += self.size[root1]
+            self.edges_count[root2] += self.edges_count[root1] + 1
+        return True
+
+class Solution:
+    def countCompleteComponents(self, n: int, edges: List[List[int]]) -> int:
+        # Initialize Union-Find for n vertices
+        uf = UnionFind(n)
+
+        # Process all edges to build connected components
+        for u, v in edges:
+            uf.union(u, v)
+
+        # Count complete components
+        complete_count = 0
+        for node in range(n):
+            # Check only roots of components
+            if uf.find(node) == node:
+                no_of_nodes = uf.size[node]
+                no_of_edges = uf.edges_count[node]
+                # A complete graph with k nodes has k * (k-1) / 2 edges
+                if no_of_edges == no_of_nodes * (no_of_nodes - 1) // 2:
+                    complete_count += 1
+        return complete_count

@@ -1,0 +1,148 @@
+3357. Minimize the Maximum Adjacent Element Difference
+Solved
+Hard
+Topics
+premium lock icon
+Companies
+Hint
+You are given an array of integers nums. Some values in nums are missing and are denoted by -1.
+
+You must choose a pair of positive integers (x, y) exactly once and replace each missing element with either x or y.
+
+You need to minimize the maximum absolute difference between adjacent elements of nums after replacements.
+
+Return the minimum possible difference.
+
+ 
+
+Example 1:
+
+Input: nums = [1,2,-1,10,8]
+
+Output: 4
+
+Explanation:
+
+By choosing the pair as (6, 7), nums can be changed to [1, 2, 6, 10, 8].
+
+The absolute differences between adjacent elements are:
+
+|1 - 2| == 1
+|2 - 6| == 4
+|6 - 10| == 4
+|10 - 8| == 2
+Example 2:
+
+Input: nums = [-1,-1,-1]
+
+Output: 0
+
+Explanation:
+
+By choosing the pair as (4, 4), nums can be changed to [4, 4, 4].
+
+Example 3:
+
+Input: nums = [-1,10,-1,8]
+
+Output: 1
+
+Explanation:
+
+By choosing the pair as (11, 9), nums can be changed to [11, 10, 9, 8].
+
+ 
+
+Constraints:
+
+2 <= nums.length <= 105
+nums[i] is either -1 or in the range [1, 109].
+
+
+Solution 1:
+
+class Solution:
+    def minDifference(self, nums: List[int]) -> int:
+        def check(d, x, y):
+            count = 0    # how many consecutive -1’s we’ve seen so far
+            prev = 0     # last non-missing value we encountered
+
+            for val in nums:
+                if val == -1:
+                    # For each -1, as long as we can later replace it by either x or y
+                    # such that |prev - choice| <= d, we’re fine so far.
+                    if prev != 0 and min(abs(prev - x), abs(prev - y)) > d:
+                        return False
+                    count += 1
+                else:
+                    # We just hit a real number after run of count -1’s
+                    if count > 0:
+                        if prev != 0:
+                            # Case: ... prev, (-1 run), val
+                            # Try filling the run all with x or all with y.
+                            # The worst-edge will be whichever endpoint is farther.
+                            use_x = max(abs(prev - x), abs(val - x))
+                            use_y = max(abs(prev - y), abs(val - y))
+                            best_endpoints = min(use_x, use_y)
+                        else:
+                            # Run starts at array start: all -1’s before the first num
+                            # Just need one endpoint check.
+                            best_endpoints = min(abs(val - x), abs(val - y))
+
+                        # Also, if we mix x and y inside the run, the interior
+                        # difference is |x - y|, so that must be <= d to be valid.
+                        can_mix = (count >= 2 and abs(x - y) <= d)
+
+                        # If neither uniform fill nor mixing works, fail.
+                        if best_endpoints > d and not can_mix:
+                            return False
+
+                    # Reset for next segment
+                    prev = val
+                    count = 0
+
+            return True
+
+
+        n = len(nums)
+
+        # Track the max adjacent diff among non-missing pairs
+        max_abs_diff = 0
+        # Track the smallest & largest neighbor around missing entries
+        min_val, max_val = float("inf"), 0
+
+        # First pass: compute max_abs_diff (fixed parts)
+        # and collect the min/max of all known entries adjacent to any -1
+        for i in range(n - 1):
+            a, b = nums[i], nums[i + 1]
+            if a != -1 and b != -1:
+                # Both known: update the baseline maximum difference
+                max_abs_diff = max(max_abs_diff, abs(a - b))
+            elif a == -1 and b != -1 or a != -1 and b == -1:
+                # One is -1, the other is a real number v
+                v = max(a, b)
+                min_val = min(min_val, v)
+                max_val = max(max_val, v)
+
+        # If there were no -1’s at all, the answer is just max_abs_diff
+        if min_val == float("inf"):
+            return max_abs_diff
+
+        # Our optimal d must lie between these two bounds
+        left, right = max_abs_diff, max_val - min_val
+        result = max_abs_diff
+
+        # Binary search the minimal feasible d
+        while left <= right:
+            mid = (left + right) // 2
+            # Choose x, y so that they sit exactly mid apart from min_val and max_val
+            x = min_val + mid
+            y = max_val - mid
+
+            if check(mid, x, y):
+                result = mid          # we can do with d = mid
+                right = mid - 1       # try an even smaller one
+            else:
+                left = mid + 1        # we need a larger d
+
+        return result

@@ -55,28 +55,36 @@ Solution 1:
 
 class Solution:
     def isValidSudoku(self, board: List[List[str]]) -> bool:
-        n = len(board)
-        rowMap = defaultdict(list)
-        colMap = defaultdict(list)
-        boxMap = defaultdict(list)
+        n = len(board)  # Size of the board (should be 9 for standard Sudoku)
 
-        for i in range(n):
-            for j in range(n):
-                if board[i][j] == '.':
+        # Dictionaries to track numbers seen in each row, column, and 3x3 box
+        rowMap = defaultdict(list)  # Key: row index, Value: list of numbers in that row
+        colMap = defaultdict(list)  # Key: column index, Value: list of numbers in that column
+        boxMap = defaultdict(list)  # Key: box index, Value: list of numbers in that 3x3 box
+
+        # Loop through each cell in the board
+        for i in range(n):  # Iterate over rows
+            for j in range(n):  # Iterate over columns
+                if board[i][j] == '.':  
+                    # Skip empty cells
                     continue
 
-                num = board[i][j]
+                num = board[i][j]  # Current number in the cell
+                # Calculate which 3x3 box this cell belongs to
+                # Boxes are numbered 0 to 8 from top-left to bottom-right
                 box = (i // 3) * 3 + (j // 3)
 
+                # Check if the number already exists in the same row, column, or box
                 if num in rowMap[i] or num in colMap[j] or num in boxMap[box]:
-                    return False
+                    return False  # Invalid Sudoku if duplicate found
                 else:
+                    # Record the number in the corresponding row, column, and box
                     rowMap[i].append(num)
                     colMap[j].append(num)
                     boxMap[box].append(num)
 
+        # If no duplicates found, the Sudoku board is valid
         return True
-
 
 Solution 2:
 

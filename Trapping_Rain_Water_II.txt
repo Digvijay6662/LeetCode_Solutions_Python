@@ -1,0 +1,74 @@
+407. Trapping Rain Water II
+Solved
+Hard
+Topics
+Companies
+Given an m x n integer matrix heightMap representing the height of each unit cell in a 2D elevation map, return the volume of water it can trap after raining.
+
+ 
+
+Example 1:
+
+
+Input: heightMap = [[1,4,3,1,3,2],[3,2,1,3,2,4],[2,3,3,2,3,1]]
+Output: 4
+Explanation: After the rain, water is trapped between the blocks.
+We have two small ponds 1 and 3 units trapped.
+The total volume of water trapped is 4.
+Example 2:
+
+
+Input: heightMap = [[3,3,3,3,3],[3,2,2,2,3],[3,2,1,2,3],[3,2,2,2,3],[3,3,3,3,3]]
+Output: 10
+ 
+
+Constraints:
+
+m == heightMap.length
+n == heightMap[i].length
+1 <= m, n <= 200
+0 <= heightMap[i][j] <= 2 * 104
+
+
+Solution 1:
+
+class Solution:
+    def trapRainWater(self, heightMap: List[List[int]]) -> int:
+        if not heightMap or not heightMap[0]:
+            return 0
+
+        n, m = len(heightMap), len(heightMap[0])
+        visited = [[False] * m for _ in range(n)]
+        minHeap = []
+
+        # Add all boundary cells to the heap and mark them as visited
+        for i in range(n):
+            heapq.heappush(minHeap, (heightMap[i][0], i, 0))
+            heapq.heappush(minHeap, (heightMap[i][m - 1], i, m - 1))
+            visited[i][0] = visited[i][m - 1] = True
+
+        for j in range(m):
+            heapq.heappush(minHeap, (heightMap[0][j], 0, j))
+            heapq.heappush(minHeap, (heightMap[n - 1][j], n - 1, j))
+            visited[0][j] = visited[n - 1][j] = True
+
+        directions = [(1, 0), (-1, 0), (0, 1), (0, -1)]
+        total_water = 0
+
+        while minHeap:
+            curr_height, r, c = heapq.heappop(minHeap)
+
+            for dr, dc in directions:
+                nr, nc = r + dr, c + dc
+                if 0 <= nr < n and 0 <= nc < m and not visited[nr][nc]:
+                    neighbor_height = heightMap[nr][nc]
+
+                    # Add water if the current cell's height is greater than the neighbor's
+                    if neighbor_height < curr_height:
+                        total_water += curr_height - neighbor_height
+
+                    # Push the effective boundary height into the heap
+                    heapq.heappush(minHeap, (max(curr_height, neighbor_height), nr, nc))
+                    visited[nr][nc] = True
+
+        return total_water

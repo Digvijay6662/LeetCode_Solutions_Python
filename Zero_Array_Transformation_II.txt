@@ -1,0 +1,124 @@
+3356. Zero Array Transformation II
+Solved
+Medium
+Topics
+Companies
+Hint
+You are given an integer array nums of length n and a 2D array queries where queries[i] = [li, ri, vali].
+
+Each queries[i] represents the following action on nums:
+
+Decrement the value at each index in the range [li, ri] in nums by at most vali.
+The amount by which each value is decremented can be chosen independently for each index.
+A Zero Array is an array with all its elements equal to 0.
+
+Return the minimum possible non-negative value of k, such that after processing the first k queries in sequence, nums becomes a Zero Array. If no such k exists, return -1.
+
+ 
+
+Example 1:
+
+Input: nums = [2,0,2], queries = [[0,2,1],[0,2,1],[1,1,3]]
+
+Output: 2
+
+Explanation:
+
+For i = 0 (l = 0, r = 2, val = 1):
+Decrement values at indices [0, 1, 2] by [1, 0, 1] respectively.
+The array will become [1, 0, 1].
+For i = 1 (l = 0, r = 2, val = 1):
+Decrement values at indices [0, 1, 2] by [1, 0, 1] respectively.
+The array will become [0, 0, 0], which is a Zero Array. Therefore, the minimum value of k is 2.
+Example 2:
+
+Input: nums = [4,3,2,1], queries = [[1,3,2],[0,2,1]]
+
+Output: -1
+
+Explanation:
+
+For i = 0 (l = 1, r = 3, val = 2):
+Decrement values at indices [1, 2, 3] by [2, 2, 1] respectively.
+The array will become [4, 1, 0, 0].
+For i = 1 (l = 0, r = 2, val = 1):
+Decrement values at indices [0, 1, 2] by [1, 1, 0] respectively.
+The array will become [3, 0, 0, 0], which is not a Zero Array.
+ 
+
+Constraints:
+
+1 <= nums.length <= 105
+0 <= nums[i] <= 5 * 105
+1 <= queries.length <= 105
+queries[i].length == 3
+0 <= li <= ri < nums.length
+1 <= vali <= 5
+
+
+Solution 1:
+
+class Solution:
+    def minZeroArray(self, nums: List[int], queries: List[List[int]]) -> int:
+        n, m = len(nums), len(queries)
+        left, right = 0, m
+
+        def check(k):
+            diff = [0] * (n + 1)
+            for i in range(k):
+                l, r, x = queries[i]
+                diff[l] += x
+                diff[r + 1] -= x
+
+            curr_sum = 0
+            for i in range(n):
+                curr_sum += diff[i]
+                diff[i] = curr_sum
+                if nums[i] - diff[i] > 0:
+                    return False
+                
+            return True
+
+        result = -1
+        while left <= right:
+            mid = (left + right) >> 1
+            if check(mid):
+                result = mid
+                right = mid - 1
+            else:
+                left = mid + 1
+
+        return result
+
+
+Solution 2:
+
+class Solution:
+    def minZeroArray(self, nums: List[int], queries: List[List[int]]) -> int:
+        n = len(nums)
+        current_decrement = 0
+        queries_used = 0
+        diff_array = [0] * (n + 1)
+
+        for i in range(n):
+            # While the current accumulated decrement is less than the value of nums[i]
+            while current_decrement + diff_array[i] < nums[i]:
+                queries_used += 1
+                # If we have used all available queries and still need to decrement, it's impossible
+                if queries_used > len(queries):
+                    return -1
+
+                # Get the details of the current query
+                left, right, value = queries[queries_used - 1]
+
+                # If the current index 'i' falls within the range [left, right] of the current query
+                if right >= i:
+                    # Apply the decrement using the difference array technique
+                    start_index = max(left, i)
+                    diff_array[start_index] += value
+                    diff_array[right + 1] -= value
+
+            # Update the current accumulated decrement by adding the net effect at the current index
+            current_decrement += diff_array[i]
+
+        return queries_used

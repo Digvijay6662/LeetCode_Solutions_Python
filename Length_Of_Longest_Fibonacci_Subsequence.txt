@@ -1,0 +1,105 @@
+873. Length of Longest Fibonacci Subsequence
+Solved
+Medium
+Topics
+Companies
+A sequence x1, x2, ..., xn is Fibonacci-like if:
+
+n >= 3
+xi + xi+1 == xi+2 for all i + 2 <= n
+Given a strictly increasing array arr of positive integers forming a sequence, return the length of the longest Fibonacci-like subsequence of arr. If one does not exist, return 0.
+
+A subsequence is derived from another sequence arr by deleting any number of elements (including none) from arr, without changing the order of the remaining elements. For example, [3, 5, 8] is a subsequence of [3, 4, 5, 6, 7, 8].
+
+ 
+
+Example 1:
+
+Input: arr = [1,2,3,4,5,6,7,8]
+Output: 5
+Explanation: The longest subsequence that is fibonacci-like: [1,2,3,5,8].
+Example 2:
+
+Input: arr = [1,3,7,11,12,14,18]
+Output: 3
+Explanation: The longest subsequence that is fibonacci-like: [1,11,12], [3,11,14] or [7,11,18].
+ 
+
+Constraints:
+
+3 <= arr.length <= 1000
+1 <= arr[i] < arr[i + 1] <= 109
+
+
+Solution 1:
+
+class Solution:
+    def lenLongestFibSubseq(self, arr: List[int]) -> int:
+        n = len(arr)
+        num_set = set(arr)
+        result = 0
+
+        for i in range(n - 1):
+            for j in range(i + 1, n):
+                prev, curr = arr[i], arr[j]
+                nxt = prev + curr
+                length = 2
+                while nxt in num_set:
+                    prev, curr = curr, nxt
+                    nxt = prev + curr
+                    length += 1
+                    result = max(result, length)
+
+        return result
+
+
+Solution 2:
+
+class Solution:
+    def lenLongestFibSubseq(self, arr: List[int]) -> int:
+        n = len(arr)
+        idx_map = {val: idx for idx, val in enumerate(arr)}
+        dp = [[2 for _ in range(n)] for _ in range(n)]
+        result = 0
+
+        for i in range(1, n - 1):
+            for j in range(i + 1, n):
+                prev = arr[j] - arr[i]
+                if prev in idx_map:
+                    idx = idx_map[prev]
+                    if idx < i:
+                        dp[i][j] = 1 + dp[idx][i]
+                        result = max(result, dp[i][j])
+        return result
+
+Solution 3:
+
+class Solution:
+    def lenLongestFibSubseq(self, arr: List[int]) -> int:
+        n = len(arr)
+        # Initialize dp table: each pair (j, i) has default length 2.
+        dp = [[2 for _ in range(n)] for _ in range(n)]
+        result = 0
+
+        # Consider each possible third element arr[i] (i starting from 2)
+        for i in range(2, n):
+            # Use two pointers to try to find a pair (left, right) with left < right < i
+            left = 0
+            right = i - 1
+            while left < right:
+                curr_sum = arr[left] + arr[right]
+                # If sum is too small, we need a larger number: move left pointer forward.
+                if curr_sum < arr[i]:
+                    left += 1
+                # If sum is too big, move right pointer left.
+                elif curr_sum > arr[i]:
+                    right -= 1
+                else:
+                    # Found a valid Fibonacci-like triple: arr[left] + arr[right] == arr[i]
+                    # Extend the subsequence ending at (arr[left], arr[right]) by including arr[i]
+                    dp[right][i] = dp[left][right] + 1
+                    result = max(result, dp[right][i])
+                    # After processing, move both pointers to continue searching for another pair.
+                    left += 1
+                    right -= 1
+        return result

@@ -68,20 +68,23 @@ Solution 2:
 class Solution:
     def numberOfWays(self, n: int, x: int) -> int:
         mod = 10**9 + 7
+        # dp[s] = number of ways to form sum 's' using x-th powers of unique integers considered so far
         dp = [0] * (n + 1)
-        dp[0] = 1
-        
-        curr = 1
-        
+        dp[0] = 1  # one way to form sum 0: choose nothing
+
+        curr = 1  # current base whose x-th power we consider (1^x, 2^x, ...)
+
+        # Iterate over all bases while their x-th power does not exceed n
         while pow(curr, x) <= n:
-            val = pow(curr, x)
+            val = pow(curr, x)  # current item value in a subset-sum sense
 
+            # 0/1 knapsack update: iterate backward to ensure each power is used at most once
             for i in range(n, val - 1, -1):
+                # Either don't take 'val' (keep dp[i]) or take it (add dp[i - val])
                 dp[i] = (dp[i] + dp[i - val]) % mod
-                
-            curr += 1
-        
+
+            curr += 1  # move to the next base
+
+        # Number of ways to form sum n using unique x-th powers
         return dp[n]
-
-
 

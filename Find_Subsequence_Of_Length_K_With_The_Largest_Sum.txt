@@ -1,0 +1,183 @@
+2099. Find Subsequence of Length K With the Largest Sum
+Solved
+Easy
+Topics
+premium lock icon
+Companies
+Hint
+You are given an integer array nums and an integer k. You want to find a subsequence of nums of length k that has the largest sum.
+
+Return any such subsequence as an integer array of length k.
+
+A subsequence is an array that can be derived from another array by deleting some or no elements without changing the order of the remaining elements.
+
+ 
+
+Example 1:
+
+Input: nums = [2,1,3,3], k = 2
+Output: [3,3]
+Explanation:
+The subsequence has the largest sum of 3 + 3 = 6.
+Example 2:
+
+Input: nums = [-1,-2,3,4], k = 3
+Output: [-1,3,4]
+Explanation: 
+The subsequence has the largest sum of -1 + 3 + 4 = 6.
+Example 3:
+
+Input: nums = [3,4,3,3], k = 2
+Output: [3,4]
+Explanation:
+The subsequence has the largest sum of 3 + 4 = 7. 
+Another possible subsequence is [4, 3].
+ 
+
+Constraints:
+
+1 <= nums.length <= 1000
+-105 <= nums[i] <= 105
+1 <= k <= nums.length
+
+
+Solution 1:
+
+2099. Find Subsequence of Length K With the Largest Sum
+Solved
+Easy
+Topics
+premium lock icon
+Companies
+Hint
+You are given an integer array nums and an integer k. You want to find a subsequence of nums of length k that has the largest sum.
+
+Return any such subsequence as an integer array of length k.
+
+A subsequence is an array that can be derived from another array by deleting some or no elements without changing the order of the remaining elements.
+
+ 
+
+Example 1:
+
+Input: nums = [2,1,3,3], k = 2
+Output: [3,3]
+Explanation:
+The subsequence has the largest sum of 3 + 3 = 6.
+Example 2:
+
+Input: nums = [-1,-2,3,4], k = 3
+Output: [-1,3,4]
+Explanation: 
+The subsequence has the largest sum of -1 + 3 + 4 = 6.
+Example 3:
+
+Input: nums = [3,4,3,3], k = 2
+Output: [3,4]
+Explanation:
+The subsequence has the largest sum of 3 + 4 = 7. 
+Another possible subsequence is [4, 3].
+ 
+
+Constraints:
+
+1 <= nums.length <= 1000
+-105 <= nums[i] <= 105
+1 <= k <= nums.length
+
+
+Solution 1:
+
+class Solution:
+    def maxSubsequence(self, nums: List[int], k: int) -> List[int]:
+        minHeap = []
+
+        for i, num in enumerate(nums):
+            heapq.heappush(minHeap, (num, i))
+            if len(minHeap) > k:
+                heapq.heappop(minHeap)
+
+        sorted_arr = sorted(minHeap, key = lambda x : x[1])
+        result = []
+
+        for num in sorted_arr:
+            result.append(num[0])
+        
+        return result
+
+
+Solution 2:
+
+class Solution:
+    def maxSubsequence(self, nums: List[int], k: int) -> List[int]:
+        n = len(nums)
+        # We will partition the indices array, not the numbers themselves,
+        # to keep track of the original positions.
+        indices = list(range(n))
+
+        def quickSelect(l, r):
+            # Randomize pivot to avoid worst-case O(n^2) time complexity
+            pivot_idx = random.randint(l, r)
+            pivot_value = nums[indices[pivot_idx]]
+
+            # Move pivot to the end
+            indices[pivot_idx], indices[r] = indices[r], indices[pivot_idx]
+
+            # `p` is the pointer for the end of the "larger than pivot" section
+            p = l
+            for i in range(l, r):
+                # We want the largest elements, so we move elements >= pivot
+                # to the left part of the partition.
+                if nums[indices[i]] >= pivot_value:
+                    indices[p], indices[i] = indices[i], indices[p]
+                    p += 1
+            
+            # Place the pivot at its correct sorted position
+            indices[p], indices[r] = indices[r], indices[p]
+            
+            return p
+
+        # Main loop to find the partition point that separates the k largest elements.
+        l, r = 0, n - 1
+        while l <= r:
+            # Get the pivot index from our partitioning function
+            pivot_idx = quickSelect(l, r)
+            
+            # The top k elements are now in indices[0...k-1].
+            # If our pivot is exactly at k-1, we've found our boundary.
+            if pivot_idx == k - 1:
+                break
+            # If the pivot is before k-1, we need to search in the right part.
+            elif pivot_idx < k - 1:
+                l = pivot_idx + 1
+            # If the pivot is after k-1, we need to search in the left part.
+            else:
+                r = pivot_idx - 1
+        
+        # At this point, indices[0...k-1] contains the indices of the k largest elements.
+        # However, they are not in their original relative order.
+        
+        # The value of the k-th largest element is our threshold.
+        kth_val = nums[indices[k - 1]]
+        
+        # Count how many of the top k elements are equal to the threshold value.
+        # This is to handle duplicates correctly.
+        freq_kth_val = 0
+        for i in range(k):
+            if nums[indices[i]] == kth_val:
+                freq_kth_val += 1
+
+        # Build the final subsequence by iterating through the original `nums` array
+        # to preserve the relative order.
+        result = []
+        for num in nums:
+            # Include any number that is strictly greater than the threshold.
+            if num > kth_val:
+                result.append(num)
+            # Include numbers equal to the threshold, but only up to the
+            # required frequency.
+            elif num == kth_val and freq_kth_val > 0:
+                result.append(num)
+                freq_kth_val -= 1
+        
+        return result

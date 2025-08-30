@@ -1,0 +1,88 @@
+1432. Max Difference You Can Get From Changing an Integer
+Solved
+Medium
+Topics
+premium lock icon
+Companies
+Hint
+You are given an integer num. You will apply the following steps to num two separate times:
+
+Pick a digit x (0 <= x <= 9).
+Pick another digit y (0 <= y <= 9). Note y can be equal to x.
+Replace all the occurrences of x in the decimal representation of num by y.
+Let a and b be the two results from applying the operation to num independently.
+
+Return the max difference between a and b.
+
+Note that neither a nor b may have any leading zeros, and must not be 0.
+
+ 
+
+Example 1:
+
+Input: num = 555
+Output: 888
+Explanation: The first time pick x = 5 and y = 9 and store the new integer in a.
+The second time pick x = 5 and y = 1 and store the new integer in b.
+We have now a = 999 and b = 111 and max difference = 888
+Example 2:
+
+Input: num = 9
+Output: 8
+Explanation: The first time pick x = 9 and y = 9 and store the new integer in a.
+The second time pick x = 9 and y = 1 and store the new integer in b.
+We have now a = 9 and b = 1 and max difference = 8
+ 
+
+Constraints:
+
+1 <= num <= 108
+
+
+Solution 1:
+
+class Solution:
+    def maxDiff(self, num: int) -> int:
+        s = str(num)  
+        # We'll produce two new strings: max_str and min_str
+
+        # 1) BUILD THE MAXIMUM VARIANT (max_str)
+        # --------------------------------------
+        # Find the first digit that's not '9'; that's the one we'll boost to '9'
+        d1 = None
+        for ch in s:
+            if ch != '9':
+                d1 = ch
+                break
+
+        if d1:
+            # We found a digit ≠ '9'. Replace every occurrence of d1 with '9'.
+            max_str = ''.join('9' if ch == d1 else ch for ch in s)
+        else:
+            # Every digit was already '9'—nothing to change.
+            max_str = s
+
+        # 2) BUILD THE MINIMUM VARIANT (min_str)
+        # --------------------------------------
+        # Case A: leading digit isn't '1' → replace all of that digit with '1'
+        if s[0] != '1':
+            replace = s[0]
+            min_str = ''.join('1' if ch == replace else ch for ch in s)
+
+        else:
+            # Case B: leading digit *is* '1'.  We look for the first digit > '1'
+            replace = None
+            for ch in s[1:]:
+                if ch not in ('0', '1'):
+                    replace = ch
+                    break
+
+            if replace:
+                # Replace every occurrence of that digit with '0'
+                min_str = ''.join('0' if ch == replace else ch for ch in s)
+            else:
+                # No digit > '1' found, so there's nothing more we can shrink.
+                min_str = s
+
+        # 3) COMPUTE AND RETURN THE DIFFERENCE
+        return int(max_str) - int(min_str)

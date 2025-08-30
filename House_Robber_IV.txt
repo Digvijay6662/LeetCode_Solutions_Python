@@ -1,0 +1,79 @@
+2560. House Robber IV
+Solved
+Medium
+Topics
+Companies
+Hint
+There are several consecutive houses along a street, each of which has some money inside. There is also a robber, who wants to steal money from the homes, but he refuses to steal from adjacent homes.
+
+The capability of the robber is the maximum amount of money he steals from one house of all the houses he robbed.
+
+You are given an integer array nums representing how much money is stashed in each house. More formally, the ith house from the left has nums[i] dollars.
+
+You are also given an integer k, representing the minimum number of houses the robber will steal from. It is always possible to steal at least k houses.
+
+Return the minimum capability of the robber out of all the possible ways to steal at least k houses.
+
+ 
+
+Example 1:
+
+Input: nums = [2,3,5,9], k = 2
+Output: 5
+Explanation: 
+There are three ways to rob at least 2 houses:
+- Rob the houses at indices 0 and 2. Capability is max(nums[0], nums[2]) = 5.
+- Rob the houses at indices 0 and 3. Capability is max(nums[0], nums[3]) = 9.
+- Rob the houses at indices 1 and 3. Capability is max(nums[1], nums[3]) = 9.
+Therefore, we return min(5, 9, 9) = 5.
+Example 2:
+
+Input: nums = [2,7,9,3,1], k = 2
+Output: 2
+Explanation: There are 7 ways to rob the houses. The way which leads to minimum capability is to rob the house at index 0 and 4. Return max(nums[0], nums[4]) = 2.
+ 
+
+Constraints:
+
+1 <= nums.length <= 105
+1 <= nums[i] <= 109
+1 <= k <= (nums.length + 1)/2
+
+
+Solution 1:
+
+class Solution:
+    def minCapability(self, nums: List[int], k: int) -> int:
+        n = len(nums)
+        
+        def check(cap: int) -> bool:
+            robbed = 0  # Count of houses robbed so far
+            prev = -2   # Index of the last robbed house; -2 ensures the first house is eligible
+            
+            # Iterate through all houses
+            for i in range(n):
+                # Check if we can rob this house:
+                # 1. It must not be adjacent to the previous robbed house (i - prev > 1)
+                # 2. Its value must be less than or equal to the capability (nums[i] <= cap)
+                if i - prev > 1 and nums[i] <= cap:
+                    robbed += 1  # Rob this house
+                    prev = i     # Update the index of the last robbed house
+            
+            # Return True if we robbed at least k houses, False otherwise
+            return robbed >= k
+        
+        # Set the binary search range: minimum capability is min(nums), maximum is max(nums)
+        left, right = min(nums), max(nums)
+        
+        # Perform binary search to find the minimum capability
+        while left <= right:
+            mid = (left + right) >> 1  # Calculate the midpoint capability (using bitwise shift for division by 2)
+            if check(mid):
+                # If we can rob k houses with this capability, try a smaller capability
+                right = mid - 1
+            else:
+                # If we cannot rob k houses, we need a larger capability
+                left = mid + 1
+        
+        # After the loop, left is the smallest capability that allows robbing at least k houses
+        return left

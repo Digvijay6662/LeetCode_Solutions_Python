@@ -1,0 +1,149 @@
+2359. Find Closest Node to Given Two Nodes
+Solved
+Medium
+Topics
+premium lock icon
+Companies
+Hint
+You are given a directed graph of n nodes numbered from 0 to n - 1, where each node has at most one outgoing edge.
+
+The graph is represented with a given 0-indexed array edges of size n, indicating that there is a directed edge from node i to node edges[i]. If there is no outgoing edge from i, then edges[i] == -1.
+
+You are also given two integers node1 and node2.
+
+Return the index of the node that can be reached from both node1 and node2, such that the maximum between the distance from node1 to that node, and from node2 to that node is minimized. If there are multiple answers, return the node with the smallest index, and if no possible answer exists, return -1.
+
+Note that edges may contain cycles.
+
+ 
+
+Example 1:
+
+
+Input: edges = [2,2,3,-1], node1 = 0, node2 = 1
+Output: 2
+Explanation: The distance from node 0 to node 2 is 1, and the distance from node 1 to node 2 is 1.
+The maximum of those two distances is 1. It can be proven that we cannot get a node with a smaller maximum distance than 1, so we return node 2.
+Example 2:
+
+
+Input: edges = [1,2,-1], node1 = 0, node2 = 2
+Output: 2
+Explanation: The distance from node 0 to node 2 is 2, and the distance from node 2 to itself is 0.
+The maximum of those two distances is 2. It can be proven that we cannot get a node with a smaller maximum distance than 2, so we return node 2.
+ 
+
+Constraints:
+
+n == edges.length
+2 <= n <= 105
+-1 <= edges[i] < n
+edges[i] != i
+0 <= node1, node2 < n
+
+
+Solution 1:
+
+class Solution:
+    def closestMeetingNode(self, edges: List[int], node1: int, node2: int) -> int:
+
+        def bfs(source):
+            n = len(edges)
+            dist = [-1] * n
+            q = deque([source])
+            visited = {source}
+            distance = 0
+            
+            while q:
+                for _ in range(len(q)):
+                    cur = q.popleft()
+                    dist[cur] = distance
+                    next_node = edges[cur]
+                    if next_node != -1 and next_node not in visited:
+                        visited.add(next_node)
+                        q.append(next_node)
+                distance += 1
+                
+            return dist
+
+        dist1 = bfs(node1)
+        dist2 = bfs(node2)
+        
+        result = -1
+        best = float('inf')
+    
+        for i in range(len(edges)):
+            if dist1[i] != -1 and dist2[i] != -1:
+                max_distance = max(dist1[i], dist2[i])
+                if max_distance < best or (max_distance == best and i < result):
+                    best = max_distance
+                    result = i
+                    
+        return result
+
+
+Solution 2:
+
+class Solution:
+    def closestMeetingNode(self, edges: List[int], node1: int, node2: int) -> int:
+        n = len(edges)
+
+        def walk(source):
+            dist = [-1]*n
+            cur = source
+            d = 0
+            while cur != -1 and dist[cur] == -1:
+                dist[cur] = d
+                d += 1
+                cur = edges[cur]
+            return dist
+
+        dist1 = walk(node1)
+        dist2 = walk(node2)
+
+        answer = -1
+        best = float('inf')
+        for i in range(n):
+            if dist1[i] >= 0 and dist2[i] >= 0:
+                cost = max(dist1[i], dist2[i])
+                if cost < best:
+                    best = cost
+                    answer = i
+
+        return answer
+
+
+Solution 3:
+
+class Solution:
+    def closestMeetingNode(self, edges: List[int], node1: int, node2: int) -> int:
+        n = len(edges)
+        
+        # Helper to recursively walk from `u`, recording dist[u] = d.
+        # Stops if u == -1 or we've already assigned a distance (cycle or visited).
+        def dfs(u, d, dist):
+            if u == -1 or dist[u] != -1:
+                return
+            dist[u] = d
+            dfs(edges[u], d+1, dist)
+
+        # Initialize distances to -1 (unvisited)
+        dist1 = [-1]*n
+        dist2 = [-1]*n
+        
+        # Run DFS from each source
+        dfs(node1, 0, dist1)
+        dfs(node2, 0, dist2)
+        
+        # Now find the node i minimizing max(dist1[i], dist2[i])
+        best_idx = -1
+        best_cost = float('inf')
+        for i in range(n):
+            d1, d2 = dist1[i], dist2[i]
+            if d1 >= 0 and d2 >= 0:
+                cost = max(d1, d2)
+                if cost < best_cost:
+                    best_cost = cost
+                    best_idx = i
+        
+        return best_idx

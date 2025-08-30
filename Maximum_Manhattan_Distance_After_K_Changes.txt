@@ -1,0 +1,93 @@
+3443. Maximum Manhattan Distance After K Changes
+Solved
+Medium
+Topics
+premium lock icon
+Companies
+Hint
+You are given a string s consisting of the characters 'N', 'S', 'E', and 'W', where s[i] indicates movements in an infinite grid:
+
+'N' : Move north by 1 unit.
+'S' : Move south by 1 unit.
+'E' : Move east by 1 unit.
+'W' : Move west by 1 unit.
+Initially, you are at the origin (0, 0). You can change at most k characters to any of the four directions.
+
+Find the maximum Manhattan distance from the origin that can be achieved at any time while performing the movements in order.
+
+The Manhattan Distance between two cells (xi, yi) and (xj, yj) is |xi - xj| + |yi - yj|.
+ 
+
+Example 1:
+
+Input: s = "NWSE", k = 1
+
+Output: 3
+
+Explanation:
+
+Change s[2] from 'S' to 'N'. The string s becomes "NWNE".
+
+Movement	Position (x, y)	Manhattan Distance	Maximum
+s[0] == 'N'	(0, 1)	0 + 1 = 1	1
+s[1] == 'W'	(-1, 1)	1 + 1 = 2	2
+s[2] == 'N'	(-1, 2)	1 + 2 = 3	3
+s[3] == 'E'	(0, 2)	0 + 2 = 2	3
+The maximum Manhattan distance from the origin that can be achieved is 3. Hence, 3 is the output.
+
+Example 2:
+
+Input: s = "NSWWEW", k = 3
+
+Output: 6
+
+Explanation:
+
+Change s[1] from 'S' to 'N', and s[4] from 'E' to 'W'. The string s becomes "NNWWWW".
+
+The maximum Manhattan distance from the origin that can be achieved is 6. Hence, 6 is the output.
+
+ 
+
+Constraints:
+
+1 <= s.length <= 105
+0 <= k <= s.length
+s consists of only 'N', 'S', 'E', and 'W'.
+
+
+Solution 1:
+
+class Solution:
+    def maxDistance(self, s: str, k: int) -> int:
+        # n: total number of moves in the input string
+        n = len(s)
+
+        # x, y: current coordinates (start at origin)
+        # max_dist: track the maximum Manhattan distance seen so far
+        x = y = max_dist = 0
+
+        # process each move one by one
+        for i in range(n):
+            # update position according to the current direction
+            if s[i] == 'N':
+                y += 1            # move north increases y
+            elif s[i] == 'E':
+                x += 1            # move east increases x
+            elif s[i] == 'S':
+                y -= 1            # move south decreases y
+            else:
+                x -= 1            # move west decreases x
+
+            # current Manhattan distance from origin
+            curr_dist = abs(x) + abs(y)
+
+            # with up to k changes, each change can boost net distance by at most 2
+            # so the farthest you could go is curr_dist + 2*k
+            # but you can't exceed the number of steps taken (i+1)
+            possible_max = min(curr_dist + 2 * k, i + 1)
+
+            # update the overall maximum
+            max_dist = max(max_dist, possible_max)
+
+        return max_dist

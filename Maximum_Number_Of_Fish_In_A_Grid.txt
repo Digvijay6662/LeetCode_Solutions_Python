@@ -1,0 +1,161 @@
+2658. Maximum Number of Fish in a Grid
+Solved
+Medium
+Topics
+Companies
+Hint
+You are given a 0-indexed 2D matrix grid of size m x n, where (r, c) represents:
+
+A land cell if grid[r][c] = 0, or
+A water cell containing grid[r][c] fish, if grid[r][c] > 0.
+A fisher can start at any water cell (r, c) and can do the following operations any number of times:
+
+Catch all the fish at cell (r, c), or
+Move to any adjacent water cell.
+Return the maximum number of fish the fisher can catch if he chooses his starting cell optimally, or 0 if no water cell exists.
+
+An adjacent cell of the cell (r, c), is one of the cells (r, c + 1), (r, c - 1), (r + 1, c) or (r - 1, c) if it exists.
+
+ 
+
+Example 1:
+
+
+Input: grid = [[0,2,1,0],[4,0,0,3],[1,0,0,4],[0,3,2,0]]
+Output: 7
+Explanation: The fisher can start at cell (1,3) and collect 3 fish, then move to cell (2,3) and collect 4 fish.
+Example 2:
+
+
+Input: grid = [[1,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,1]]
+Output: 1
+Explanation: The fisher can start at cells (0,0) or (3,3) and collect a single fish. 
+ 
+
+Constraints:
+
+m == grid.length
+n == grid[i].length
+1 <= m, n <= 10
+0 <= grid[i][j] <= 10
+
+
+Solution 1:
+
+class Solution:
+    def findMaxFish(self, grid: List[List[int]]) -> int:
+        n, m = len(grid), len(grid[0])
+        directions = [(1, 0), (0, 1), (-1, 0), (0, -1)]
+        visited = [[False] * m for _ in range(n)]
+        max_fish = 0
+
+        def dfs(r, c):
+            if visited[r][c] or grid[r][c] == 0:
+                return 0
+            visited[r][c] = True
+            fish = grid[r][c]
+            for dr, dc in directions:
+                nr, nc = r + dr, c + dc
+                if 0 <= nr < n and 0 <= nc < m:
+                    fish += dfs(nr, nc)
+            return fish
+
+        for i in range(n):
+            for j in range(m):
+                if grid[i][j] > 0 and not visited[i][j]:
+                    max_fish = max(max_fish, dfs(i, j))
+
+        return max_fish
+
+
+Solution 2:
+
+class Solution:
+    def findMaxFish(self, grid: List[List[int]]) -> int:
+        n, m = len(grid), len(grid[0])
+        directions = [(1, 0), (0, 1), (-1, 0), (0, -1)]
+        visited = [[False] * m for _ in range(n)]
+        max_fish = 0
+
+        def bfs(r, c):
+            queue = deque([(r, c)])
+            visited[r][c] = True
+            fish = grid[r][c]
+
+            while queue:
+                x, y = queue.popleft()
+                for dx, dy in directions:
+                    nx, ny = x + dx, y + dy
+                    if 0 <= nx < n and 0 <= ny < m and not visited[nx][ny] and grid[nx][ny] > 0:
+                        queue.append((nx, ny))
+                        visited[nx][ny] = True
+                        fish += grid[nx][ny]
+
+            return fish
+
+        for i in range(n):
+            for j in range(m):
+                if grid[i][j] > 0 and not visited[i][j]:
+                    max_fish = max(max_fish, bfs(i, j))
+
+        return max_fish
+
+
+Solution 3:
+
+class UnionFind:
+    def __init__(self, n):
+        self.parent = [i for i in range(n)]
+        self.size = [1] * n
+
+    def find(self, node):
+        while node != self.parent[node]:
+            self.parent[node] = self.parent[self.parent[node]]
+            node = self.parent[node]
+        return node
+
+    def union(self, node1, node2, total_fish):
+        p1, p2 = self.find(node1), self.find(node2)
+        if p1 == p2:
+            return False
+
+        if self.size[p1] > self.size[p2]:
+            self.parent[p2] = p1
+            self.size[p1] += self.size[p2]
+            total_fish[p1] += total_fish[p2]
+        else:
+            self.parent[p1] = p2
+            self.size[p2] += self.size[p1]
+            total_fish[p2] += total_fish[p1]
+
+        return True
+
+class Solution:
+    def findMaxFish(self, grid: List[List[int]]) -> int:
+        n, m = len(grid), len(grid[0])
+        directions = [(1, 0), (0, 1), (-1, 0), (0, -1)]
+        total_cells = n * m
+        uf = UnionFind(total_cells)
+        total_fish = [0] * total_cells
+
+        for i in range(n):
+            for j in range(m):
+                idx = i * m + j
+                total_fish[idx] = grid[i][j]
+
+        for i in range(n):
+            for j in range(m):
+                if grid[i][j] > 0:
+                    idx = i * m + j
+                    for dr, dc in directions:
+                        nr, nc = i + dr, j + dc
+                        if 0 <= nr < n and 0 <= nc < m and grid[nr][nc] > 0:
+                            nei_idx = nr * m + nc
+                            uf.union(idx, nei_idx, total_fish)
+
+        max_fish = 0
+        for i in range(total_cells):
+            if uf.find(i) == i:
+                max_fish = max(max_fish, total_fish[i])
+
+        return max_fish

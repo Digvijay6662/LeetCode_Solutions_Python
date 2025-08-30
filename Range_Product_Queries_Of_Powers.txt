@@ -1,0 +1,104 @@
+2438. Range Product Queries of Powers
+Solved
+Medium
+Topics
+premium lock icon
+Companies
+Hint
+Given a positive integer n, there exists a 0-indexed array called powers, composed of the minimum number of powers of 2 that sum to n. The array is sorted in non-decreasing order, and there is only one way to form the array.
+
+You are also given a 0-indexed 2D integer array queries, where queries[i] = [lefti, righti]. Each queries[i] represents a query where you have to find the product of all powers[j] with lefti <= j <= righti.
+
+Return an array answers, equal in length to queries, where answers[i] is the answer to the ith query. Since the answer to the ith query may be too large, each answers[i] should be returned modulo 109 + 7.
+
+ 
+
+Example 1:
+
+Input: n = 15, queries = [[0,1],[2,2],[0,3]]
+Output: [2,4,64]
+Explanation:
+For n = 15, powers = [1,2,4,8]. It can be shown that powers cannot be a smaller size.
+Answer to 1st query: powers[0] * powers[1] = 1 * 2 = 2.
+Answer to 2nd query: powers[2] = 4.
+Answer to 3rd query: powers[0] * powers[1] * powers[2] * powers[3] = 1 * 2 * 4 * 8 = 64.
+Each answer modulo 109 + 7 yields the same answer, so [2,4,64] is returned.
+Example 2:
+
+Input: n = 2, queries = [[0,0]]
+Output: [2]
+Explanation:
+For n = 2, powers = [2].
+The answer to the only query is powers[0] = 2. The answer modulo 109 + 7 is the same, so [2] is returned.
+ 
+
+Constraints:
+
+1 <= n <= 109
+1 <= queries.length <= 105
+0 <= starti <= endi < powers.length
+
+
+Solution 1:
+
+class Solution:
+    def productQueries(self, n: int, queries: List[List[int]]) -> List[int]:
+        MOD = 10**9 + 7  # Large prime for modulo operations to avoid overflow
+
+        # Extract powers-of-two that make up n
+        powers = []
+        p = 1           # Start with 2^0 = 1
+        num = n
+        while p <= n:
+            if num & 1:         # Check if the lowest bit of num is set
+                powers.append(p % MOD)  # Add corresponding power of 2 modulo MOD
+            num >>= 1          # Move to the next bit
+            p <<= 1            # Move to the next power of 2
+
+        # Compute prefix products of powers modulo MOD
+        for i in range(1, len(powers)):
+            powers[i] = (powers[i - 1] * powers[i]) % MOD
+
+        res = []
+        for l, r in queries:
+            val = powers[r]  # Product from 0 to r
+            if l > 0:
+                # Instead of division, use modular inverse to exclude prefix [0 to l-1]
+                val = (val * pow(powers[l - 1], MOD - 2, MOD)) % MOD
+            res.append(val)  # Append the result to output list
+
+        return res
+
+
+Solution 2:
+
+class Solution:
+    def productQueries(self, n: int, queries: List[List[int]]) -> List[int]:
+        MOD = 10**9 + 7  # Prime modulus
+
+        # Collect exponents of powers of two that sum to n.
+        # If the i-th bit of n is set, n includes a factor 2^i.
+        exps = []       # exps will be in ascending order (0, 1, 2, ...)
+        bit = 0
+        temp = n
+        while temp > 0:
+            if temp & 1:         # If current least-significant bit is set
+                exps.append(bit) # record the exponent i for 2^i
+            bit += 1
+            temp >>= 1           # Shift right: move to the next bit
+
+        # Build a prefix sum over exps so we can get range sums in O(1).
+        # pref[t] = sum of exps[0..t-1], with pref[0] = 0.
+        pref = [0]
+        for e in exps:
+            pref.append(pref[-1] + e)
+
+        # For each query [l, r], the product equals 2^(sum of exps in [l, r]) mod MOD.
+        ans = []
+        for l, r in queries:
+            # Sum of exponents in range [l, r]
+            s = pref[r + 1] - pref[l]
+            # Fast modular exponentiation: 2^s mod MOD
+            ans.append(pow(2, s, MOD))
+
+        return ans

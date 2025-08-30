@@ -1,0 +1,138 @@
+3446. Sort Matrix by Diagonals
+Solved
+Medium
+Topics
+premium lock icon
+Companies
+Hint
+You are given an n x n square matrix of integers grid. Return the matrix such that:
+
+The diagonals in the bottom-left triangle (including the middle diagonal) are sorted in non-increasing order.
+The diagonals in the top-right triangle are sorted in non-decreasing order.
+ 
+
+Example 1:
+
+Input: grid = [[1,7,3],[9,8,2],[4,5,6]]
+
+Output: [[8,2,3],[9,6,7],[4,5,1]]
+
+Explanation:
+
+
+
+The diagonals with a black arrow (bottom-left triangle) should be sorted in non-increasing order:
+
+[1, 8, 6] becomes [8, 6, 1].
+[9, 5] and [4] remain unchanged.
+The diagonals with a blue arrow (top-right triangle) should be sorted in non-decreasing order:
+
+[7, 2] becomes [2, 7].
+[3] remains unchanged.
+Example 2:
+
+Input: grid = [[0,1],[1,2]]
+
+Output: [[2,1],[1,0]]
+
+Explanation:
+
+
+
+The diagonals with a black arrow must be non-increasing, so [0, 2] is changed to [2, 0]. The other diagonals are already in the correct order.
+
+Example 3:
+
+Input: grid = [[1]]
+
+Output: [[1]]
+
+Explanation:
+
+Diagonals with exactly one element are already in order, so no changes are needed.
+
+ 
+
+Constraints:
+
+grid.length == grid[i].length == n
+1 <= n <= 10
+-105 <= grid[i][j] <= 105
+
+
+Solution 1:
+
+class Solution:
+    def sortMatrix(self, grid: List[List[int]]) -> List[List[int]]:
+        n = len(grid)  # Size of the square matrix (n x n)
+
+        # Dictionary to store each diagonal's elements.
+        # Key = (row index - column index) → unique identifier for each diagonal
+        # Value = list of numbers along that diagonal
+        diagonals = defaultdict(list)
+
+        # Step: 1 Group all elements by their diagonal ID (i - j)
+        for i in range(n):
+            for j in range(n):
+                diagonals[i - j].append(grid[i][j])
+
+        # Step: 2 Sort each diagonal based on rules:
+        #    - Key >= 0 → bottom-left triangle (including main diagonal) → sort ascending first
+        #    - Key < 0  → top-right triangle → sort in descending order first
+        for key in diagonals:
+            if key >= 0:
+                diagonals[key].sort()  # ascending
+            else:
+                diagonals[key].sort(reverse=True)  # descending
+
+        # Step: 3 Place the sorted values back into the grid
+        # pop() is used so we take the last remaining element from the sorted list
+        # (order matches the required traversal direction)
+        for i in range(n):
+            for j in range(n):
+                grid[i][j] = diagonals[i - j].pop()
+
+        return grid
+
+
+Solution 2:
+
+class Solution:
+    def sortMatrix(self, grid: List[List[int]]) -> List[List[int]]:
+        n = len(grid)  # Get size of the square matrix (n x n)
+
+        # Helper function to process (extract → sort → place back) a diagonal
+        # reverse_order = True  → sort in descending order (non-increasing)
+        # reverse_order = False → sort in ascending order (non-decreasing)
+        def process_diagonal(r, c, reverse_order):
+            elements = []  # temporary list to store elements from the diagonal
+            i, j = r, c
+
+            # Step: 1 Collect all elements in this diagonal starting from (r, c)
+            while i < n and j < n:
+                elements.append(grid[i][j])
+                i += 1
+                j += 1
+            
+            # Step: 2 Sort the diagonal elements as per order requirement
+            elements.sort(reverse=reverse_order)
+            
+            # Step: 3 Put the sorted elements back into their diagonal positions
+            i, j, k = r, c, 0
+            while i < n and j < n:
+                grid[i][j] = elements[k]
+                i += 1
+                j += 1
+                k += 1
+
+        # Process all diagonals in bottom-left half (including main diagonal)
+        # These should be sorted in non-increasing order (descending)
+        for r in range(n):
+            process_diagonal(r, 0, True)
+
+        # Process all diagonals in top-right half (excluding main diagonal)
+        # These should be sorted in non-decreasing order (ascending)
+        for c in range(1, n):
+            process_diagonal(0, c, False)
+
+        return grid

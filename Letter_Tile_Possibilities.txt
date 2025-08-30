@@ -1,0 +1,158 @@
+1079. Letter Tile Possibilities
+Solved
+Medium
+Topics
+Companies
+Hint
+You have n  tiles, where each tile has one letter tiles[i] printed on it.
+
+Return the number of possible non-empty sequences of letters you can make using the letters printed on those tiles.
+
+ 
+
+Example 1:
+
+Input: tiles = "AAB"
+Output: 8
+Explanation: The possible sequences are "A", "B", "AA", "AB", "BA", "AAB", "ABA", "BAA".
+Example 2:
+
+Input: tiles = "AAABBC"
+Output: 188
+Example 3:
+
+Input: tiles = "V"
+Output: 1
+ 
+
+Constraints:
+
+1 <= tiles.length <= 7
+tiles consists of uppercase English letters.
+
+
+Solution 1:
+
+class Solution:
+    def numTilePossibilities(self, tiles: str) -> int:
+        n = len(tiles)
+        used = [False] * n
+        unique_sequences = set() 
+
+        def solve(curr_sequence):
+            if curr_sequence:
+                unique_sequences.add(curr_sequence)
+
+            for i in range(n):
+                if not used[i]:
+                    used[i] = True
+                    solve(curr_sequence + tiles[i])
+                    used[i] = False
+
+        solve("")
+        return len(unique_sequences)
+
+
+Solution 2:
+
+class Solution:
+    def numTilePossibilities(self, tiles: str) -> int:
+        tiles = sorted(tiles)  # sort to help skip duplicates
+        n = len(tiles)
+        used = [False] * n
+        self.count = 0  # to count unique sequences
+        
+        def backtrack():
+            # try each unused tile in order
+            for i in range(n):
+                if used[i]:
+                    continue
+                # Skip duplicates: if the current tile is the same as the previous one,
+                # and the previous one has not been used in this recursion branch,
+                # then skip to avoid duplicate sequences.
+                if i > 0 and tiles[i] == tiles[i-1] and not used[i-1]:
+                    continue
+                used[i] = True
+                self.count += 1  # each selection yields a valid (non-empty) sequence
+                backtrack()      # continue building the sequence
+                used[i] = False  # backtrack
+        
+        backtrack()
+        return self.count
+
+
+Solution 3:
+
+class Solution:
+    def numTilePossibilities(self, tiles: str) -> int:
+        char_count = [0] * 26
+        for char in tiles:
+            char_count[ord(char) - ord("A")] += 1
+
+        def find_sequences(char_count):
+            total = 0
+            # Try using each available character
+            for pos in range(26):
+                if char_count[pos] == 0:
+                    continue
+                # Add current character and recurse
+                total += 1
+                char_count[pos] -= 1
+                total += find_sequences(char_count)
+                char_count[pos] += 1
+
+            return total
+        # Find all possible sequences using character frequencies
+        return find_sequences(char_count)
+
+
+Solution 4:
+
+class Solution:
+    def numTilePossibilities(self, tiles: str) -> int:
+        n = len(tiles)
+        # Sort the tiles to ensure that identical characters are adjacent.
+        sorted_tiles = "".join(sorted(tiles))
+        
+        # Precompute factorials up to n. We use these later to count
+        # the number of distinct permutations for a given multiset.
+        factorial = [1] * (n + 1)
+        for i in range(2, n + 1):
+            factorial[i] = factorial[i - 1] * i
+        
+        # Given a string s, count the number of unique permutations
+        # using the formula: total_perms = len(s)! / (c1! * c2! * ... * ck!)
+        def count_permutations(s: str) -> int:
+            freq = Counter(s)
+            total = factorial[len(s)]
+            for count in freq.values():
+                total //= factorial[count]
+            return total
+        
+        # We'll use a set to record which subsets (combinations of tiles)
+        # we've already processed, so we don't count them more than once.
+        seen_subsets = set()
+        
+        # Backtracking function to generate every possible subset of the sorted tiles.
+        # 'index' indicates the current position in sorted_tiles.
+        # 'current_subset' is the string representing the current combination of tiles.
+        def backtrack(index: int, current_subset: str) -> int:
+            # Base case: we've considered all tiles.
+            if index == n:
+                # Only process non-empty subsets that haven't been counted before.
+                if current_subset not in seen_subsets:
+                    seen_subsets.add(current_subset)
+                    return count_permutations(current_subset)
+                return 0
+            
+            # Option 1: Skip the tile at the current index.
+            count_without = backtrack(index + 1, current_subset)
+            # Option 2: Include the tile at the current index.
+            count_with = backtrack(index + 1, current_subset + sorted_tiles[index])
+            
+            # Total count for this branch is the sum of both options.
+            return count_without + count_with
+        
+        # We subtract 1 at the end because the recursion counts the empty subset,
+        # but the problem asks for non-empty sequences.
+        return backtrack(0, "") - 1

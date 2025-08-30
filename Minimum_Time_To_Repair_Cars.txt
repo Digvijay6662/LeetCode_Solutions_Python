@@ -1,0 +1,73 @@
+2594. Minimum Time to Repair Cars
+Solved
+Medium
+Topics
+Companies
+Hint
+You are given an integer array ranks representing the ranks of some mechanics. ranksi is the rank of the ith mechanic. A mechanic with a rank r can repair n cars in r * n2 minutes.
+
+You are also given an integer cars representing the total number of cars waiting in the garage to be repaired.
+
+Return the minimum time taken to repair all the cars.
+
+Note: All the mechanics can repair the cars simultaneously.
+
+ 
+
+Example 1:
+
+Input: ranks = [4,2,3,1], cars = 10
+Output: 16
+Explanation: 
+- The first mechanic will repair two cars. The time required is 4 * 2 * 2 = 16 minutes.
+- The second mechanic will repair two cars. The time required is 2 * 2 * 2 = 8 minutes.
+- The third mechanic will repair two cars. The time required is 3 * 2 * 2 = 12 minutes.
+- The fourth mechanic will repair four cars. The time required is 1 * 4 * 4 = 16 minutes.
+It can be proved that the cars cannot be repaired in less than 16 minutes.​​​​​
+Example 2:
+
+Input: ranks = [5,1,8], cars = 6
+Output: 16
+Explanation: 
+- The first mechanic will repair one car. The time required is 5 * 1 * 1 = 5 minutes.
+- The second mechanic will repair four cars. The time required is 1 * 4 * 4 = 16 minutes.
+- The third mechanic will repair one car. The time required is 8 * 1 * 1 = 8 minutes.
+It can be proved that the cars cannot be repaired in less than 16 minutes.​​​​​
+ 
+
+Constraints:
+
+1 <= ranks.length <= 105
+1 <= ranks[i] <= 100
+1 <= cars <= 106
+
+
+Solution 1:
+
+class Solution:
+    def repairCars(self, ranks: List[int], cars: int) -> int:
+        # Define the search space for the minimum time
+        left = 0  # Minimum possible time (starting point)
+        right = max(ranks) * cars * cars  # Maximum possible time if slowest mechanic repairs all cars alone
+
+        # Helper function to check if 'minutes' is enough time to repair at least 'cars' cars
+        def check(minutes: int) -> bool:
+            total_repaired = 0  # Total number of cars repaired by all mechanics
+            for r in ranks:  # Iterate over each mechanic's rank
+                # For rank r, time = r * n^2 <= minutes
+                # Thus, n^2 <= minutes / r
+                # So, n <= sqrt(minutes / r), and n must be an integer
+                n = int(sqrt(minutes / r))  # Number of cars this mechanic can repair (floor value)
+                total_repaired += n  # Add to total
+            return total_repaired >= cars  # True if enough cars are repaired
+
+        # Binary search to find the smallest time
+        while left <= right:
+            mid = (left + right) // 2  # Calculate the midpoint time to test
+            if check(mid):  # If 'mid' minutes is sufficient
+                right = mid - 1  # Try a smaller time
+            else:  # If 'mid' minutes is not enough
+                left = mid + 1  # Need more time
+
+        # After the loop, 'left' is the smallest time where check(left) is True
+        return left

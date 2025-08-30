@@ -1,0 +1,89 @@
+1394. Find Lucky Integer in an Array
+Solved
+Easy
+Topics
+premium lock icon
+Companies
+Hint
+Given an array of integers arr, a lucky integer is an integer that has a frequency in the array equal to its value.
+
+Return the largest lucky integer in the array. If there is no lucky integer return -1.
+
+ 
+
+Example 1:
+
+Input: arr = [2,2,3,4]
+Output: 2
+Explanation: The only lucky number in the array is 2 because frequency[2] == 2.
+Example 2:
+
+Input: arr = [1,2,2,3,3,3]
+Output: 3
+Explanation: 1, 2 and 3 are all lucky numbers, return the largest of them.
+Example 3:
+
+Input: arr = [2,2,2,3,3]
+Output: -1
+Explanation: There are no lucky numbers in the array.
+ 
+
+Constraints:
+
+1 <= arr.length <= 500
+1 <= arr[i] <= 500
+
+
+Solution 1:
+
+class Solution:
+    def findLucky(self, arr: List[int]) -> int:
+        freq = [0] * 501
+        for x in arr:
+            freq[x] += 1
+
+        for val in range(500, 0, -1):
+            if freq[val] == val:
+                return val
+        return -1
+
+
+Solution 2:
+
+class Solution:
+    def findLucky(self, arr: List[int]) -> int:
+        lucky = [x for x, c in Counter(arr).items() if x == c]
+        return max(lucky) if lucky else -1
+
+
+Solution 3:
+
+class Solution:
+    def findLucky(self, arr: List[int]) -> int:
+        # n is both the length of the array and the max possible lucky value
+        n = len(arr)
+
+        # 1) Encode frequencies into the high 16 bits of each slot
+        for x in arr:
+            # extract the original value (low 16 bits),
+            # in case arr has been modified already
+            val = x & ((1 << 16) - 1)
+
+            # only track counts for numbers that could possibly be lucky
+            if val <= n:
+                # shift 1 into the high 16 bits and add it to arr[val-1]
+                # so the low bits still hold the original value,
+                # and the high bits accumulate the count
+                arr[val - 1] += (1 << 16)
+
+        # 2) Scan for the largest lucky integer from n down to 1
+        for v in range(n, 0, -1):
+            # extract the count by shifting down 16 bits
+            count = arr[v - 1] >> 16
+
+            # if frequency equals the value itself, we've found a lucky integer
+            if count == v:
+                return v
+
+        # no lucky integer found
+        return -1

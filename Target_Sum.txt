@@ -90,7 +90,7 @@ class Solution:
         return dp[0][target + offset]
 
 
-Solution 2:
+Solution 3:
 
 
 class Solution:
@@ -116,7 +116,7 @@ class Solution:
         return dp[0][target + offset]
 
 
-Solution 3:
+Solution 4:
 
 class Solution:
     def findTargetSumWays(self, nums: List[int], target: int) -> int:

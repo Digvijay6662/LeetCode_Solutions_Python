@@ -1,0 +1,129 @@
+1028. Recover a Tree From Preorder Traversal
+Solved
+Hard
+Topics
+Companies
+Hint
+We run a preorder depth-first search (DFS) on the root of a binary tree.
+
+At each node in this traversal, we output D dashes (where D is the depth of this node), then we output the value of this node.  If the depth of a node is D, the depth of its immediate child is D + 1.  The depth of the root node is 0.
+
+If a node has only one child, that child is guaranteed to be the left child.
+
+Given the output traversal of this traversal, recover the tree and return its root.
+
+ 
+
+Example 1:
+
+
+Input: traversal = "1-2--3--4-5--6--7"
+Output: [1,2,5,3,4,6,7]
+Example 2:
+
+
+Input: traversal = "1-2--3---4-5--6---7"
+Output: [1,2,5,3,null,6,null,4,null,7]
+Example 3:
+
+
+Input: traversal = "1-401--349---90--88"
+Output: [1,401,null,349,88,90]
+ 
+
+Constraints:
+
+The number of nodes in the original tree is in the range [1, 1000].
+1 <= Node.val <= 109
+
+
+Solution 1:
+
+# Definition for a binary tree node.
+# class TreeNode:
+#     def __init__(self, val=0, left=None, right=None):
+#         self.val = val
+#         self.left = left
+#         self.right = right
+class Solution:
+    def recoverFromPreorder(self, traversal: str) -> Optional[TreeNode]:
+        n = len(traversal)
+        i = 0  # Use a simple integer for index tracking
+
+        def build_tree(depth):
+            nonlocal i
+            if i == n:
+                return None
+            
+            # Count the number of dashes for the current node
+            dash_count = 0
+            while i < n and traversal[i] == '-':
+                dash_count += 1
+                i += 1
+            
+            # If the dash count doesn't match the expected depth, backtrack
+            if dash_count != depth:
+                i -= dash_count  # Rewind the index
+                return None
+            
+            # Extract the node value
+            val = 0
+            while i < n and traversal[i].isdigit():
+                val = val * 10 + int(traversal[i])
+                i += 1
+            
+            # Create the current node
+            node = TreeNode(val)
+            # Recursively build the left and right subtrees
+            node.left = build_tree(depth + 1)
+            node.right = build_tree(depth + 1)
+            
+            return node
+
+        return build_tree(0)
+
+
+Solution 2:
+
+# Definition for a binary tree node.
+# class TreeNode:
+#     def __init__(self, val=0, left=None, right=None):
+#         self.val = val
+#         self.left = left
+#         self.right = right
+class Solution:
+    def recoverFromPreorder(self, traversal: str) -> Optional[TreeNode]:
+        stack = []
+        i = 0
+        n = len(traversal)
+        
+        while i < n:
+            depth = 0
+            # Count the number of dashes (to determine depth)
+            while i < n and traversal[i] == '-':
+                depth += 1
+                i += 1
+
+            value = 0
+            # Extract the node value
+            while i < n and traversal[i].isdigit():
+                value = value * 10 + int(traversal[i])
+                i += 1
+            
+            node = TreeNode(value)
+
+            # Maintain correct parent-child relationship
+            while len(stack) > depth:  # Pop until the correct parent is found
+                stack.pop()
+            
+            # Attach this node to the correct parent
+            if stack:
+                parent = stack[-1]
+                if not parent.left:   # First child goes to the left
+                    parent.left = node
+                else:                 # Second child goes to the right
+                    parent.right = node
+            
+            stack.append(node)  # Push the current node onto the stack
+        
+        return stack[0]  # Root of the tree

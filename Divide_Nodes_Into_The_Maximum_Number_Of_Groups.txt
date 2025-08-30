@@ -1,0 +1,200 @@
+2493. Divide Nodes Into the Maximum Number of Groups
+Solved
+Hard
+Topics
+Companies
+Hint
+You are given a positive integer n representing the number of nodes in an undirected graph. The nodes are labeled from 1 to n.
+
+You are also given a 2D integer array edges, where edges[i] = [ai, bi] indicates that there is a bidirectional edge between nodes ai and bi. Notice that the given graph may be disconnected.
+
+Divide the nodes of the graph into m groups (1-indexed) such that:
+
+Each node in the graph belongs to exactly one group.
+For every pair of nodes in the graph that are connected by an edge [ai, bi], if ai belongs to the group with index x, and bi belongs to the group with index y, then |y - x| = 1.
+Return the maximum number of groups (i.e., maximum m) into which you can divide the nodes. Return -1 if it is impossible to group the nodes with the given conditions.
+
+ 
+
+Example 1:
+
+
+Input: n = 6, edges = [[1,2],[1,4],[1,5],[2,6],[2,3],[4,6]]
+Output: 4
+Explanation: As shown in the image we:
+- Add node 5 to the first group.
+- Add node 1 to the second group.
+- Add nodes 2 and 4 to the third group.
+- Add nodes 3 and 6 to the fourth group.
+We can see that every edge is satisfied.
+It can be shown that that if we create a fifth group and move any node from the third or fourth group to it, at least on of the edges will not be satisfied.
+Example 2:
+
+Input: n = 3, edges = [[1,2],[2,3],[3,1]]
+Output: -1
+Explanation: If we add node 1 to the first group, node 2 to the second group, and node 3 to the third group to satisfy the first two edges, we can see that the third edge will not be satisfied.
+It can be shown that no grouping is possible.
+ 
+
+Constraints:
+
+1 <= n <= 500
+1 <= edges.length <= 104
+edges[i].length == 2
+1 <= ai, bi <= n
+ai != bi
+There is at most one edge between any pair of vertices.
+
+
+Solution 1:
+
+class UnionFind:
+    def __init__(self, n):
+        self.parent = [i for i in range(n)]
+        self.size = [1] * n
+
+    def find(self, node):
+        while node != self.parent[node]:
+            self.parent[node] = self.parent[self.parent[node]]
+            node = self.parent[node]
+        return node
+
+    def union(self, node1, node2):
+        p1, p2 = self.find(node1), self.find(node2)
+        if p1 == p2:
+            return False
+
+        if self.size[p1] > self.size[p2]:
+            self.parent[p2] = p1
+            self.size[p1] += self.size[p2]
+        else:
+            self.parent[p1] = p2
+            self.size[p2] += self.size[p1]
+
+        return True
+
+class Solution:
+    def magnificentSets(self, n: int, edges: List[List[int]]) -> int:
+        graph = defaultdict(list)
+        for u, v in edges:
+            graph[u].append(v)
+            graph[v].append(u)
+
+        uf = UnionFind(n + 1)
+        for u, v in edges:
+            uf.union(u, v)
+
+        components = defaultdict(list)
+        for i in range(1, n + 1):
+            components[uf.find(i)].append(i)
+
+        def is_bipartite(component):
+            color = {}
+            for node in component:
+                if node not in color:
+                    queue = deque([node])
+                    color[node] = 0  # Start coloring with 0
+                    while queue:
+                        curr = queue.popleft()
+                        for neighbor in graph[curr]:
+                            if neighbor in color:
+                                if color[neighbor] == color[curr]:  # Odd-length cycle detected
+                                    return False
+                            else:
+                                color[neighbor] = 1 - color[curr]
+                                queue.append(neighbor)
+            return True
+
+        def bfs_max_depth(start_node):
+            queue = deque([start_node])
+            visited = {start_node: 1}
+            max_depth = 1  # At least 1 group exists
+
+            while queue:
+                for _ in range(len(queue)):
+                    curr = queue.popleft()
+                    for neighbor in graph[curr]:
+                        if neighbor not in visited:
+                            visited[neighbor] = visited[curr] + 1
+                            queue.append(neighbor)
+                            max_depth = max(max_depth, visited[neighbor])
+
+            return max_depth
+
+        max_groups = 0
+        for component in components.values():
+            if not is_bipartite(component):
+                return -1  # If any component is not bipartite, return -1
+
+            # Find the longest possible grouping
+            max_depth = 0
+            for node in component:
+                max_depth = max(max_depth, bfs_max_depth(node))
+            
+            max_groups += max_depth  # Sum of max depths for all components
+
+        return max_groups
+
+
+Solution 2:
+
+class Solution:
+    def magnificentSets(self, n: int, edges: List[List[int]]) -> int:
+        def is_bipartite_and_get_component(start):
+            queue = deque([start])
+            color[start] = 0
+            component = [start]
+            is_bipartite = True
+
+            while queue:
+                u = queue.popleft()
+                for v in graph[u]:
+                    if color[v] == -1:
+                        color[v] = color[u] ^ 1  # Alternate color
+                        queue.append(v)
+                        component.append(v)
+                    elif color[v] == color[u]:  # Odd cycle detected
+                        is_bipartite = False
+                        break
+
+            return is_bipartite, component
+
+        def bfs_max_depth(start):
+            queue = deque([start])
+            visited = {start: 1}
+            max_depth = 1
+
+            while queue:
+                u = queue.popleft()
+                for v in graph[u]:
+                    if v not in visited:
+                        visited[v] = visited[u] + 1
+                        max_depth = max(max_depth, visited[v])
+                        queue.append(v)
+
+            return max_depth
+
+        graph = [[] for _ in range(n + 1)]
+        for u, v in edges:
+            graph[u].append(v)
+            graph[v].append(u)
+
+        # Step 1: Check if the graph is bipartite and get components
+        color = [-1] * (n + 1)
+        components = []
+        for node in range(1, n + 1):
+            if color[node] == -1:
+                is_bipartite, component = is_bipartite_and_get_component(node)
+                if not is_bipartite:
+                    return -1
+                components.append(component)
+
+        # Step 2: Compute the max depth for each component
+        total = 0
+        for component in components:
+            max_distance = 0
+            for start in component:
+                max_distance = max(max_distance, bfs_max_depth(start))
+            total += max_distance
+
+        return total

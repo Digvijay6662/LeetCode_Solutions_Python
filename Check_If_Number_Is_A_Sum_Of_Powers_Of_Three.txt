@@ -1,0 +1,71 @@
+1780. Check if Number is a Sum of Powers of Three
+Solved
+Medium
+Topics
+Companies
+Hint
+Given an integer n, return true if it is possible to represent n as the sum of distinct powers of three. Otherwise, return false.
+
+An integer y is a power of three if there exists an integer x such that y == 3x.
+
+ 
+
+Example 1:
+
+Input: n = 12
+Output: true
+Explanation: 12 = 31 + 32
+Example 2:
+
+Input: n = 91
+Output: true
+Explanation: 91 = 30 + 32 + 34
+Example 3:
+
+Input: n = 21
+Output: false
+ 
+
+Constraints:
+
+1 <= n <= 107
+
+
+Solution 1:
+
+class Solution:
+    def checkPowersOfThree(self, n: int) -> bool:
+
+        def solve(num, power_index):
+            if num == 0:
+                return True
+            if num < 0:
+                return False
+            if power_index > 16: # Optimization: No need to check powers beyond a certain point. 3^16 > 10^7
+                return False
+
+            power_of_3 = 3 ** power_index
+
+            # Option 1: Don't use the current power of 3, move to the next power
+            if solve(num, power_index + 1):
+                return True
+
+            # Option 2: Use the current power of 3, and then try to represent the remainder with higher powers
+            if solve(num - power_of_3, power_index + 1):
+                return True
+
+            return False # If neither option worked, return False
+
+        return solve(n, 0)
+
+
+Solution 2:
+
+class Solution:
+    def checkPowersOfThree(self, n: int) -> bool:
+        while n > 0:
+            # If the digit in base 3 is 2, return False immediately.
+            if n % 3 == 2:
+                return False
+            n //= 3  # Remove the last digit in base 3.
+        return True

@@ -1,0 +1,100 @@
+3480. Maximize Subarrays After Removing One Conflicting Pair
+Solved
+Hard
+Topics
+premium lock icon
+Companies
+Hint
+You are given an integer n which represents an array nums containing the numbers from 1 to n in order. Additionally, you are given a 2D array conflictingPairs, where conflictingPairs[i] = [a, b] indicates that a and b form a conflicting pair.
+
+Remove exactly one element from conflictingPairs. Afterward, count the number of non-empty subarrays of nums which do not contain both a and b for any remaining conflicting pair [a, b].
+
+Return the maximum number of subarrays possible after removing exactly one conflicting pair.
+
+ 
+
+Example 1:
+
+Input: n = 4, conflictingPairs = [[2,3],[1,4]]
+
+Output: 9
+
+Explanation:
+
+Remove [2, 3] from conflictingPairs. Now, conflictingPairs = [[1, 4]].
+There are 9 subarrays in nums where [1, 4] do not appear together. They are [1], [2], [3], [4], [1, 2], [2, 3], [3, 4], [1, 2, 3] and [2, 3, 4].
+The maximum number of subarrays we can achieve after removing one element from conflictingPairs is 9.
+Example 2:
+
+Input: n = 5, conflictingPairs = [[1,2],[2,5],[3,5]]
+
+Output: 12
+
+Explanation:
+
+Remove [1, 2] from conflictingPairs. Now, conflictingPairs = [[2, 5], [3, 5]].
+There are 12 subarrays in nums where [2, 5] and [3, 5] do not appear together.
+The maximum number of subarrays we can achieve after removing one element from conflictingPairs is 12.
+ 
+
+Constraints:
+
+2 <= n <= 105
+1 <= conflictingPairs.length <= 2 * n
+conflictingPairs[i].length == 2
+1 <= conflictingPairs[i][j] <= n
+conflictingPairs[i][0] != conflictingPairs[i][1]
+
+
+Solution 1:
+
+class Solution:
+    def maxSubarrays(self, n: int, conflictingPairs: List[List[int]]) -> int:
+        # arr[b] will store a list of `a` values for each conflict pair [a, b] where a < b.
+        arr = [[] for _ in range(n + 1)]
+        for p in conflictingPairs:
+            # Ensure a is always the smaller value and b is the larger one.
+            a, b = min(p[0], p[1]), max(p[0], p[1])
+            arr[b].append(a)
+        
+        # `base_valid_subarrays` will be the count assuming NO pairs are removed.
+        base_valid_subarrays = 0
+        
+        # `gain[u]` will store the TOTAL accumulated gain if the conflict starting at `u`
+        # (which is currently the bottleneck) is removed.
+        gain = defaultdict(int)
+        
+        # `maximum` is the highest start of a conflict seen so far (the current limit).
+        # `secondMaximum` is the second-highest start of a conflict seen so far.
+        maximum = 0
+        secondMaximum = 0
+
+        # Iterate through all possible subarray end points.
+        for end in range(1, n + 1):
+            # Update maximum and secondMaximum with any new conflicts ending at `end`.
+            for u in arr[end]:
+                if u > maximum:
+                    secondMaximum = maximum
+                    maximum = u
+                elif u > secondMaximum:
+                    secondMaximum = u
+            
+            # Add the number of valid subarrays ending at `end` to the base count.
+            # A subarray [start...end] is valid if start > maximum.
+            # Valid starts are from `maximum + 1` to `end`.
+            base_valid_subarrays += end - maximum
+            
+            # If there's a bottleneck conflict (maximum > 0), calculate the potential gain.
+            # The gain is the difference between the current limit and what the limit
+            # would be if the bottleneck was removed (i.e., secondMaximum).
+            # This gain is attributed to the conflict starting at `maximum`.
+            if maximum > 0:
+                gain[maximum] += maximum - secondMaximum
+
+        # The final result is the base count plus the best possible total gain
+        # we can achieve by removing exactly one conflict.
+        # `max(gain.values())` finds the bottleneck whose removal yields the most benefit.
+        # If there are no conflicts, gain will be empty, so we add 0.
+        max_total_gain = max(gain.values()) if gain else 0
+        
+        return base_valid_subarrays + max_total_gain

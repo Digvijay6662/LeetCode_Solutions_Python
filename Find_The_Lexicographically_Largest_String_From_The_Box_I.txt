@@ -1,0 +1,114 @@
+3403. Find the Lexicographically Largest String From the Box I
+Solved
+Medium
+Topics
+premium lock icon
+Companies
+Hint
+You are given a string word, and an integer numFriends.
+
+Alice is organizing a game for her numFriends friends. There are multiple rounds in the game, where in each round:
+
+word is split into numFriends non-empty strings, such that no previous round has had the exact same split.
+All the split words are put into a box.
+Find the lexicographically largest string from the box after all the rounds are finished.
+
+ 
+
+Example 1:
+
+Input: word = "dbca", numFriends = 2
+
+Output: "dbc"
+
+Explanation: 
+
+All possible splits are:
+
+"d" and "bca".
+"db" and "ca".
+"dbc" and "a".
+Example 2:
+
+Input: word = "gggg", numFriends = 4
+
+Output: "g"
+
+Explanation: 
+
+The only possible split is: "g", "g", "g", and "g".
+
+ 
+
+Constraints:
+
+1 <= word.length <= 5 * 103
+word consists only of lowercase English letters.
+1 <= numFriends <= word.length
+
+
+Solution 1:
+
+class Solution:
+    def answerString(self, word: str, numFriends: int) -> str:
+        n = len(word)  # Get the length of the input word
+        
+        # Base case: if there's only 1 friend, the entire word is the only split possible
+        if numFriends == 1:
+            return word
+
+        result = ""  # Initialize an empty string to track the lexicographically largest substring
+        
+        # Loop through each possible starting index i in the word
+        for i in range(n):
+            # Calculate the maximum length of a substring starting at i that allows
+            # the remaining word to be split into (numFriends - 1) non-empty parts.
+            # Total length is n, and we need (numFriends - 1) parts of at least 1 character each,
+            # so max length of this substring is n - (numFriends - 1).
+            # Use min() to ensure we don’t exceed the word’s length.
+            result = max(result, word[i: min(i + n - (numFriends - 1), n)])
+            # Compare current result with the new substring and keep the lexicographically larger one
+        
+        return result  # Return the largest substring found
+
+
+Solution 2:
+
+class Solution:
+    def answerString(self, word: str, numFriends: int) -> str:
+        # Determine the length of the input string.
+        n = len(word)
+        
+        # If there's only one friend, the only possible split is the whole word.
+        if numFriends == 1:
+            return word
+        
+        # 'i' will hold the starting index of the current candidate for the lexicographically largest substring.
+        # 'j' serves as the pointer for the next potential candidate.
+        i = 0
+        j = 1
+
+        # Loop until 'j' reaches the end of the string.
+        while j < n:
+            # 'k' will count the number of characters that are identical between the substring
+            # starting at 'i' and the one starting at 'j' (i.e., their common prefix length).
+            k = 0
+            while j + k < n and word[i + k] == word[j + k]:
+                k += 1
+            
+            # Check if we've not reached the end of the string and the character in the current candidate
+            # is lexicographically smaller than the character in the substring starting at 'j'.
+            if j + k < n and word[i + k] < word[j + k]:
+                # A better (i.e., lexicographically larger) candidate is found at index 'j'.
+                i = j
+                # Increment 'j' to continue checking subsequent candidates.
+                j = j + 1
+            else:
+                # If the current candidate remains larger, skip over the checked common prefix plus one.
+                # This avoids re-checking substrings that cannot be larger.
+                j = j + k + 1
+            
+        # The selected candidate starting at index 'i' might be too long; we can only take a substring 
+        # that leaves enough characters for the remaining (numFriends - 1) splits.
+        # Hence, the substring length is capped at n - (numFriends - 1).
+        return word[i : min(i + n - (numFriends - 1), n)]

@@ -1,0 +1,72 @@
+498. Diagonal Traverse
+Solved
+Medium
+Topics
+premium lock icon
+Companies
+Given an m x n matrix mat, return an array of all the elements of the array in a diagonal order.
+
+ 
+
+Example 1:
+
+
+Input: mat = [[1,2,3],[4,5,6],[7,8,9]]
+Output: [1,2,4,7,5,3,6,8,9]
+Example 2:
+
+Input: mat = [[1,2],[3,4]]
+Output: [1,2,3,4]
+ 
+
+Constraints:
+
+m == mat.length
+n == mat[i].length
+1 <= m, n <= 104
+1 <= m * n <= 104
+-105 <= mat[i][j] <= 105
+
+
+Solution 1:
+
+class Solution:
+    def findDiagonalOrder(self, mat: List[List[int]]) -> List[int]:
+        # Handle the edge case: if the matrix is empty or has empty rows, return an empty list
+        if not mat or not mat[0]:
+            return []
+
+        n, m = len(mat), len(mat[0])  # n = number of rows, m = number of columns
+        result = []                   # This will store the final diagonal traversal order
+
+        # Loop over all possible diagonals
+        # There are (n + m - 1) diagonals in total
+        for d in range(n + m - 1):
+            intermediate = []  # Temporary list to store elements of the current diagonal
+
+            # Find the starting point (row, col) of the current diagonal 'd'
+            if d < m:
+                # If we're still within the first row, start from (0, d)
+                row, col = 0, d
+            else:
+                # Otherwise, start from the last column and move down
+                # Row starts at (d - m + 1) to maintain row + col = d
+                row, col = d - m + 1, m - 1
+
+            # Traverse the current diagonal:
+            # Move down (row + 1) and left (col - 1) until we go out of bounds
+            while row < n and col >= 0:
+                intermediate.append(mat[row][col])
+                row += 1
+                col -= 1
+
+            # For diagonals with even index 'd', reverse the collected elements
+            # This creates the zigzag pattern as required by the problem
+            if d % 2 == 0:
+                intermediate.reverse()
+
+            # Add the processed diagonal elements to the result list
+            result.extend(intermediate)
+
+        # Return the final traversal result
+        return result

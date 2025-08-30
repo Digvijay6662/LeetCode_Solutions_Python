@@ -57,22 +57,44 @@ Solution:
 
 class Solution:
     def countInterestingSubarrays(self, nums: List[int], modulo: int, k: int) -> int:
-        n = len(nums)
+        n = len(nums)  # Get the number of elements in the array
+        
+        # We use a dictionary to record the number of times a particular prefix sum 
+        # (modulo 'modulo') has occurred. We initialize with {0: 1} because an empty
+        # prefix (before processing any element) has a sum of 0, which we count as seen once.
         hashMap = {0: 1}
-        count = 0
-        prefixSum = 0
-
+        
+        count = 0       # This will accumulate our count of interesting subarrays.
+        prefixSum = 0   # This variable will hold the running count of "interesting" elements (that satisfy nums[i] % modulo == k)
+        
+        # Loop over each element of the array to build the prefix sum.
         for i in range(n):
+            # Check if the current element qualifies (remainder equals k).
             if nums[i] % modulo == k:
-                prefixSum += 1
+                prefixSum += 1  # Increment our running count of interesting elements.
+            
+            # Since we only care about counts modulo 'modulo',
+            # we take prefixSum modulo 'modulo' to keep it within the range [0, modulo-1].
             prefixSum %= modulo
-
-            if (prefixSum - k + modulo) % modulo in hashMap:
-                count += hashMap[(prefixSum - k + modulo) % modulo]
+            
+            # Determine the target prefix value that, if subtracted from the current prefix sum,
+            # would yield a subarray with count % modulo == k.
+            # We need to solve: (current_prefix - previous_prefix) % modulo == k.
+            # Rearranging, previous_prefix should be (current_prefix - k) modulo modulo.
+            # We add 'modulo' before taking modulo to prevent negative values.
+            targetPrefix = (prefixSum - k + modulo) % modulo
+            
+            # If this target prefix has been seen before, then every occurrence represents a valid starting position
+            # for an interesting subarray ending at the current index.
+            if targetPrefix in hashMap:
+                count += hashMap[targetPrefix]
                 
+            # Record the current prefix sum in the hashmap.
+            # If it already exists, increment its frequency; otherwise, initialize with 1.
             if prefixSum in hashMap:
                 hashMap[prefixSum] += 1
             else:
                 hashMap[prefixSum] = 1
         
+        # Finally, return the total count of interesting subarrays.
         return count

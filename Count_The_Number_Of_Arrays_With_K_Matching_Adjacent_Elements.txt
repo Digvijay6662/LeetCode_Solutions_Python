@@ -1,0 +1,128 @@
+3405. Count the Number of Arrays with K Matching Adjacent Elements
+Solved
+Hard
+Topics
+premium lock icon
+Companies
+Hint
+You are given three integers n, m, k. A good array arr of size n is defined as follows:
+
+Each element in arr is in the inclusive range [1, m].
+Exactly k indices i (where 1 <= i < n) satisfy the condition arr[i - 1] == arr[i].
+Return the number of good arrays that can be formed.
+
+Since the answer may be very large, return it modulo 109 + 7.
+
+ 
+
+Example 1:
+
+Input: n = 3, m = 2, k = 1
+
+Output: 4
+
+Explanation:
+
+There are 4 good arrays. They are [1, 1, 2], [1, 2, 2], [2, 1, 1] and [2, 2, 1].
+Hence, the answer is 4.
+Example 2:
+
+Input: n = 4, m = 2, k = 2
+
+Output: 6
+
+Explanation:
+
+The good arrays are [1, 1, 1, 2], [1, 1, 2, 2], [1, 2, 2, 2], [2, 1, 1, 1], [2, 2, 1, 1] and [2, 2, 2, 1].
+Hence, the answer is 6.
+Example 3:
+
+Input: n = 5, m = 2, k = 0
+
+Output: 2
+
+Explanation:
+
+The good arrays are [1, 2, 1, 2, 1] and [2, 1, 2, 1, 2]. Hence, the answer is 2.
+ 
+
+Constraints:
+
+1 <= n <= 105
+1 <= m <= 105
+0 <= k <= n - 1
+
+
+Solution 1:
+
+class Solution:
+    def countGoodArrays(self, n: int, m: int, k: int) -> int:
+        # Define the modulus for all calculations.
+        MOD = 10**9 + 7
+
+        # Helper function to compute (base^exponent) % mod efficiently.
+        # This is also known as exponentiation by squaring. It's crucial for finding
+        # modular inverses and powers of large numbers.
+        def custom_pow(base, exponent, mod):
+            result = 1
+            base = base % mod
+            while exponent > 0:
+                # If the exponent is odd, multiply the base with the result.
+                if exponent % 2 == 1:
+                    result = (result * base) % mod
+                # Square the base and halve the exponent for the next iteration.
+                base = (base * base) % mod
+                exponent //= 2
+            return result
+
+        # Precompute factorials up to 'n' modulo MOD.
+        # fact[i] will store i! % MOD.
+        fact = [1] * (n + 1)
+        for i in range(2, n + 1):
+            fact[i] = (i * fact[i - 1]) % MOD
+
+        # Precompute modular inverse of factorials up to 'n'.
+        # inv_fact[i] will store (i!)⁻¹ % MOD.
+        inv_fact = [1] * (n + 1)
+        
+        # Calculate the modular inverse of n! as the base case.
+        # This uses Fermat's Little Theorem: a^(p-2) ≡ a⁻¹ (mod p) for a prime p.
+        inv_fact[n] = custom_pow(fact[n], MOD - 2, MOD)
+
+        # Calculate the rest of the inverse factorials iteratively.
+        # This uses the relationship: (i!)⁻¹ = ((i+1)!)⁻¹ * (i+1).
+        # It's much faster than calculating the inverse for each factorial individually.
+        for i in range(n - 1, -1, -1):
+            inv_fact[i] = ((i + 1) * inv_fact[i + 1]) % MOD
+            
+        # Helper function to calculate combinations "n choose r" (nCr) using the precomputed values.
+        # nCr = n! / (r! * (n-r)!) which is equivalent to n! * (r!)⁻¹ * ((n-r)!)⁻¹ in modular arithmetic.
+        def nCr(n_val, r_val, mod):
+            # Handle edge cases where r is out of bounds for n.
+            if r_val < 0 or r_val > n_val:
+                return 0
+            # Calculate numerator: n!
+            numerator = fact[n_val]
+            # Calculate denominator: (r!)⁻¹ * ((n-r)!)⁻¹
+            denominator = (inv_fact[r_val] * inv_fact[n_val - r_val]) % mod
+            return (numerator * denominator) % mod
+
+        # --- Final Calculation based on the Combinatorial Formula ---
+        # The problem can be solved by combining three parts:
+        
+        # 1. Choose which 'k' of the 'n-1' adjacent positions will have equal elements.
+        #    This is C(n-1, k).
+        combinations = nCr(n - 1, k, MOD)
+        
+        # 2. Choose the values for the 'n-k' groups of identical elements.
+        #    - The first group has 'm' choices.
+        #    - The remaining 'n-k-1' groups must differ from their previous group,
+        #      so they each have 'm-1' choices. This gives (m-1)^(n-k-1).
+        m_powers = custom_pow(m - 1, n - k - 1, MOD)
+        
+        # Combine the parts: C(n-1, k) * m * (m-1)^(n-k-1)
+        # We perform modulo at each step to prevent overflow.
+        result = (combinations * m) % MOD
+        result = (result * m_powers) % MOD
+        
+        return result
