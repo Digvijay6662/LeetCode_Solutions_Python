@@ -1,0 +1,90 @@
+611. Valid Triangle Number
+Solved
+Medium
+Topics
+premium lock icon
+Companies
+Given an integer array nums, return the number of triplets chosen from the array that can make triangles if we take them as side lengths of a triangle.
+
+ 
+
+Example 1:
+
+Input: nums = [2,2,3,4]
+Output: 3
+Explanation: Valid combinations are: 
+2,3,4 (using the first 2)
+2,3,4 (using the second 2)
+2,2,3
+Example 2:
+
+Input: nums = [4,2,3,4]
+Output: 4
+ 
+
+Constraints:
+
+1 <= nums.length <= 1000
+0 <= nums[i] <= 1000
+
+
+Solution 1:
+
+class Solution:
+    def triangleNumber(self, nums: List[int]) -> int:
+        n = len(nums)
+        nums.sort()   # Sort the array so we can apply binary search and triangle inequality easily
+        total_triangles = 0
+
+        # Custom binary search:
+        # Finds the largest index 'right' such that nums[right] < target
+        def binary_search(start_index: int, target: int) -> int:
+            left, right = start_index, n - 1
+            while left <= right:
+                mid = left + (right - left) // 2
+                if nums[mid] < target:
+                    left = mid + 1   # move right to find larger valid values
+                else:
+                    right = mid - 1  # shrink range if nums[mid] >= target
+            return right   # 'right' will be the last index where nums[right] < target
+
+        # Iterate over the first side of the triangle
+        for first in range(n - 2):
+            if nums[first] == 0:   # side length 0 cannot form a triangle
+                continue
+
+            # Iterate over the second side of the triangle
+            for second in range(first + 1, n - 1):
+                # Find the farthest index 'third' such that:
+                # nums[first] + nums[second] > nums[third]
+                third = binary_search(second + 1, nums[first] + nums[second])
+
+                # If third > second, then all indices in (second, third] are valid
+                total_triangles += third - second
+
+        return total_triangles
+
+
+Solution 2:
+
+class Solution:
+    def triangleNumber(self, nums: List[int]) -> int:
+        nums.sort()  # Sort to apply two-pointer logic
+        n = len(nums)
+        total_triangles = 0
+
+        # Fix the largest side at index k
+        for k in range(n - 1, 1, -1):
+            left, right = 0, k - 1
+
+            # Use two pointers to find valid pairs
+            while left < right:
+                if nums[left] + nums[right] > nums[k]:
+                    # If nums[left] + nums[right] > nums[k],
+                    # then all pairs (left, left+1, ..., right-1, right) with nums[right] are valid
+                    total_triangles += right - left
+                    right -= 1  # move inward to check smaller right
+                else:
+                    left += 1   # need a larger sum, move left forward
+
+        return total_triangles

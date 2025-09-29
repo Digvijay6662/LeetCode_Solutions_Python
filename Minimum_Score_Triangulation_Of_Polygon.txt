@@ -1,0 +1,138 @@
+1039. Minimum Score Triangulation of Polygon
+Solved
+Medium
+Topics
+premium lock icon
+Companies
+Hint
+You have a convex n-sided polygon where each vertex has an integer value. You are given an integer array values where values[i] is the value of the ith vertex in clockwise order.
+
+Polygon triangulation is a process where you divide a polygon into a set of triangles and the vertices of each triangle must also be vertices of the original polygon. Note that no other shapes other than triangles are allowed in the division. This process will result in n - 2 triangles.
+
+You will triangulate the polygon. For each triangle, the weight of that triangle is the product of the values at its vertices. The total score of the triangulation is the sum of these weights over all n - 2 triangles.
+
+Return the minimum possible score that you can achieve with some triangulation of the polygon.
+
+ 
+
+Example 1:
+
+
+
+Input: values = [1,2,3]
+
+Output: 6
+
+Explanation: The polygon is already triangulated, and the score of the only triangle is 6.
+
+Example 2:
+
+
+
+Input: values = [3,7,4,5]
+
+Output: 144
+
+Explanation: There are two triangulations, with possible scores: 3*7*5 + 4*5*7 = 245, or 3*4*5 + 3*4*7 = 144.
+The minimum score is 144.
+
+Example 3:
+
+
+
+Input: values = [1,3,1,4,1,5]
+
+Output: 13
+
+Explanation: The minimum score triangulation is 1*1*3 + 1*1*4 + 1*1*5 + 1*1*1 = 13.
+
+ 
+
+Constraints:
+
+n == values.length
+3 <= n <= 50
+1 <= values[i] <= 100
+
+
+Solution 1:
+
+class Solution:
+    def minScoreTriangulation(self, values: List[int]) -> int:
+        n = len(values)
+        dp = {}   # dictionary to store computed results for (start, end)
+
+        def solve(start: int, end: int) -> int:
+            # If result already computed, return it
+            if (start, end) in dp:
+                return dp[(start, end)]
+            
+            # Base case 1: fewer than 3 vertices → no triangle possible
+            if start + 2 > end:
+                return 0
+            
+            # Base case 2: exactly 3 vertices → only one triangle possible
+            if start + 2 == end:
+                return values[start] * values[start + 1] * values[end]
+            
+            # Initialize minimum score as infinity
+            min_score = float('inf')
+            
+            # Try every possible middle vertex 'mid' between start and end
+            for mid in range(start + 1, end):
+                # Cost of forming triangle (start, mid, end)
+                triangle_score = values[start] * values[mid] * values[end]
+                
+                # Recursively solve left and right sub-polygons
+                left_score = solve(start, mid)
+                right_score = solve(mid, end)
+                
+                # Total score for this partition
+                total_score = triangle_score + left_score + right_score
+                
+                # Update minimum score
+                min_score = min(min_score, total_score)
+            
+            # Store result in dp before returning
+            dp[(start, end)] = min_score
+            return min_score
+        
+        # Solve for the full polygon (from vertex 0 to n-1)
+        return solve(0, n - 1)
+
+
+Solution 2:
+
+class Solution:
+    def minScoreTriangulation(self, values: List[int]) -> int:
+        n = len(values)
+        
+        # dp[i][j] will store the minimum triangulation score
+        # for the sub-polygon formed by vertices from i to j (inclusive).
+        dp = [[0] * n for _ in range(n)]
+        
+        # We build solutions for sub-polygons of increasing length
+        # Minimum polygon length to form a triangle is 3
+        for length in range(3, n + 1):  
+            # i = starting index of the sub-polygon
+            for i in range(n - length + 1):
+                # j = ending index of the sub-polygon
+                j = i + length - 1
+                
+                # Initialize with infinity since we want the minimum
+                dp[i][j] = float('inf')
+                
+                # Try all possible "middle" vertices k between i and j
+                # Each choice of k forms a triangle (i, k, j)
+                for k in range(i + 1, j):
+                    # Cost of triangulating with vertex k:
+                    #   - dp[i][k] = optimal triangulation of left sub-polygon (i..k)
+                    #   - dp[k][j] = optimal triangulation of right sub-polygon (k..j)
+                    #   - values[i] * values[k] * values[j] = score of triangle (i, k, j)
+                    cost = dp[i][k] + dp[k][j] + values[i] * values[k] * values[j]
+                    
+                    # Update dp[i][j] with the minimum cost found
+                    dp[i][j] = min(dp[i][j], cost)
+        
+        # The answer is the minimum triangulation score for the full polygon (0..n-1)
+        return dp[0][n - 1]

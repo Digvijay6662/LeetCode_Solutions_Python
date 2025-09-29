@@ -37,25 +37,35 @@ Solution 1:
 
 class Solution:
     def maxAverageRatio(self, classes: List[List[int]], extraStudents: int) -> float:
-        n = len(classes)
-        maxHeap = []
+        n = len(classes)  # Total number of classes
+        maxHeap = []      # Max-heap (we'll store negative values because Python's heapq is a min-heap)
 
+        # Step 1: Initialize the heap with each class's potential improvement (delta)
         for p, t in classes:
-            # if we add one student to this class how much
-            # will it increment. We need max increment first
+            # p = number of passing students
+            # t = total students
+            # delta = improvement in pass ratio if we add one passing student
             delta = (p + 1) / (t + 1) - (p / t)
+            # Push negative delta to simulate a max-heap
             heapq.heappush(maxHeap, (-delta, p, t))
         
+        # Step 2: Assign extra students one by one to the class with the highest improvement
         for _ in range(extraStudents):
+            # Pop the class with the largest delta (max improvement)
             delta, p, t = heapq.heappop(maxHeap)
+            # Add one passing student to this class
             p += 1
             t += 1
+            # Recalculate the new improvement if we add another student next time
             new_delta = (p + 1) / (t + 1) - (p / t)
+            # Push the updated class back into the heap
             heapq.heappush(maxHeap, (-new_delta, p, t))
         
+        # Step 3: Calculate the final average pass ratio
         total_ratio = 0
         while maxHeap:
             _, p, t = heapq.heappop(maxHeap)
-            total_ratio += p / t
+            total_ratio += p / t  # Add this class's pass ratio
         
+        # Return the average pass ratio across all classes
         return total_ratio / n

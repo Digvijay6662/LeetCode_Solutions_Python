@@ -34,17 +34,27 @@ Constraints:
 1 <= num1 <= 109
 -109 <= num2 <= 109
 
-Solution:
+Solution 1:
 
 class Solution:
     def makeTheIntegerZero(self, num1: int, num2: int) -> int:
-        if num1 < num2:
-            return -1
+        # Try all possible operation counts from 1 to 60
+        # (Why 60? Because 2^60 is already huge > 10^18, enough for constraints)
+        for operations_count in range(1, 61):
 
-        for k in range(61):
-            target = num1 - k * num2
-            if target >= 0 and target.bit_count() <= k <= target:
-                return k
-                
+            # Remaining value after subtracting num2 in each operation
+            remaining_value = num1 - operations_count * num2
+
+            # If remaining_value is negative, further operations will only make it smaller
+            if remaining_value < 0:
+                return -1
+
+            # Check if remaining_value can be represented as the sum of exactly operations_count powers of 2
+            # .bit_count() gives the minimum number of powers of 2 needed
+            # Condition 1: bit_count <= operations_count → we can split powers into smaller ones if needed
+            # Condition 2: operations_count <= remaining_value → can't have more operations than the value itself
+            if remaining_value.bit_count() <= operations_count and operations_count <= remaining_value:
+                return operations_count
+
+        # If no valid operation count found
         return -1
-

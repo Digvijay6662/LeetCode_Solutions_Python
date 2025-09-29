@@ -61,29 +61,46 @@ Solution 1:
 class FoodRatings:
 
     def __init__(self, foods: List[str], cuisines: List[str], ratings: List[int]):
+        n = len(foods)
+        # Map: food name -> current rating
         self.food_rating = {}
+        # Map: food name -> cuisine type
         self.food_cuisine = {}
-        self.cuisine_food_ratings = defaultdict(list)
+        # Map: cuisine -> max-heap of (-rating, food name)
+        # We store negative ratings because Python's heapq is a min-heap by default.
+        # Using (-rating, food) makes it behave like a max-heap.
+        self.maxHeap = defaultdict(list)
 
-        for food, cuisine, rating in zip(foods, cuisines, ratings):
-            self.food_rating[food] = -rating
-            self.food_cuisine[food] = cuisine
-            heapq.heappush(self.cuisine_food_ratings[cuisine], (-rating, food))
-        
+        # Initialize all mappings and heaps
+        for i in range(n):
+            self.food_rating[foods[i]] = ratings[i]
+            self.food_cuisine[foods[i]] = cuisines[i]
+            # Push into the heap for that cuisine
+            # (-rating, food) ensures highest rating first, and lexicographically smallest food on ties
+            heapq.heappush(self.maxHeap[cuisines[i]], (-ratings[i], foods[i]))
+
     def changeRating(self, food: str, newRating: int) -> None:
-        self.food_rating[food] = -newRating
-        heapq.heappush(self.cuisine_food_ratings[self.food_cuisine[food]], (-newRating, food))
-        
+        # Update the rating in the food_rating map
+        self.food_rating[food] = newRating
+        # Find the cuisine for this food
+        cuisine = self.food_cuisine[food]
+        # Push the new rating into the heap for that cuisine
+        # We don't remove the old rating here — instead, we use lazy deletion in highestRated()
+        heapq.heappush(self.maxHeap[cuisine], (-newRating, food))
+
     def highestRated(self, cuisine: str) -> str:
-        heap = self.cuisine_food_ratings[cuisine]
-        while heap:
-            rating, food = heap[0]
-            if rating == self.food_rating[food]:
+        # Lazy deletion:
+        # Keep popping from the heap until the top element matches the current rating in food_rating
+        while self.maxHeap[cuisine]:
+            rating, food = self.maxHeap[cuisine][0]  # Peek at the top of the heap
+            # If the rating matches the current rating of this food, it's valid
+            if -rating == self.food_rating[food]:
                 return food
-            heapq.heappop(heap)
-
-
+            # Otherwise, it's outdated — remove it and check the next one
+            heapq.heappop(self.maxHeap[cuisine])
         
+        # If no valid food found (shouldn't happen with valid input), return empty string
+        return ""
 
 
 # Your FoodRatings object will be instantiated and called as such:
@@ -92,35 +109,48 @@ class FoodRatings:
 # param_2 = obj.highestRated(cuisine)
 
 
-
 Solution 2:
 
-from sortedcontainers import SortedSet
+from sortedcontainers import SortedList
 
 class FoodRatings:
-
     def __init__(self, foods: List[str], cuisines: List[str], ratings: List[int]):
-        self.food_rating = {}
-        self.food_cuisine = {}
-        self.cuisine_food_ratings = defaultdict(SortedSet)
+        # Dictionary mapping each food to its current rating
+        self.food_rating = {}      
+        # Dictionary mapping each food to its cuisine type
+        self.food_cuisine = {}     
+        # Dictionary mapping each cuisine to a SortedList of (-rating, food)
+        # We store (-rating, food) so that:
+        #   1. Higher ratings come first (because negative makes sort descending by rating)
+        #   2. If ratings tie, lexicographically smaller food name comes first automatically
+        self.cuisine_foods = {}    
 
+        # Initialize the data structures with the given foods, cuisines, and ratings
         for food, cuisine, rating in zip(foods, cuisines, ratings):
-            self.food_rating[food] = -rating
+            self.food_rating[food] = rating
             self.food_cuisine[food] = cuisine
-            self.cuisine_food_ratings[cuisine].add((-rating, food))
-        
+            # If this cuisine hasn't been seen before, create a new SortedList for it
+            if cuisine not in self.cuisine_foods:
+                self.cuisine_foods[cuisine] = SortedList()
+            # Add the food to the SortedList for its cuisine
+            self.cuisine_foods[cuisine].add((-rating, food))
+
     def changeRating(self, food: str, newRating: int) -> None:
+        # Find the cuisine of the given food
+        cuisine = self.food_cuisine[food]
+        # Get the old rating of this food
         oldRating = self.food_rating[food]
-        self.food_rating[food] = -newRating
+        # Remove the old (rating, food) entry from the SortedList
+        self.cuisine_foods[cuisine].remove((-oldRating, food))
+        # Add the new (rating, food) entry to the SortedList
+        self.cuisine_foods[cuisine].add((-newRating, food))
+        # Update the rating in the food_rating dictionary
+        self.food_rating[food] = newRating
 
-        self.cuisine_food_ratings[self.food_cuisine[food]].remove((oldRating, food))
-        self.cuisine_food_ratings[self.food_cuisine[food]].add((-newRating, food))
-        
     def highestRated(self, cuisine: str) -> str:
-        return self.cuisine_food_ratings[cuisine][0][1]
-
-
-        
+        # The SortedList is always sorted so that the highest-rated food is at index 0
+        # Return the food name (second element of the tuple)
+        return self.cuisine_foods[cuisine][0][1]
 
 
 # Your FoodRatings object will be instantiated and called as such:

@@ -57,32 +57,47 @@ Solution 1:
 
 class Solution:
     def numberOfPairs(self, points: List[List[int]]) -> int:
-
+        # Custom comparator function for sorting points
         def comparator(a, b):
+            # First, compare by x-coordinate (ascending)
             if a[0] != b[0]:
                 if a[0] < b[0]:
-                    return -1
+                    return -1   # a comes before b
                 else:
-                    return 1
+                    return 1    # b comes before a
             else:
+                # If x is the same, compare by y-coordinate (descending)
                 if a[1] < b[1]:
-                    return 1
+                    return 1    # higher y comes first
                 else:
-                    return -1
+                    return -1   # lower y comes later
 
-        n = len(points)
-        result = 0
+        n = len(points)  # Total number of points
+        result = 0       # Counter for valid pairs
 
-        sorted_points = sorted(points, key = cmp_to_key(comparator))
+        # Sort points using the custom comparator
+        # This ensures:
+        #   - Points are ordered left to right by x
+        #   - For same x, higher y comes first
+        sorted_points = sorted(points, key=cmp_to_key(comparator))
 
+        # Outer loop: choose the first point in the pair
         for i in range(n):
-            max_y = float('-inf')
+            max_y = float('-inf')  # Track the highest y seen so far in the inner loop
+
+            # Inner loop: check all points to the right of the current point
             for j in range(i + 1, n):
+
+                # Skip if the second point's y is greater than the first point's y
+                # (because we only want pairs where y2 <= y1)
                 if sorted_points[i][1] < sorted_points[j][1]:
                     continue
 
+                # If this point's y is greater than all previously seen y's in this inner loop,
+                # it forms a valid pair with point i
                 if sorted_points[j][1] > max_y:
-                    max_y = sorted_points[j][1]
-                    result += 1
+                    max_y = sorted_points[j][1]  # Update the max_y tracker
+                    result += 1                  # Count this as a valid pair
 
+        # Return the total number of valid pairs found
         return result

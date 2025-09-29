@@ -59,3 +59,158 @@ class Solution:
             return True
 
         solve()
+
+
+Solution 2:
+
+class Solution:
+    def solveSudoku(self, board: List[List[str]]) -> None:
+        """
+        Do not return anything, modify board in-place instead.
+        """
+        # Pre-allocate 9 sets for rows, columns, and boxes.
+        # rows[i] holds digits already used in row i, etc.
+        rows = [set() for _ in range(9)]
+        cols = [set() for _ in range(9)]
+        boxes = [set() for _ in range(9)]
+
+        # List of coordinates of empty cells to fill ('.')
+        empties = []
+
+        # Constant set of all digit characters for quick candidate computation
+        DIGITS = {'1','2','3','4','5','6','7','8','9'}
+
+        # Initialize constraint sets and list of empty positions
+        for i in range(9):
+            for j in range(9):
+                val = board[i][j]
+                if val == '.':
+                    # Keep track of empty cells to visit in recursion
+                    empties.append((i, j))
+                else:
+                    # Register existing numbers into row/col/box constraints
+                    rows[i].add(val)
+                    cols[j].add(val)
+                    box_id = (i // 3) * 3 + (j // 3)  # Map (i, j) to box index 0..8
+                    boxes[box_id].add(val)
+
+        def backtrack(idx) -> bool:
+            """
+            Fills empties[idx:] recursively.
+            Returns True as soon as a full valid assignment is found.
+            """
+            # Base case: all empty cells have been filled successfully
+            if idx == len(empties):
+                return True
+
+            i, j = empties[idx]
+            box_id = (i // 3) * 3 + (j // 3)
+
+            # Compute valid candidates by subtracting used digits in row/col/box
+            candidates = DIGITS - rows[i] - cols[j] - boxes[box_id]
+
+            # Try each candidate digit
+            for num in candidates:
+                # Place the digit
+                board[i][j] = num
+                rows[i].add(num)
+                cols[j].add(num)
+                boxes[box_id].add(num)
+
+                # Recurse to fill the next empty cell
+                if backtrack(idx + 1):
+                    return True  # Found a complete solution
+
+                # Backtrack: undo the placement and try the next candidate
+                board[i][j] = '.'
+                rows[i].remove(num)
+                cols[j].remove(num)
+                boxes[box_id].remove(num)
+
+            # No candidate worked here; signal failure to previous level
+            return False
+
+        # Kick off the backtracking from the first empty cell
+        backtrack(0)
+
+
+Solution 3:
+
+class Solution:
+    def solveSudoku(self, board: List[List[str]]) -> None:
+        """
+        Do not return anything, modify board in-place instead.
+        """
+        # Pre-allocate 9 sets for rows, columns, and boxes.
+        # rows[i] holds digits already used in row i, etc.
+        rows = [set() for _ in range(9)]
+        cols = [set() for _ in range(9)]
+        boxes = [set() for _ in range(9)]
+
+        # List of coordinates of empty cells to fill ('.')
+        empties = []
+
+        # Constant set of all digit characters for quick candidate computation
+        DIGITS = {'1','2','3','4','5','6','7','8','9'}
+
+        # Initialize constraint sets and list of empty positions
+        for i in range(9):
+            for j in range(9):
+                val = board[i][j]
+                if val == '.':
+                    # Keep track of empty cells to visit in recursion
+                    empties.append((i, j))
+                else:
+                    # Register existing numbers into row/col/box constraints
+                    rows[i].add(val)
+                    cols[j].add(val)
+                    box_id = (i // 3) * 3 + (j // 3)  # Map (i, j) to box index 0..8
+                    boxes[box_id].add(val)
+
+        def backtrack() -> bool:
+            # 1) Success condition: no more empties means the board is solved
+            if not empties:
+                return True
+
+            # 2) MRV: choose the empty cell with the fewest legal candidates
+            best_k = -1          # index within `empties` of the best cell so far
+            best_cands = None    # candidate set for the best cell
+
+            for k, (i, j) in enumerate(empties):
+                b = (i // 3) * 3 + (j // 3)                   # map (i,j) to box 0..8
+                cands = DIGITS - rows[i] - cols[j] - boxes[b] # legal digits for (i,j)
+
+                # Update best choice if none yet, or if this cell is tighter
+                if best_cands is None or len(cands) < len(best_cands):
+                    best_cands, best_k = cands, k
+
+                    # 3) Early exit: a single candidate is a forced move
+                    if len(best_cands) == 1:
+                        break
+
+            # 4) Take the chosen cell out of the pool while we try to assign it
+            i, j = empties.pop(best_k)
+            b = (i // 3) * 3 + (j // 3)
+
+            # 5) Try each candidate; note: iterating a set is fine, or use sorted(...) for determinism
+            for num in best_cands:
+                board[i][j] = num
+                rows[i].add(num)
+                cols[j].add(num)
+                boxes[b].add(num)
+
+                if backtrack():            # recurse with fewer empties
+                    return True            # found a solution
+
+                # Undo (backtrack) if this choice fails
+                board[i][j] = '.'
+                rows[i].remove(num)
+                cols[j].remove(num)
+                boxes[b].remove(num)
+
+            # 6) Restore the picked cell back to empties at its original index
+            empties.insert(best_k, (i, j))
+            return False
+
+        # Kick off the backtracking from the first empty cell
+        backtrack()

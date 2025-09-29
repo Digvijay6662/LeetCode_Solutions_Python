@@ -1,0 +1,96 @@
+166. Fraction to Recurring Decimal
+Solved
+Medium
+Topics
+premium lock icon
+Companies
+Hint
+Given two integers representing the numerator and denominator of a fraction, return the fraction in string format.
+
+If the fractional part is repeating, enclose the repeating part in parentheses.
+
+If multiple answers are possible, return any of them.
+
+It is guaranteed that the length of the answer string is less than 104 for all the given inputs.
+
+ 
+
+Example 1:
+
+Input: numerator = 1, denominator = 2
+Output: "0.5"
+Example 2:
+
+Input: numerator = 2, denominator = 1
+Output: "2"
+Example 3:
+
+Input: numerator = 4, denominator = 333
+Output: "0.(012)"
+ 
+
+Constraints:
+
+-231 <= numerator, denominator <= 231 - 1
+denominator != 0
+
+
+Solution 1:
+
+class Solution:
+    def fractionToDecimal(self, numerator: int, denominator: int) -> str:
+        # Edge case: if numerator is 0, the result is simply "0"
+        if numerator == 0:
+            return "0"
+
+        result = []  # list to build the result string efficiently
+
+        # Handle the sign of the result
+        # XOR (^) ensures result is negative if exactly one of numerator/denominator is negative
+        if (numerator < 0) ^ (denominator < 0):
+            result.append("-")
+
+        # Work with absolute values to simplify division logic
+        numerator, denominator = abs(numerator), abs(denominator)
+
+        # Compute the integer part of the division
+        integer_part = numerator // denominator
+        result.append(str(integer_part))
+
+        # Compute the initial remainder
+        remainder = numerator % denominator
+        if remainder == 0:
+            # If perfectly divisible, return the integer part only
+            return "".join(result)
+
+        # Otherwise, we have a fractional part
+        result.append(".")
+
+        # Dictionary to map each remainder to its position in the result string
+        # This helps detect repeating cycles
+        seen = {}
+
+        # Perform long division until remainder becomes 0 or repeats
+        while remainder != 0:
+            # If this remainder has been seen before, we found a repeating cycle
+            if remainder in seen:
+                # Insert '(' at the index where this remainder first appeared
+                result.insert(seen[remainder], "(")
+                # Append ')' at the end to close the repeating part
+                result.append(")")
+                break
+
+            # Store the current remainder with its corresponding index in result
+            seen[remainder] = len(result)
+
+            # Multiply remainder by 10 (long division step)
+            remainder *= 10
+
+            # Append the quotient digit
+            result.append(str(remainder // denominator))
+
+            # Update remainder
+            remainder %= denominator
+
+        # Join the list into a final string and return
+        return "".join(result)
