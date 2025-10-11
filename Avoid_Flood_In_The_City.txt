@@ -1,0 +1,95 @@
+1488. Avoid Flood in The City
+Solved
+Medium
+Topics
+premium lock icon
+Companies
+Hint
+Your country has an infinite number of lakes. Initially, all the lakes are empty, but when it rains over the nth lake, the nth lake becomes full of water. If it rains over a lake that is full of water, there will be a flood. Your goal is to avoid floods in any lake.
+
+Given an integer array rains where:
+
+rains[i] > 0 means there will be rains over the rains[i] lake.
+rains[i] == 0 means there are no rains this day and you can choose one lake this day and dry it.
+Return an array ans where:
+
+ans.length == rains.length
+ans[i] == -1 if rains[i] > 0.
+ans[i] is the lake you choose to dry in the ith day if rains[i] == 0.
+If there are multiple valid answers return any of them. If it is impossible to avoid flood return an empty array.
+
+Notice that if you chose to dry a full lake, it becomes empty, but if you chose to dry an empty lake, nothing changes.
+
+ 
+
+Example 1:
+
+Input: rains = [1,2,3,4]
+Output: [-1,-1,-1,-1]
+Explanation: After the first day full lakes are [1]
+After the second day full lakes are [1,2]
+After the third day full lakes are [1,2,3]
+After the fourth day full lakes are [1,2,3,4]
+There's no day to dry any lake and there is no flood in any lake.
+Example 2:
+
+Input: rains = [1,2,0,0,2,1]
+Output: [-1,-1,2,1,-1,-1]
+Explanation: After the first day full lakes are [1]
+After the second day full lakes are [1,2]
+After the third day, we dry lake 2. Full lakes are [1]
+After the fourth day, we dry lake 1. There is no full lakes.
+After the fifth day, full lakes are [2].
+After the sixth day, full lakes are [1,2].
+It is easy that this scenario is flood-free. [-1,-1,1,2,-1,-1] is another acceptable scenario.
+Example 3:
+
+Input: rains = [1,2,0,1,2]
+Output: []
+Explanation: After the second day, full lakes are  [1,2]. We have to dry one lake in the third day.
+After that, it will rain over lakes [1,2]. It's easy to prove that no matter which lake you choose to dry in the 3rd day, the other one will flood.
+ 
+
+Constraints:
+
+1 <= rains.length <= 105
+0 <= rains[i] <= 109
+
+
+Solution 1:
+
+class Solution:
+    def avoidFlood(self, rains: List[int]) -> List[int]:
+        n = len(rains)
+        # Dictionary to track the last day each lake was filled
+        last_rain_day = {}
+        # Sorted list of indices where we can dry a lake (days with 0)
+        dry_day_indices = []
+        # Initialize answer array:
+        # - Default to 1 for dry days (will update later if needed)
+        # - Will set to -1 for rainy days
+        result = [1] * n
+
+        for day, lake in enumerate(rains):
+            if lake > 0:  
+                # It's raining on 'lake'
+                if lake in last_rain_day:
+                    # This lake is already full, so we must have dried it
+                    # between its last rain and today to avoid flood
+                    # Find the earliest dry day available AFTER last_rain_day[lake]
+                    j = bisect_right(dry_day_indices, last_rain_day[lake])
+                    if j == len(dry_day_indices):
+                        # No dry day available -> impossible to avoid flood
+                        return []
+                    # Assign that dry day to dry this lake
+                    dry_day = dry_day_indices.pop(j)
+                    result[dry_day] = lake
+                # Update last day this lake got rain
+                last_rain_day[lake] = day
+                # Mark rainy day with -1 in result
+                result[day] = -1
+            else:
+                # It's a dry day, store its index for later assignment
+                dry_day_indices.append(day)
+        
+        return result
