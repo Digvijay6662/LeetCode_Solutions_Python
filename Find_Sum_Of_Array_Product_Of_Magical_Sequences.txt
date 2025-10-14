@@ -1,0 +1,133 @@
+3539. Find Sum of Array Product of Magical Sequences
+Solved
+Hard
+Topics
+premium lock icon
+Companies
+Hint
+You are given two integers, m and k, and an integer array nums.
+
+A sequence of integers seq is called magical if:
+seq has a size of m.
+0 <= seq[i] < nums.length
+The binary representation of 2seq[0] + 2seq[1] + ... + 2seq[m - 1] has k set bits.
+The array product of this sequence is defined as prod(seq) = (nums[seq[0]] * nums[seq[1]] * ... * nums[seq[m - 1]]).
+
+Return the sum of the array products for all valid magical sequences.
+
+Since the answer may be large, return it modulo 109 + 7.
+
+A set bit refers to a bit in the binary representation of a number that has a value of 1.
+
+ 
+
+Example 1:
+
+Input: m = 5, k = 5, nums = [1,10,100,10000,1000000]
+
+Output: 991600007
+
+Explanation:
+
+All permutations of [0, 1, 2, 3, 4] are magical sequences, each with an array product of 1013.
+
+Example 2:
+
+Input: m = 2, k = 2, nums = [5,4,3,2,1]
+
+Output: 170
+
+Explanation:
+
+The magical sequences are [0, 1], [0, 2], [0, 3], [0, 4], [1, 0], [1, 2], [1, 3], [1, 4], [2, 0], [2, 1], [2, 3], [2, 4], [3, 0], [3, 1], [3, 2], [3, 4], [4, 0], [4, 1], [4, 2], and [4, 3].
+
+Example 3:
+
+Input: m = 1, k = 1, nums = [28]
+
+Output: 28
+
+Explanation:
+
+The only magical sequence is [0].
+
+ 
+
+Constraints:
+
+1 <= k <= m <= 30
+1 <= nums.length <= 50
+1 <= nums[i] <= 108
+
+
+Solution 1:
+
+class Solution:
+    def magicalSum(self, m: int, k: int, nums: List[int]) -> int:
+        MOD = 10**9 + 7
+
+        # Fast modular exponentiation (iterative)
+        def mod_pow(a: int, b: int) -> int:
+            res = 1
+            a %= MOD
+            while b > 0:
+                if b & 1:  # if the current bit is set
+                    res = (res * a) % MOD
+                a = (a * a) % MOD
+                b >>= 1
+            return res
+
+        # Precompute factorials for nCr
+        fact = [1] * (m + 1)
+        for i in range(2, m + 1):
+            fact[i] = fact[i - 1] * i % MOD
+
+        # Precompute inverse factorials using Fermat's little theorem
+        invFact = [1] * (m + 1)
+        invFact[m] = pow(fact[m], MOD - 2, MOD)  # modular inverse of fact[m]
+        for i in range(m, 0, -1):
+            invFact[i - 1] = invFact[i] * i % MOD
+
+        # nCr function using precomputed factorials and inverse factorials
+        def nCr(n: int, r: int) -> int:
+            if r < 0 or r > n:
+                return 0
+            return fact[n] * invFact[r] % MOD * invFact[n - r] % MOD
+
+        n = len(nums)
+        memo = {}  # dictionary for memoization
+
+        def dp(binary_sum: int, remaining: int, need_bits: int, idx: int) -> int:
+            key = (binary_sum, remaining, need_bits, idx)
+            if key in memo:
+                return memo[key]
+
+            # Base case: if all positions are filled
+            if remaining == 0:
+                # valid only if the number of set bits matches need_bits
+                return 1 if binary_sum.bit_count() == need_bits else 0
+
+            # If no more indices left to use
+            if idx >= n:
+                return 0
+
+            total = 0
+
+            # Option 1: skip current index
+            total += dp(binary_sum >> 1, remaining, need_bits - (binary_sum & 1), idx + 1)
+            total %= MOD
+
+            # Option 2: take current index 'freq' times (1..remaining)
+            for freq in range(1, remaining + 1):
+                new_sum = binary_sum + freq
+                sub = dp(new_sum >> 1, remaining - freq, need_bits - (new_sum & 1), idx + 1)
+
+                # Contribution = nums[idx]^freq * subresult * ways to choose positions
+                contrib = mod_pow(nums[idx], freq) * sub % MOD
+                contrib = contrib * nCr(remaining, freq) % MOD
+                total = (total + contrib) % MOD
+
+            memo[key] = total
+            return total
+
+        return dp(0, m, k, 0) % MOD

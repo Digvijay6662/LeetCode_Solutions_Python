@@ -40,28 +40,58 @@ m == potions.length
 1 <= success <= 1010
 
 
-Solution:
+Solution 1:
 
 class Solution:
     def successfulPairs(self, spells: List[int], potions: List[int], success: int) -> List[int]:
         n = len(potions)
-        potions.sort()
+        potions.sort()   # Sort potions so we can binary search efficiently
         res = []
 
+        # For each spell, we want to count how many potions form a successful pair
         for s in spells:
             l, r = 0, n - 1
-            i = n
+            i = n   # Default index = n (means no valid potion found yet)
 
+            # Binary search to find the first potion that satisfies s * potion >= success
             while l <= r:
-                m = (l + r)//2
+                m = (l + r) // 2   # Middle index
 
                 if s * potions[m] >= success:
-                    r = m - 1
+                    # Potion at index m works, but maybe there is an earlier one
                     i = m
+                    r = m - 1      # Search left half for smaller valid potion
                 else:
-                    l = m + 1
+                    # Potion at index m is too weak, need stronger potion
+                    l = m + 1      # Search right half
 
-            res.append(n - i) 
-
+            # All potions from index i to the end are valid
+            res.append(n - i)
 
         return res
+
+
+Solution 2:
+
+class Solution:
+    def successfulPairs(self, spells: List[int], potions: List[int], success: int) -> List[int]:
+        n, m = len(spells), len(potions)
+
+        # Sort potions so we can binary search for the first valid potion
+        potions.sort()
+        result = []
+
+        # For each spell, determine how many potions can pair successfully
+        for s in spells:
+            # Minimum potion strength required so that s * potion >= success
+            # Using ceiling division: (success + s - 1) // s
+            required = (success + s - 1) // s
+
+            # Binary search: find the first index in potions where potion >= required
+            j = bisect_left(potions, required)
+
+            # All potions from index j to the end are valid
+            result.append(m - j)
+
+        # Return the list of counts for each spell
+        return result

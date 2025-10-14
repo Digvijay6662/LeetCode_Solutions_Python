@@ -124,21 +124,40 @@ Solution 4:
 
 class Solution:
     def maximumTotalDamage(self, power: List[int]) -> int:
+        # Count how many times each damage value appears
         freq = Counter(power)
+
+        # Extract unique damage values and sort them
         uni = sorted(freq.keys())
         n = len(uni)
+
+        # Rolling DP array of size 3 (to save memory instead of full array)
         dp = [0] * 3
+
+        # Base case: if we only take the first unique damage value
         dp[0] = uni[0] * freq[uni[0]]
 
+        # Iterate over each unique damage value
         for i in range(1, n):
+            # Find the last index j such that uni[i] - uni[j] > 2
+            # (because we cannot take values within distance 2)
             j = i - 1
             while j >= 0 and uni[i] - uni[j] <= 2:
                 j -= 1
 
+            # Option 1: take all spells of damage uni[i]
             next_val = uni[i] * freq[uni[i]]
+
+            # If there is a valid j (non-conflicting previous damage),
+            # add the best damage up to j
             if j >= 0:
                 next_val += dp[j % 3]
+
+            # Option 2: skip uni[i], just take the best up to i-1
             next_val = max(next_val, dp[(i - 1) % 3])
+
+            # Store the best result for index i
             dp[i % 3] = next_val
 
+        # The answer is the best result for the last index
         return dp[(n - 1) % 3]
