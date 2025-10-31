@@ -95,3 +95,45 @@ class Solution:
             result += m
 
         return result
+
+
+Solution 4:
+
+class Solution:
+    def totalMoney(self, n: int) -> int:
+        # Number of complete weeks (each week has 7 days)
+        weeks = n // 7
+        
+        # Remaining days after the complete weeks
+        days = n % 7
+
+        # -------------------------------
+        # 1. Sum of complete weeks
+        # Each week forms an arithmetic progression:
+        #   Week 1 sum = 28 (1+2+...+7)
+        #   Week 2 sum = 35 (2+3+...+8)
+        #   Week 3 sum = 42 (3+4+...+9)
+        # General formula: 28 + (week_index-1)*7
+        #
+        # So the total of 'weeks' weeks is the sum of an arithmetic series:
+        #   totalWeeks = weeks/2 * (2*28 + (weeks-1)*7)
+        # -------------------------------
+        total = weeks * (2 * 28 + (weeks - 1) * 7) // 2
+
+        # -------------------------------
+        # 2. Sum of remaining days
+        # After 'weeks' full weeks, the next Monday starts at (weeks+1).
+        # For example:
+        #   If weeks=1, next Monday deposit starts at 2
+        #   If weeks=2, next Monday deposit starts at 3
+        #
+        # Remaining days form another arithmetic progression:
+        #   start = weeks+1
+        #   sequence = start, start+1, ..., start+(days-1)
+        #
+        # Sum formula: days/2 * (2*start + (days-1))
+        # -------------------------------
+        total += days * (2 * (weeks + 1) + (days - 1)) // 2
+
+        # Final total after n days
+        return total

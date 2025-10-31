@@ -52,14 +52,20 @@ Solution 1:
 
 class Solution:
     def numberOfBeams(self, bank: List[str]) -> int:
-        n = len(bank)
-        prev = 0
-        result = 0
+        rows = len(bank)          # Total number of rows in the bank
+        prev_devices = 0          # Number of devices in the last non-empty row
+        total_beams = 0           # Final count of laser beams
 
-        for i in range(n):
-            lasers = bank[i].count('1')
-            if lasers > 0:
-                result += lasers * prev
-                prev = lasers
+        for i in range(rows):
+            # Count number of security devices ('1's) in the current row
+            curr_devices = bank[i].count('1')
 
-        return result
+            if curr_devices > 0:
+                # If current row has devices, then beams are formed between
+                # every device in this row and every device in the last non-empty row
+                total_beams += curr_devices * prev_devices
+
+                # Update prev_devices to current row's device count
+                prev_devices = curr_devices
+
+        return total_beams

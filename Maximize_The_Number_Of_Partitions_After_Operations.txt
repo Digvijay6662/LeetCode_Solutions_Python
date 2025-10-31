@@ -71,39 +71,62 @@ Solution 1:
 
 class Solution:
     def maxPartitionsAfterOperations(self, s: str, k: int) -> int:
-        dp = {}
+        dp = {}  # memoization dictionary to cache results of subproblems
 
         def solve(i, uniqueChars, canChange):
+            """
+            i           : current index in string s
+            uniqueChars : bitmask of distinct characters seen in the current partition
+            canChange   : boolean (True/False) indicating if we still have the option
+                          to change one character in the string
+            Returns     : maximum number of partitions possible from s[i:]
+            """
+
+            # Base case: if we've processed the entire string,
+            # return 1 to count the final partition.
             if i == n:
                 return 1
 
+            # Encode state into a single integer key for memoization.
+            # Layout: [i << 27] | [uniqueChars << 1] | [canChange bit]
             key = canChange | (uniqueChars << 1) | (i << 27)
 
+            # If we've already solved this state, return the cached result
             if key in dp:
                 return dp[key]
             
+            # Convert current character into a bit position (0–25)
             bit = ord(s[i]) - ord('a')
+
+            # Add this character into the current partition's set
             newUniqueChars = uniqueChars | (1 << bit)
             uniqueCount = newUniqueChars.bit_count()
 
+            # Case 1: continue current partition if still within k distinct chars
             if uniqueCount > k:
+                # Too many distinct chars → must cut here
                 result = 1 + solve(i + 1, 1 << bit, canChange)
             else:
+                # Still valid → extend current partition
                 result = solve(i + 1, newUniqueChars, canChange)
 
+            # Case 2: try changing this character (if allowed)
             if canChange:
-                for ch in range(26):
+                for ch in range(26):  # try replacing with any letter
                     newUniqueChars = uniqueChars | (1 << ch)
                     uniqueCount = newUniqueChars.bit_count()
 
                     if uniqueCount > k:
+                        # Replacement causes overflow → cut partition here
                         result = max(result, 1 + solve(i + 1, 1 << ch, False))
                     else:
+                        # Replacement keeps partition valid → continue
                         result = max(result, solve(i + 1, newUniqueChars, False))
 
+            # Store result in memo table
             dp[key] = result
             return result
 
         n = len(s)
-
+        # Start recursion at index 0, with empty set of chars, and one change available
         return solve(0, 0, True)

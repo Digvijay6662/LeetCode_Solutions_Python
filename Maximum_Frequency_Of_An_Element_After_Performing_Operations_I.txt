@@ -1,0 +1,196 @@
+3346. Maximum Frequency of an Element After Performing Operations I
+Solved
+Medium
+Topics
+premium lock icon
+Companies
+Hint
+You are given an integer array nums and two integers k and numOperations.
+
+You must perform an operation numOperations times on nums, where in each operation you:
+
+Select an index i that was not selected in any previous operations.
+Add an integer in the range [-k, k] to nums[i].
+Return the maximum possible frequency of any element in nums after performing the operations.
+
+ 
+
+Example 1:
+
+Input: nums = [1,4,5], k = 1, numOperations = 2
+
+Output: 2
+
+Explanation:
+
+We can achieve a maximum frequency of two by:
+
+Adding 0 to nums[1]. nums becomes [1, 4, 5].
+Adding -1 to nums[2]. nums becomes [1, 4, 4].
+Example 2:
+
+Input: nums = [5,11,20,20], k = 5, numOperations = 1
+
+Output: 2
+
+Explanation:
+
+We can achieve a maximum frequency of two by:
+
+Adding 0 to nums[1].
+ 
+
+Constraints:
+
+1 <= nums.length <= 105
+1 <= nums[i] <= 105
+0 <= k <= 105
+0 <= numOperations <= nums.length
+
+
+Solution 1:
+
+class Solution:
+    def maxFrequency(self, nums: List[int], k: int, numOperations: int) -> int:
+        # Find the smallest and largest element in nums
+        minElement, maxElement = min(nums), max(nums)
+
+        # Frequency array (size = maxElement + 1)
+        # prefix[i] will eventually store the count of numbers <= i
+        prefix = [0] * (maxElement + 1)
+
+        # Step 1: Count frequency of each number
+        for num in nums:
+            prefix[num] += 1
+        
+        # Step 2: Build prefix sum array
+        # After this, prefix[i] = number of elements <= i
+        for i in range(1, maxElement + 1):
+            prefix[i] += prefix[i - 1]
+
+        result = 0
+
+        # Step 3: Try making each value in [minElement, maxElement] the "target"
+        for target in range(minElement, maxElement + 1):
+            # If target never appears in nums, skip
+            if prefix[target] == 0:
+                continue
+
+            # Range of values that can be converted into target
+            # Any number within [target - k, target + k] can be shifted to target
+            left = max(minElement, target - k)
+            right = min(maxElement, target + k)
+
+            # Count how many numbers fall inside [left, right]
+            total_element = prefix[right] - prefix[left - 1]
+
+            # Count how many numbers are already equal to target
+            target_count = prefix[target] - prefix[target - 1]
+
+            # Numbers in range [left, right] but not equal to target
+            need_conversion = total_element - target_count
+
+            # We can only convert at most numOperations of them
+            operations_done = min(need_conversion, numOperations)
+
+            # Update result with the maximum achievable frequency for this target
+            result = max(result, target_count + operations_done)
+
+        return result
+
+
+Solution 2:
+
+class Solution:
+    def maxFrequency(self, nums: List[int], k: int, numOperations: int) -> int:
+        n = len(nums)
+        # Find the range of values in nums
+        max_val, min_val = max(nums), min(nums)
+        # Difference array to track how many numbers can be shifted to each target
+        diff = [0] * (max_val + 2)
+        # Frequency map of original numbers
+        original_freq = defaultdict(int)
+
+        # Step 1: Build the difference array and frequency map
+        for num in nums:
+            # Each number can be shifted into the range [num - k, num + k]
+            left = max(0, num - k)
+            right = min(max_val, num + k)
+            
+            # Mark the contribution in the difference array
+            diff[left] += 1
+            diff[right + 1] -= 1
+            
+            # Count the original frequency of numbers
+            original_freq[num] += 1
+
+        # Step 2: Prefix sum to compute how many numbers can be shifted to each target
+        for i in range(1, max_val + 2):
+            diff[i] += diff[i - 1]
+
+        # Step 3: Try making each value in [min_val, max_val] the target
+        max_frequency = 0
+        for target in range(min_val, max_val + 1):
+            total_possible = diff[target]              # numbers that can be shifted to 'target'
+            already_present = original_freq[target]    # numbers already equal to 'target'
+            
+            # Operations needed = how many we must shift to reach total_possible
+            operations_needed = total_possible - already_present
+            
+            # We can only perform at most numOperations shifts
+            operations_used = min(operations_needed, numOperations)
+            
+            # Final frequency for this target
+            max_frequency = max(max_frequency, already_present + operations_used)
+
+        return max_frequency
+
+
+Solution 3:
+
+class Solution:
+    def maxFrequency(self, nums: List[int], k: int, numOperations: int) -> int:
+        # Maximum possible value we need to consider as a target
+        max_target_value = max(nums)
+        # Difference map (sweep line technique) to track how many numbers
+        # can potentially be shifted to each target value
+        diff_map = defaultdict(int)
+        # Frequency map to count how many numbers are already equal to a value
+        freq_map = defaultdict(int)
+
+        # Step 1: Build the difference map and frequency map
+        for num in nums:
+            freq_map[num] += 1  # count occurrences of each number
+
+            # Each number can be shifted into the range [num - k, num + k]
+            left_bound = max(num - k, 0)
+            right_bound = min(num + k, max_target_value)
+
+            # Mark the contribution in the difference map
+            diff_map[left_bound] += 1
+            diff_map[right_bound + 1] -= 1
+
+            # Ensure the number itself exists in diff_map (important for iteration)
+            diff_map[num] += 0  
+
+        # Step 2: Sweep through diff_map in sorted order to compute cumulative coverage
+        result = 1
+        cumulative_count = 0
+
+        for target in sorted(diff_map.keys()):
+            # Update cumulative count: how many numbers can be shifted to 'target'
+            cumulative_count += diff_map[target]
+
+            # Numbers already equal to 'target'
+            already_equal = freq_map[target]
+
+            # Numbers that could be shifted to 'target' but aren't equal yet
+            need_conversion = cumulative_count - already_equal
+
+            # We can only convert up to numOperations elements
+            conversions_used = min(need_conversion, numOperations)
+
+            # Best frequency achievable for this target
+            result = max(result, already_equal + conversions_used)
+
+        return result

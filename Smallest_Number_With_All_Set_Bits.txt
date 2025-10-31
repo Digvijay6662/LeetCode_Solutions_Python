@@ -1,0 +1,86 @@
+3370. Smallest Number With All Set Bits
+Solved
+Easy
+Topics
+premium lock icon
+Companies
+Hint
+You are given a positive number n.
+
+Return the smallest number x greater than or equal to n, such that the binary representation of x contains only set bits
+
+ 
+
+Example 1:
+
+Input: n = 5
+
+Output: 7
+
+Explanation:
+
+The binary representation of 7 is "111".
+
+Example 2:
+
+Input: n = 10
+
+Output: 15
+
+Explanation:
+
+The binary representation of 15 is "1111".
+
+Example 3:
+
+Input: n = 3
+
+Output: 3
+
+Explanation:
+
+The binary representation of 3 is "11".
+
+ 
+
+Constraints:
+
+1 <= n <= 1000
+
+
+Solution 1:
+
+class Solution:
+    def smallestNumber(self, n: int) -> int:
+        # bit_length will represent how many bits of '1' we need
+        bit_length = 1  
+
+        # Keep increasing bit_length until a number with all bits set (like 1, 3, 7, 15, ...)
+        # becomes >= n.
+        # Formula: (1 << bit_length) - 1 gives a number with 'bit_length' ones in binary.
+        # Example: bit_length=3 → (1 << 3) - 1 = 7 (111 in binary).
+        while (1 << bit_length) - 1 < n:
+            bit_length += 1
+
+        # Return the smallest all-ones number that is >= n
+        return (1 << bit_length) - 1
+
+
+Solution 2:
+
+class Solution:
+    def smallestNumber(self, n: int) -> int:
+        # all_ones will represent the current candidate number 
+        # whose binary form consists only of 1s (like 1, 3, 7, 15, 31, ...)
+        all_ones = 1  
+
+        # Keep generating larger "all ones" numbers until it is >= n
+        # Each step: all_ones = all_ones * 2 + 1
+        #   Example: 1 -> 3 -> 7 -> 15 -> 31 ...
+        # This works because multiplying by 2 shifts left in binary,
+        # and adding 1 appends another '1' at the end.
+        while all_ones < n:
+            all_ones = all_ones * 2 + 1
+
+        # Return the smallest "all ones" number that is >= n
+        return all_ones

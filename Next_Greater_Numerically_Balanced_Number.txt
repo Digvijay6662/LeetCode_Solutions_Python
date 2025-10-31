@@ -1,0 +1,118 @@
+2048. Next Greater Numerically Balanced Number
+Solved
+Medium
+Topics
+premium lock icon
+Companies
+Hint
+An integer x is numerically balanced if for every digit d in the number x, there are exactly d occurrences of that digit in x.
+
+Given an integer n, return the smallest numerically balanced number strictly greater than n.
+
+ 
+
+Example 1:
+
+Input: n = 1
+Output: 22
+Explanation: 
+22 is numerically balanced since:
+- The digit 2 occurs 2 times. 
+It is also the smallest numerically balanced number strictly greater than 1.
+Example 2:
+
+Input: n = 1000
+Output: 1333
+Explanation: 
+1333 is numerically balanced since:
+- The digit 1 occurs 1 time.
+- The digit 3 occurs 3 times. 
+It is also the smallest numerically balanced number strictly greater than 1000.
+Note that 1022 cannot be the answer because 0 appeared more than 0 times.
+Example 3:
+
+Input: n = 3000
+Output: 3133
+Explanation: 
+3133 is numerically balanced since:
+- The digit 1 occurs 1 time.
+- The digit 3 occurs 3 times.
+It is also the smallest numerically balanced number strictly greater than 3000.
+ 
+
+Constraints:
+
+0 <= n <= 106
+
+
+Solution 1:
+
+class Solution:
+    def nextBeautifulNumber(self, n: int) -> int:
+        def is_balanced(num):
+            count = [0] * 10
+            temp = num
+            while temp > 0:
+                digit = temp % 10
+                count[digit] += 1
+                temp //= 10
+            
+            # Check each digit's frequency
+            for d in range(10):
+                if count[d] != 0 and count[d] != d:
+                    return False
+            return True
+
+        # Search upwards until we find the next balanced number
+        for candidate in range(n + 1, 1224444 + 1):
+            if is_balanced(candidate):
+                return candidate
+
+        return -1
+
+
+Solution 2:
+
+class Solution:
+    def nextBeautifulNumber(self, n: int) -> int:
+        # digitQuota[d] means how many times digit 'd' is still allowed to be used.
+        # Initially, each digit d can appear exactly d times.
+        digitQuota = [i for i in range(10)]
+
+        def backtrack(limit, current, remaining):
+            # Base case: placed all digits
+            if remaining == 0:
+                # Verify that all digits used correctly
+                for d in range(1, 10):  # skip 0, since it must not appear
+                    if digitQuota[d] != 0 and digitQuota[d] != d:
+                        return 0
+                # Return if strictly greater than n
+                return current if current > limit else 0
+
+            result = 0
+            # Try placing digits 1–9
+            for d in range(1, 10):
+                # Only place digit if we still have quota left
+                # and we have enough slots remaining to satisfy its requirement
+                if digitQuota[d] > 0 and digitQuota[d] <= remaining:
+                    # Use this digit
+                    digitQuota[d] -= 1
+                    result = backtrack(limit, current * 10 + d, remaining - 1)
+                    # Undo choice (backtrack)
+                    digitQuota[d] += 1
+
+                # If we already found a valid result, stop early
+                if result != 0:
+                    break
+
+            return result
+
+        # Start with the same number of digits as n
+        numDigits = len(str(n))
+        result = backtrack(n, 0, numDigits)
+
+        # If not found, try with one more digit
+        if result == 0:
+            result = backtrack(n, 0, numDigits + 1)
+
+        return result

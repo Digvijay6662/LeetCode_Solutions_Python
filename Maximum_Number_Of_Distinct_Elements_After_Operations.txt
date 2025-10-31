@@ -1,0 +1,72 @@
+3397. Maximum Number of Distinct Elements After Operations
+Solved
+Medium
+Topics
+premium lock icon
+Companies
+Hint
+You are given an integer array nums and an integer k.
+
+You are allowed to perform the following operation on each element of the array at most once:
+
+Add an integer in the range [-k, k] to the element.
+Return the maximum possible number of distinct elements in nums after performing the operations.
+
+ 
+
+Example 1:
+
+Input: nums = [1,2,2,3,3,4], k = 2
+
+Output: 6
+
+Explanation:
+
+nums changes to [-1, 0, 1, 2, 3, 4] after performing operations on the first four elements.
+
+Example 2:
+
+Input: nums = [4,4,4,4], k = 1
+
+Output: 3
+
+Explanation:
+
+By adding -1 to nums[0] and 1 to nums[1], nums changes to [3, 5, 4, 4].
+
+ 
+
+Constraints:
+
+1 <= nums.length <= 105
+1 <= nums[i] <= 109
+0 <= k <= 109
+
+
+Solution 1:
+
+class Solution:
+    def maxDistinctElements(self, nums: List[int], k: int) -> int:
+        # Step 1: Sort the numbers so we handle them in increasing order
+        nums.sort()
+        
+        last_chosen = float('-inf')  # The last distinct value we placed
+        distinct_count = 0           # Count of distinct elements we managed to create
+        
+        # Step 2: Iterate through each number
+        for num in nums:
+            # We want to assign a value to this number within [num - k, num + k]
+            # But it must also be strictly greater than last_chosen (to remain distinct).
+            
+            # max(num - k, last_chosen + 1) ensures:
+            #   - We don't go below num - k
+            #   - We stay strictly greater than last_chosen
+            # min(..., num + k) ensures we don't exceed num + k
+            candidate = min(max(num - k, last_chosen + 1), num + k)
+            
+            # If candidate is valid (greater than last_chosen), we can use it
+            if candidate > last_chosen:
+                distinct_count += 1
+                last_chosen = candidate  # Update last chosen distinct value
+        
+        return distinct_count
