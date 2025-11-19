@@ -1,0 +1,106 @@
+2536. Increment Submatrices by One
+Solved
+Medium
+Topics
+premium lock icon
+Companies
+Hint
+You are given a positive integer n, indicating that we initially have an n x n 0-indexed integer matrix mat filled with zeroes.
+
+You are also given a 2D integer array query. For each query[i] = [row1i, col1i, row2i, col2i], you should do the following operation:
+
+Add 1 to every element in the submatrix with the top left corner (row1i, col1i) and the bottom right corner (row2i, col2i). That is, add 1 to mat[x][y] for all row1i <= x <= row2i and col1i <= y <= col2i.
+Return the matrix mat after performing every query.
+
+ 
+
+Example 1:
+
+
+Input: n = 3, queries = [[1,1,2,2],[0,0,1,1]]
+Output: [[1,1,0],[1,2,1],[0,1,1]]
+Explanation: The diagram above shows the initial matrix, the matrix after the first query, and the matrix after the second query.
+- In the first query, we add 1 to every element in the submatrix with the top left corner (1, 1) and bottom right corner (2, 2).
+- In the second query, we add 1 to every element in the submatrix with the top left corner (0, 0) and bottom right corner (1, 1).
+Example 2:
+
+
+Input: n = 2, queries = [[0,0,1,1]]
+Output: [[1,1],[1,1]]
+Explanation: The diagram above shows the initial matrix and the matrix after the first query.
+- In the first query we add 1 to every element in the matrix.
+ 
+
+Constraints:
+
+1 <= n <= 500
+1 <= queries.length <= 104
+0 <= row1i <= row2i < n
+0 <= col1i <= col2i < n
+
+
+Solution 1:
+
+class Solution:
+    def rangeAddQueries(self, n: int, queries: List[List[int]]) -> List[List[int]]:
+        # Initialize an n x n matrix filled with zeros
+        matrix = [[0] * n for _ in range(n)]
+
+        # Step 1: Apply difference array technique row by row
+        # For each query, mark increments and decrements in the row
+        for r1, c1, r2, c2 in queries:
+            # Iterate through each row in the submatrix
+            for row in range(r1, r2 + 1):
+                # Add +1 at the start column of the submatrix
+                matrix[row][c1] += 1
+                # Subtract -1 just after the end column (to "cancel" later during prefix sum)
+                if c2 + 1 < n:
+                    matrix[row][c2 + 1] -= 1
+
+        # Step 2: Convert difference array back to actual values
+        # Do a prefix sum across each row
+        for row in range(n):
+            row_sum = 0  # running sum for the current row
+            for col in range(n):
+                row_sum += matrix[row][col]   # accumulate changes
+                matrix[row][col] = row_sum    # update cell with actual value
+
+        # Final matrix after all queries
+        return matrix
+
+
+Solution 2:
+
+class Solution:
+    def rangeAddQueries(self, n: int, queries: List[List[int]]) -> List[List[int]]:
+        # Difference grid with padding (n+1) x (n+1) to safely write at r2+1 and c2+1
+        diff = [[0] * (n + 1) for _ in range(n + 1)]
+        
+        # Encode each rectangle increment using 2D difference corner updates.
+        # Each query adds +1 to all cells in [r1..r2] x [c1..c2].
+        for r1, c1, r2, c2 in queries:
+            diff[r1][c1] += 1            # Start inclusion at top-left
+            diff[r1][c2 + 1] -= 1        # Cancel to the right of top-right
+            diff[r2 + 1][c1] -= 1        # Cancel below bottom-left
+            diff[r2 + 1][c2 + 1] += 1    # Restore cancellation at diagonal
+        
+        # Reconstruct the final matrix by taking 2D prefix sums over diff.
+        # Using inclusion-exclusion to avoid double counting the overlap.
+        result = [[0] * n for _ in range(n)]
+        for row in range(n):
+            for col in range(n):
+                # Base contribution from diff at this cell
+                val = diff[row][col]
+                # Accumulate from the top (same column, previous row)
+                if row > 0:
+                    val += result[row - 1][col]
+                # Accumulate from the left (same row, previous column)
+                if col > 0:
+                    val += result[row][col - 1]
+                # Remove the double-counted overlap (top-left diagonal)
+                if row > 0 and col > 0:
+                    val -= result[row - 1][col - 1]
+                # Final value for this cell
+                result[row][col] = val
+        
+        return result

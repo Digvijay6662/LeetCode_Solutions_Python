@@ -56,46 +56,155 @@ from sortedcontainers import SortedList
 class Solution:
     def findXSum(self, nums: List[int], k: int, x: int) -> List[int]:
         n = len(nums)
+        # bot_elements: candidates not in top-x (sorted by [freq, value])
+        # top_elements: current top-x most frequent elements
         bot_elements = SortedList()
         top_elements = SortedList()
+        
+        # frequency map of elements in the current window
         count = Counter()
+        
+        # running sum of contributions from top_elements
         curr_sum = 0
 
         def update(num, op):
+            """
+            Update frequency of 'num' by +1 (entering window) or -1 (leaving window).
+            Adjust its position between bot_elements and top_elements accordingly.
+            """
             nonlocal curr_sum
 
+            # If num already exists, remove its old entry from whichever set it was in
             if count[num]:
                 if [count[num], num] in bot_elements:
                     bot_elements.remove([count[num], num])
                 else:
+                    # It was in top_elements, so remove and subtract its contribution
                     top_elements.remove([count[num], num])
                     curr_sum -= count[num] * num
 
+            # Update frequency
             count[num] += op
 
+            # If still present after update, reinsert into bot_elements
             if count[num]:
                 bot_elements.add([count[num], num])
 
         result = []
         for i in range(n):
+            # Add new element into the window
             update(nums[i], 1)
+
+            # Remove element that slides out of the window
             if i >= k:
                 update(nums[i - k], -1)
 
-            # Balance the top elements
+            # Ensure top_elements has up to x elements
             while bot_elements and len(top_elements) < x:
-                count_x, num_x = bot_elements.pop()
-                curr_sum += count_x * num_x
-                top_elements.add([count_x, num_x])
+                count_x, num_x = bot_elements.pop()   # take the largest from bot_elements
+                curr_sum += count_x * num_x           # add its contribution
+                top_elements.add([count_x, num_x])    # move it into top_elements
 
+            # Rebalance: if best candidate in bot_elements is better than worst in top_elements
             while bot_elements and top_elements and bot_elements[-1] > top_elements[0]:
-                count_x, num_x = bot_elements.pop()
-                count_y, num_y = top_elements.pop(0)
+                count_x, num_x = bot_elements.pop()   # best from bot_elements
+                count_y, num_y = top_elements.pop(0)  # worst from top_elements
+                # adjust sum: add new top, remove old top
                 curr_sum += count_x * num_x - count_y * num_y
+                # swap them between sets
                 bot_elements.add([count_y, num_y])
                 top_elements.add([count_x, num_x])
 
+            # Once we have a full window of size k, record the x-sum
             if i >= k - 1:
                 result.append(curr_sum)
+
+        return result
+
+
+Solution 2:
+
+class Solution:
+    def findXSum(self, nums: List[int], k: int, x: int) -> List[int]:
+        n = len(nums)
+        # top_x_set: holds the current top-x elements (by frequency, then value)
+        # stored as (-freq, -val) so that SortedList keeps them in descending order
+        top_x_set = SortedList()
+        # other_set: holds all other elements not in the top-x
+        other_set = SortedList()
+        # frequency map of elements in the current window
+        freq = defaultdict(int)
+        # running sum of contributions from the top-x elements
+        self.curr_sum = 0
+
+        def add_to_sets(f, val):
+            """
+            Insert (frequency f, value val) into the appropriate set.
+            If top_x_set has fewer than x elements, put it there.
+            Otherwise, compare with the worst element in top_x_set and swap if better.
+            """
+            entry = (-f, -val)  # negative for descending order
+            if len(top_x_set) < x:
+                # still room in top-x
+                top_x_set.add(entry)
+                self.curr_sum += val * f
+            else:
+                # compare with the worst in top-x (last element in ascending order)
+                if entry < top_x_set[-1]:
+                    # new entry is better → swap it into top-x
+                    worst = top_x_set.pop(-1)
+                    wfreq, wval = -worst[0], -worst[1]
+                    self.curr_sum -= wfreq * wval
+                    other_set.add(worst)
+
+                    top_x_set.add(entry)
+                    self.curr_sum += val * f
+                else:
+                    # not good enough for top-x, goes to other_set
+                    other_set.add(entry)
+
+        def remove_from_sets(f, val):
+            """
+            Remove (frequency f, value val) from whichever set it belongs to.
+            If removed from top-x, promote the best candidate from other_set.
+            """
+            entry = (-f, -val)
+            if entry in top_x_set:
+                # remove from top-x and subtract its contribution
+                top_x_set.remove(entry)
+                self.curr_sum -= val * f
+                # promote best candidate from other_set if available
+                if other_set:
+                    best = other_set.pop(0)  # best = smallest (-freq, -val) = highest freq/val
+                    top_x_set.add(best)
+                    bfreq, bval = -best[0], -best[1]
+                    self.curr_sum += bfreq * bval
+            else:
+                # must be in other_set
+                other_set.remove(entry)
+
+        i = j = 0
+        result = []
+
+        # sliding window
+        while j < n:
+            # if nums[j] already exists, remove its old entry before updating
+            if freq[nums[j]] > 0:
+                remove_from_sets(freq[nums[j]], nums[j])
+            # increment frequency and re-add
+            freq[nums[j]] += 1
+            add_to_sets(freq[nums[j]], nums[j])
+            # when window size reaches k
+            if j - i + 1 == k:
+                result.append(self.curr_sum)
+                # remove outgoing element nums[i]
+                remove_from_sets(freq[nums[i]], nums[i])
+                freq[nums[i]] -= 1
+                if freq[nums[i]] > 0:
+                    add_to_sets(freq[nums[i]], nums[i])
+                else:
+                    del freq[nums[i]]
+                i += 1  # slide window start
+            j += 1  # expand window end
 
         return result

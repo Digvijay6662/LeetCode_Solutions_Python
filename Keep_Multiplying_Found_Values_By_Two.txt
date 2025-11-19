@@ -1,0 +1,74 @@
+2154. Keep Multiplying Found Values by Two
+Solved
+Easy
+Topics
+premium lock icon
+Companies
+Hint
+You are given an array of integers nums. You are also given an integer original which is the first number that needs to be searched for in nums.
+
+You then do the following steps:
+
+If original is found in nums, multiply it by two (i.e., set original = 2 * original).
+Otherwise, stop the process.
+Repeat this process with the new number as long as you keep finding the number.
+Return the final value of original.
+
+ 
+
+Example 1:
+
+Input: nums = [5,3,6,1,12], original = 3
+Output: 24
+Explanation: 
+- 3 is found in nums. 3 is multiplied by 2 to obtain 6.
+- 6 is found in nums. 6 is multiplied by 2 to obtain 12.
+- 12 is found in nums. 12 is multiplied by 2 to obtain 24.
+- 24 is not found in nums. Thus, 24 is returned.
+Example 2:
+
+Input: nums = [2,7,9], original = 4
+Output: 4
+Explanation:
+- 4 is not found in nums. Thus, 4 is returned.
+ 
+
+Constraints:
+
+1 <= nums.length <= 1000
+1 <= nums[i], original <= 1000
+
+
+Solution 1:
+
+class Solution:
+    def findFinalValue(self, nums: List[int], original: int) -> int:
+        # Sort the array so we can check numbers in ascending order
+        nums.sort()
+        
+        # Start with the given original number
+        current_value = original
+        
+        # Iterate through each number in the sorted list
+        for num in nums:
+            # If the current value is found in nums
+            if num == current_value:
+                # Multiply it by 2 as per the rule
+                current_value *= 2
+        
+        # Return the final value after all possible multiplications
+        return current_value
+
+
+Solution 2:
+
+class Solution:
+    def findFinalValue(self, nums: List[int], original: int) -> int:
+        # Convert nums to a set for fast membership checking
+        num_set = set(nums)
+        
+        # Keep doubling while the current value exists in the set
+        while original in num_set:
+            original *= 2
+        
+        return original

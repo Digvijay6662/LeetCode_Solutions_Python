@@ -1,0 +1,77 @@
+2654. Minimum Number of Operations to Make All Array Elements Equal to 1
+Solved
+Medium
+Topics
+premium lock icon
+Companies
+Hint
+You are given a 0-indexed array nums consisiting of positive integers. You can do the following operation on the array any number of times:
+
+Select an index i such that 0 <= i < n - 1 and replace either of nums[i] or nums[i+1] with their gcd value.
+Return the minimum number of operations to make all elements of nums equal to 1. If it is impossible, return -1.
+
+The gcd of two integers is the greatest common divisor of the two integers.
+
+ 
+
+Example 1:
+
+Input: nums = [2,6,3,4]
+Output: 4
+Explanation: We can do the following operations:
+- Choose index i = 2 and replace nums[2] with gcd(3,4) = 1. Now we have nums = [2,6,1,4].
+- Choose index i = 1 and replace nums[1] with gcd(6,1) = 1. Now we have nums = [2,1,1,4].
+- Choose index i = 0 and replace nums[0] with gcd(2,1) = 1. Now we have nums = [1,1,1,4].
+- Choose index i = 2 and replace nums[3] with gcd(1,4) = 1. Now we have nums = [1,1,1,1].
+Example 2:
+
+Input: nums = [2,10,6,14]
+Output: -1
+Explanation: It can be shown that it is impossible to make all the elements equal to 1.
+ 
+
+Constraints:
+
+2 <= nums.length <= 50
+1 <= nums[i] <= 106
+
+
+Solution 1:
+
+class Solution:
+    def minOperations(self, nums: List[int]) -> int:
+        n = len(nums)  # length of the array
+        count_ones = 0  # count how many elements are already 1
+
+        # Step 1: Count existing ones in the array
+        for val in nums:
+            if val == 1:
+                count_ones += 1
+        
+        # Case 1: If there are already some 1's
+        # We can convert the rest of the elements to 1 in (n - count_ones) operations
+        if count_ones > 0:
+            return n - count_ones
+
+        # Step 2: Try to find the shortest subarray whose gcd becomes 1
+        # Because once we get a single '1', we can spread it across the array
+        min_subarray_length = n  # initialize with max possible length
+
+        for start in range(n - 1):  # iterate over starting index
+            current_gcd = nums[start]
+            for end in range(start + 1, n):  # extend subarray
+                current_gcd = gcd(current_gcd, nums[end])
+                if current_gcd == 1:
+                    # Found a subarray [start..end] whose gcd is 1
+                    # Length of this subarray = (end - start)
+                    min_subarray_length = min(min_subarray_length, end - start)
+                    break  # no need to extend further, gcd will stay 1
+
+        # Case 2: If we never found gcd == 1, it's impossible
+        if min_subarray_length == n:
+            return -1
+
+        # Step 3: If we found a subarray that reduces to 1
+        # We need (n - 1) operations to spread this single '1' to the whole array
+        # Plus the cost of creating that '1' (min_subarray_length)
+        return (n - 1) + min_subarray_length

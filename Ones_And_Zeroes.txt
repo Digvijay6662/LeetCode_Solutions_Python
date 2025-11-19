@@ -1,0 +1,120 @@
+474. Ones and Zeroes
+Solved
+Medium
+Topics
+premium lock icon
+Companies
+You are given an array of binary strings strs and two integers m and n.
+
+Return the size of the largest subset of strs such that there are at most m 0's and n 1's in the subset.
+
+A set x is a subset of a set y if all elements of x are also elements of y.
+
+ 
+
+Example 1:
+
+Input: strs = ["10","0001","111001","1","0"], m = 5, n = 3
+Output: 4
+Explanation: The largest subset with at most 5 0's and 3 1's is {"10", "0001", "1", "0"}, so the answer is 4.
+Other valid but smaller subsets include {"0001", "1"} and {"10", "1", "0"}.
+{"111001"} is an invalid subset because it contains 4 1's, greater than the maximum of 3.
+Example 2:
+
+Input: strs = ["10","0","1"], m = 1, n = 1
+Output: 2
+Explanation: The largest subset is {"0", "1"}, so the answer is 2.
+ 
+
+Constraints:
+
+1 <= strs.length <= 600
+1 <= strs[i].length <= 100
+strs[i] consists only of digits '0' and '1'.
+1 <= m, n <= 100
+
+
+Solution 1:
+
+class Solution:
+    def findMaxForm(self, strs: List[str], m: int, n: int) -> int:
+        length = len(strs)
+
+        # dp[i][m][n] will store the answer for index i with m zeros and n ones left
+        dp = [[[-1] * (n + 1) for _ in range(m + 1)] for _ in range(length + 1)]
+
+        def solve(i, m, n):
+            if i == length:
+                return 0
+            if dp[i][m][n] != -1:
+                return dp[i][m][n]
+
+            zeros = strs[i].count('0')
+            ones = strs[i].count('1')
+
+            # Option 1: skip current string
+            ans = solve(i + 1, m, n)
+
+            # Option 2: take current string (if possible)
+            if m >= zeros and n >= ones:
+                ans = max(ans, 1 + solve(i + 1, m - zeros, n - ones))
+
+            dp[i][m][n] = ans
+            return ans
+
+        return solve(0, m, n)
+
+
+Solution 2:
+
+class Solution:
+    def findMaxForm(self, strs: List[str], m: int, n: int) -> int:
+        # dp[i][j] = max number of strings using at most i zeros and j ones
+        dp = [[0] * (n + 1) for _ in range(m + 1)]
+        
+        # Consider strings one by one
+        for s in strs:
+            zeros = s.count('0')   # "cost" in zeros
+            ones = s.count('1')    # "cost" in ones
+            
+            # Iterate capacities backwards to avoid using s more than once
+            for i in range(m, zeros - 1, -1):
+                for j in range(n, ones - 1, -1):
+                    # If we include s, we add 1 to the best we could do with the remaining capacity
+                    dp[i][j] = max(dp[i][j], 1 + dp[i - zeros][j - ones])
+        
+        # Best answer under total budgets m (zeros) and n (ones)
+        return dp[m][n]
+
+
+Solution 3:
+
+class Solution:
+    def findMaxForm(self, strs: List[str], m: int, n: int) -> int:
+        # dp[(zerosUsed, onesUsed)] = maximum subset size achievable with this usage
+        dp = {(0, 0): 0}
+
+        for s in strs:
+            # Count how many zeros and ones this string consumes
+            numOnes = s.count('1')
+            numZeros = s.count('0')
+
+            # Temporary dictionary to store new states formed by including this string
+            newStates = {}
+
+            # Iterate over all existing states
+            for (usedZeros, usedOnes), subsetSize in dp.items():
+                # New usage if we include this string
+                nextZeros, nextOnes = usedZeros + numZeros, usedOnes + numOnes
+
+                # Check if within capacity limits
+                if nextZeros <= m and nextOnes <= n:
+                    # If this new state is better than what we had before, record it
+                    if (nextZeros, nextOnes) not in dp or dp[(nextZeros, nextOnes)] < subsetSize + 1:
+                        newStates[(nextZeros, nextOnes)] = subsetSize + 1
+
+            # Merge new states into dp (so we don't overwrite while iterating)
+            dp.update(newStates)
+
+        # The answer is the maximum subset size across all valid states
+        return max(dp.values())

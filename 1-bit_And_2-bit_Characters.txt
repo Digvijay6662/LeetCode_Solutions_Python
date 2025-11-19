@@ -1,0 +1,79 @@
+717. 1-bit and 2-bit Characters
+Solved
+Easy
+Topics
+premium lock icon
+Companies
+Hint
+We have two special characters:
+
+The first character can be represented by one bit 0.
+The second character can be represented by two bits (10 or 11).
+Given a binary array bits that ends with 0, return true if the last character must be a one-bit character.
+
+ 
+
+Example 1:
+
+Input: bits = [1,0,0]
+Output: true
+Explanation: The only way to decode it is two-bit character and one-bit character.
+So the last character is one-bit character.
+Example 2:
+
+Input: bits = [1,1,1,0]
+Output: false
+Explanation: The only way to decode it is two-bit character and two-bit character.
+So the last character is not one-bit character.
+ 
+
+Constraints:
+
+1 <= bits.length <= 1000
+bits[i] is either 0 or 1.
+
+
+Solution 1:
+
+class Solution:
+    def isOneBitCharacter(self, bits: List[int]) -> bool:
+        n = len(bits)              # total length of the bits array
+        i = 0                      # pointer to traverse the array from the start
+        
+        # Traverse until just before the last bit
+        while i < n - 1:
+            # If current bit is 1, it must form a two-bit character (10 or 11),
+            # so skip ahead by 2 positions.
+            # If current bit is 0, it's a one-bit character, so skip ahead by 1.
+            i += 2 if bits[i] == 1 else 1
+        
+        # After the loop ends:
+        # If we stopped exactly at the last index (n-1),
+        # it means the last bit is a standalone one-bit character → return True.
+        # Otherwise, we overshot and the last bit was part of a two-bit character → return False.
+        return i == n - 1
+
+
+Solution 2:
+
+class Solution:
+    def isOneBitCharacter(self, bits: List[int]) -> bool:
+        n = len(bits)          # Length of the binary array
+        count = 0              # Counter to track consecutive 1s before the last 0
+        
+        # Start from the second-to-last element (index n-2),
+        # because the array is guaranteed to end with 0.
+        i = n - 2
+        
+        # Move backwards while we see consecutive 1s.
+        # Each 1 could potentially pair with the final 0 to form a two-bit character.
+        while i >= 0 and bits[i] == 1:
+            count += 1         # Count how many consecutive 1s we encounter
+            i -= 1             # Step backwards
+        
+        # After counting:
+        # - If the number of consecutive 1s before the last 0 is EVEN,
+        #   then the last 0 cannot be paired with them → it stands alone as a one-bit character.
+        # - If the number of consecutive 1s is ODD,
+        #   then the last 0 pairs with one of those 1s → it becomes part of a two-bit character.
+        return count % 2 == 0

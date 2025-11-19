@@ -65,13 +65,25 @@ Solution 2:
 
 class Solution:
     def minimumOneBitOperations(self, n: int) -> int:
+        # Base case: if n is 0, no operations are required
         if n == 0:
             return 0
         
+        # Step 1: Find the highest power of 2 (curr) that is <= n
+        # k will be the index of this highest set bit
         k = 0
         curr = 1
         while (curr * 2) <= n:
-            curr *= 2
-            k += 1
-
+            curr *= 2   # keep doubling until curr exceeds n
+            k += 1      # track the bit position of the highest set bit
+        
+        # Step 2: Apply recursive formula
+        # Formula: f(n) = (2^(k+1) - 1) - f(n ^ curr)
+        #
+        # Explanation:
+        # - (2^(k+1) - 1) represents the maximum number of operations
+        #   needed to clear all bits up to position k.
+        # - n ^ curr flips the highest set bit, reducing the problem size.
+        # - Subtracting f(n ^ curr) adjusts for the smaller subproblem.
+        
         return 2 ** (k + 1) - 1 - self.minimumOneBitOperations(n ^ curr)
