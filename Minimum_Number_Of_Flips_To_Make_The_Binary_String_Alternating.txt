@@ -1,0 +1,159 @@
+1888. Minimum Number of Flips to Make the Binary String Alternating
+Solved
+Medium
+Topics
+premium lock icon
+Companies
+Hint
+You are given a binary string s. You are allowed to perform two types of operations on the string in any sequence:
+
+Type-1: Remove the character at the start of the string s and append it to the end of the string.
+Type-2: Pick any character in s and flip its value, i.e., if its value is '0' it becomes '1' and vice-versa.
+Return the minimum number of type-2 operations you need to perform such that s becomes alternating.
+
+The string is called alternating if no two adjacent characters are equal.
+
+For example, the strings "010" and "1010" are alternating, while the string "0100" is not.
+ 
+
+Example 1:
+
+Input: s = "111000"
+Output: 2
+Explanation: Use the first operation two times to make s = "100011".
+Then, use the second operation on the third and sixth elements to make s = "101010".
+Example 2:
+
+Input: s = "010"
+Output: 0
+Explanation: The string is already alternating.
+Example 3:
+
+Input: s = "1110"
+Output: 1
+Explanation: Use the second operation on the second element to make s = "1010".
+ 
+
+Constraints:
+
+1 <= s.length <= 105
+s[i] is either '0' or '1'.
+
+
+
+Solution 1:
+
+class Solution:
+    def minFlips(self, s: str) -> int:
+        n = len(s)
+        doubled_s = s + s   # Concatenate string with itself to simulate all possible rotations.
+                           # Example: "1110" → "11101110". Any rotation of length n is now a substring.
+
+        # Build two alternating target patterns of length 2n:
+        # Pattern A starts with '0': "010101..."
+        # Pattern B starts with '1': "101010..."
+        patternA = ""
+        patternB = ""
+        for i in range(2 * n):
+            # Even indices → '0' for patternA, '1' for patternB
+            # Odd indices → '1' for patternA, '0' for patternB
+            patternA += "0" if i % 2 == 0 else "1"
+            patternB += "1" if i % 2 == 0 else "0"
+
+        # Sliding window pointers
+        left = 0   # Start of the window
+        right = 0  # End of the window
+
+        # Counters for mismatches between current window and each pattern
+        mismatchA = 0
+        mismatchB = 0
+
+        # Initialize answer with maximum possible flips (worst case = n flips)
+        min_flips = n
+
+        # Traverse doubled_s with a sliding window of size n
+        while right < 2 * n:
+            # Step 1: Expand window by including character at 'right'
+            # Compare with both patterns and count mismatches
+            if patternA[right] != doubled_s[right]:
+                mismatchA += 1
+            if patternB[right] != doubled_s[right]:
+                mismatchB += 1
+
+            # Step 2: If window size exceeds n, shrink from the left
+            # This ensures we only consider substrings of length n (valid rotations)
+            if right - left + 1 > n:
+                # Remove contribution of character at 'left' from mismatch counts
+                if patternA[left] != doubled_s[left]:
+                    mismatchA -= 1
+                if patternB[left] != doubled_s[left]:
+                    mismatchB -= 1
+                left += 1  # Move window start forward
+
+            # Step 3: When window size == n, update minimum flips
+            # At this point, the substring doubled_s[left:right+1] is one rotation of s
+            if right - left + 1 == n:
+                # Minimum flips needed is the smaller mismatch count
+                min_flips = min(min_flips, mismatchA, mismatchB)
+
+            # Step 4: Move window end forward
+            right += 1
+
+        return min_flips
+
+
+Solution 2:
+
+class Solution:
+    def minFlips(self, s: str) -> int:
+        n = len(s)  # Length of the original string
+
+        # Sliding window pointers
+        left = 0    # Start index of the current window
+        right = 0   # End index of the current window
+
+        # Counters for mismatches between current window and each alternating pattern
+        mismatchPatternA = 0  # Pattern A = "010101..."
+        mismatchPatternB = 0  # Pattern B = "101010..."
+
+        # Initialize answer with maximum possible flips (worst case = n flips)
+        min_flips = n
+
+        # Traverse the doubled string (conceptually s+s) using a sliding window of size n
+        # Instead of explicitly building s+s, we use modulo indexing (right % n, left % n)
+        while right < 2 * n:
+            # Step 1: Expand window by including character at 'right'
+            # Determine what the alternating patterns expect at position 'right'
+            expectedA = "0" if right % 2 == 0 else "1"  # Pattern A alternates starting with '0'
+            expectedB = "1" if right % 2 == 0 else "0"  # Pattern B alternates starting with '1'
+
+            # Compare actual character (s[right % n]) with expected values
+            if expectedA != s[right % n]:
+                mismatchPatternA += 1  # Count mismatch for Pattern A
+            if expectedB != s[right % n]:
+                mismatchPatternB += 1  # Count mismatch for Pattern B
+
+            # Step 2: If window size exceeds n, shrink from the left
+            # This ensures we only consider substrings of length n (valid rotations)
+            if right - left + 1 > n:
+                # Remove contribution of character at 'left' from mismatch counts
+                expectedA = "0" if left % 2 == 0 else "1"
+                expectedB = "1" if left % 2 == 0 else "0"
+
+                if expectedA != s[left % n]:
+                    mismatchPatternA -= 1
+                if expectedB != s[left % n]:
+                    mismatchPatternB -= 1
+
+                left += 1  # Move window start forward
+
+            # Step 3: When window size == n, update minimum flips
+            # At this point, the substring s[left:right+1] (modulo indexing) is one rotation of s
+            if right - left + 1 == n:
+                # Minimum flips needed is the smaller mismatch count
+                min_flips = min(min_flips, mismatchPatternA, mismatchPatternB)
+
+            # Step 4: Move window end forward
+            right += 1
+
+        return min_flips

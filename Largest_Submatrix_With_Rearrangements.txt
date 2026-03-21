@@ -1,0 +1,167 @@
+1727. Largest Submatrix With Rearrangements
+Solved
+Medium
+Topics
+premium lock icon
+Companies
+Hint
+You are given a binary matrix matrix of size m x n, and you are allowed to rearrange the columns of the matrix in any order.
+
+Return the area of the largest submatrix within matrix where every element of the submatrix is 1 after reordering the columns optimally.
+
+ 
+
+Example 1:
+
+
+Input: matrix = [[0,0,1],[1,1,1],[1,0,1]]
+Output: 4
+Explanation: You can rearrange the columns as shown above.
+The largest submatrix of 1s, in bold, has an area of 4.
+Example 2:
+
+
+Input: matrix = [[1,0,1,0,1]]
+Output: 3
+Explanation: You can rearrange the columns as shown above.
+The largest submatrix of 1s, in bold, has an area of 3.
+Example 3:
+
+Input: matrix = [[1,1,0],[1,0,1]]
+Output: 2
+Explanation: Notice that you must rearrange entire columns, and there is no way to make a submatrix of 1s larger than an area of 2.
+ 
+
+Constraints:
+
+m == matrix.length
+n == matrix[i].length
+1 <= m * n <= 105
+matrix[i][j] is either 0 or 1.
+
+
+Solution 1:
+
+class Solution:
+    def getBiggestThree(self, grid: List[List[int]]) -> List[int]:
+        rows, cols = len(grid), len(grid[0])
+        # Use a set to automatically handle the requirement for "distinct" sums
+        distinct_sums = set()
+
+        for r in range(rows):
+            for c in range(cols):
+                # Every individual cell is a valid "area 0" rhombus
+                distinct_sums.add(grid[r][c])
+                
+                # 'radius' is the distance from the center cell (r, c) to the corners
+                radius = 1
+                
+                # Check if a rhombus with this radius can stay within the grid boundaries
+                # Corners: Top (r-radius), Bottom (r+radius), Left (c-radius), Right (c+radius)
+                while r - radius >= 0 and r + radius < rows and c - radius >= 0 and c + radius < cols:
+                    current_border_sum = 0
+                    
+                    # Traverse the four slanted edges of the rhombus border
+                    # Each loop 'k' picks one cell from each of the 4 edges
+                    for k in range(radius):
+                        # 1. Top Corner -> Right Corner (moving down-right)
+                        current_border_sum += grid[r - radius + k][c + k]
+                        
+                        # 2. Right Corner -> Bottom Corner (moving down-left)
+                        current_border_sum += grid[r + k][c + radius - k]
+                        
+                        # 3. Bottom Corner -> Left Corner (moving up-left)
+                        current_border_sum += grid[r + radius - k][c - k]
+                        
+                        # 4. Left Corner -> Top Corner (moving up-right)
+                        current_border_sum += grid[r - k][c - radius + k]
+
+                    # Add the total sum of this specific rhombus border to our set
+                    distinct_sums.add(current_border_sum)
+                    
+                    # Try to expand to a larger rhombus centered at the same (r, c)
+                    radius += 1
+
+        # Convert the set to a list, sort it in descending order, and take the top 3
+        return sorted(list(distinct_sums), reverse=True)[:3]
+
+
+Solution 2:
+
+class Solution:
+    def getBiggestThree(self, grid: List[List[int]]) -> List[int]:
+        rows, cols = len(grid), len(grid[0])
+
+        # down-right diagonal prefix sums (↘)
+        diag_down_right = [[0] * cols for _ in range(rows)]
+        # down-left diagonal prefix sums (↙)
+        diag_down_left = [[0] * cols for _ in range(rows)]
+
+        # Build diag_down_right
+        for r in range(rows):
+            for c in range(cols):
+                diag_down_right[r][c] = grid[r][c]
+                if r > 0 and c > 0:
+                    diag_down_right[r][c] += diag_down_right[r-1][c-1]
+
+        # Build diag_down_left
+        for r in range(rows):
+            for c in range(cols-1, -1, -1):
+                diag_down_left[r][c] = grid[r][c]
+                if r > 0 and c+1 < cols:
+                    diag_down_left[r][c] += diag_down_left[r-1][c+1]
+
+        # Use a set to automatically handle the requirement for "distinct" sums
+        distinct_sums = set()
+
+        # Iterate over all possible rhombus centers
+        for r in range(rows):
+            for c in range(cols):
+                # Case 1: area-0 rhombus (just the single cell)
+                distinct_sums.add(grid[r][c])
+
+                # Case 2: rhombus with side length >= 1
+                side_len = 1
+                while r-side_len >= 0 and r+side_len < rows and c-side_len >= 0 and c+side_len < cols:
+                    # Coordinates of the four corners
+                    top_r, top_c = r-side_len, c
+                    right_r, right_c = r, c+side_len
+                    bottom_r, bottom_c = r+side_len, c
+                    left_r, left_c = r, c-side_len
+
+                    border_sum = 0
+
+                    # Top → Right edge (↘ diagonal)
+                    border_sum += diag_down_right[right_r][right_c]
+                    if top_r-1 >= 0 and top_c-1 >= 0:
+                        border_sum -= diag_down_right[top_r-1][top_c-1]
+
+                    # Right → Bottom edge (↙ diagonal)
+                    border_sum += diag_down_left[bottom_r][bottom_c]
+                    if right_r-1 >= 0 and right_c+1 < cols:
+                        border_sum -= diag_down_left[right_r-1][right_c+1]
+
+                    # Bottom → Left edge (↘ diagonal)
+                    border_sum += diag_down_right[bottom_r][bottom_c]
+                    if left_r-1 >= 0 and left_c-1 >= 0:
+                        border_sum -= diag_down_right[left_r-1][left_c-1]
+
+                    # Left → Top edge (↙ diagonal)
+                    border_sum += diag_down_left[left_r][left_c]
+                    if top_r-1 >= 0 and top_c+1 < cols:
+                        border_sum -= diag_down_left[top_r-1][top_c+1]
+
+                    # Subtract corners (each counted twice in diagonals)
+                    border_sum -= grid[top_r][top_c]
+                    border_sum -= grid[right_r][right_c]
+                    border_sum -= grid[bottom_r][bottom_c]
+                    border_sum -= grid[left_r][left_c]
+
+                    # Add this rhombus border sum
+                    distinct_sums.add(border_sum)
+
+                    # Try larger rhombus
+                    side_len += 1
+
+        # Return top 3 distinct sums in descending order
+        return sorted(distinct_sums, reverse=True)[:3]

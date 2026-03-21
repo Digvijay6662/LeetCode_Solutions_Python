@@ -38,26 +38,29 @@ Solution 1:
 #         self.left = left
 #         self.right = right
 class Solution:
-    def balanceBST(self, root: TreeNode) -> TreeNode:
-        arr = []
+    def balanceBST(self, root: Optional[TreeNode]) -> Optional[TreeNode]:
+        # Step 1: Perform inorder traversal to collect node values in sorted order
+        sorted_values = []
 
-        def inorder(node):
+        def inorder_traversal(node):
             if not node:
-                return None
-            
-            inorder(node.left)
-            arr.append(node.val)
-            inorder(node.right)
-        
-        def buildBST(left, right):
+                return
+            inorder_traversal(node.left)          # Visit left subtree
+            sorted_values.append(node.val)        # Record current node value
+            inorder_traversal(node.right)         # Visit right subtree
+
+        # Step 2: Build a balanced BST from sorted values using divide-and-conquer
+        def build_balanced_bst(left, right):
             if left > right:
                 return None
-            mid = left + (right - left)//2
-            node = TreeNode(arr[mid])
-            node.left = buildBST(left, mid - 1)
-            node.right = buildBST(mid + 1, right)
-
+            # Pick middle element to ensure balance
+            mid = left + (right - left) // 2
+            node = TreeNode(sorted_values[mid])
+            node.left = build_balanced_bst(left, mid - 1)   # Recursively build left subtree
+            node.right = build_balanced_bst(mid + 1, right) # Recursively build right subtree
             return node
 
-        inorder(root)
-        return buildBST(0, len(arr) - 1)
+        # Execute inorder traversal to fill sorted_values
+        inorder_traversal(root)
+        # Build balanced BST from sorted array
+        return build_balanced_bst(0, len(sorted_values) - 1)

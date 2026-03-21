@@ -51,64 +51,72 @@ Solution 1:
 
 class Solution:
     def maxKDivisibleComponents(self, n: int, edges: List[List[int]], values: List[int], k: int) -> int:
-        count = 0
+        # Build adjacency list representation of the graph
         graph = defaultdict(list)
-
         for u, v in edges:
             graph[u].append(v)
             graph[v].append(u)
 
-        def dfs(node, par):
-            nonlocal count
-            total_sum = values[node]
-            for nei in graph[node]:
-                if nei == par:
+        # This will count how many valid components we can form
+        component_count = 0
+        def dfs(node, parent):
+            nonlocal component_count
+            # Start with the value of the current node
+            subtree_sum = values[node]
+            # Explore all children (neighbors except the parent)
+            for neighbor in graph[node]:
+                if neighbor == parent:
                     continue
-                total_sum += dfs(nei, node)
+                # Add the sum of the child's subtree
+                subtree_sum += dfs(neighbor, node)
+            # If this subtree sum is divisible by k, it can be split off
+            if subtree_sum % k == 0:
+                component_count += 1
+            # Return the total sum of this subtree to the parent
+            return subtree_sum
+        # Start DFS from root (node 0), with no parent (-1)
+        dfs(0, -1)
+        # The result is the number of divisible components found
+        return component_count
 
-            if total_sum % k == 0:
-                count += 1
-                total_sum = 0
-
-            return total_sum
-
-        total_sum = dfs(0, -1)
-
-        if total_sum != 0:
-            count += 1
-
-        return count
 
 
 Solution 2:
 
 class Solution:
     def maxKDivisibleComponents(self, n: int, edges: List[List[int]], values: List[int], k: int) -> int:
+        # Step 1: Build adjacency list for the tree
         graph = [[] for _ in range(n)]
-
         for u, v in edges:
             graph[u].append(v)
             graph[v].append(u)
-
-        num_edges = [0] * n
-        count = 0
-        q = deque()
-
+        # Step 2: Track degree (number of neighbors) for each node
+        degree = [0] * n
         for i in range(n):
-            num_edges[i] = len(graph[i])
-            if num_edges[i] < 2:
-                q.append(i)
+            degree[i] = len(graph[i])
+        # Step 3: Initialize queue with all leaves (degree <= 1)
+        queue = deque([i for i in range(n) if degree[i] <= 1])
+        # This will count how many components are divisible by k
+        component_count = 0
+        # Step 4: Process nodes bottom‑up (leaf‑stripping BFS)
+        while queue:
+            node = queue.popleft()
+            # Mark node as processed (reduce degree)
+            degree[node] -= 1
+            # If this node's accumulated value is divisible by k,
+            # it can form its own component
+            if values[node] % k == 0:
+                component_count += 1
+            # Otherwise, push its remainder contribution upward to its parent
+            for neighbor in graph[node]:
+                if degree[neighbor] > 0:  # parent still active
+                    # Merge node's value into parent (mod k to keep sums manageable)
+                    values[neighbor] = (values[neighbor] + values[node]) % k
+                    # Reduce parent's degree
+                    degree[neighbor] -= 1
+                    # If parent becomes a leaf, add it to the queue
+                    if degree[neighbor] == 1:
+                        queue.append(neighbor)
 
-        while q:
-            i = q.popleft()
-            num_edges[i] -= 1
-            count += values[i] % k == 0
-
-            for j in graph[i]:
-                if num_edges[j] != 0:
-                    values[j] += values[i] % k
-                    num_edges[j] -= 1
-                    if num_edges[j] == 1:
-                        q.append(j)
-
-        return count
+        # Step 5: Return the total number of divisible components
+        return component_count

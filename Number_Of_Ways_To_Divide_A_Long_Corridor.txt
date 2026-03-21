@@ -151,7 +151,7 @@ class Solution:
         return result
 
 
-Solution 2:
+Solution 5:
 
 class Solution:
     def numberOfWays(self, corridor: str) -> int:

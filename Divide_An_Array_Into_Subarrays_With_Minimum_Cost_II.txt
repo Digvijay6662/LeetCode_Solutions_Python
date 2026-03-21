@@ -68,42 +68,56 @@ class Solution:
 
 Solution 2:
 
-from sortedcontainers import SortedList
 class Solution:
     def minimumCost(self, nums: List[int], k: int, dist: int) -> int:
         n = len(nums)
-        k -= 1
-
-        sorted_nums = sorted(nums[1:dist + 2])
-        small_nums = SortedList(sorted_nums[:k])
-        large_nums = SortedList(sorted_nums[k:])
-
-        cost = min_cost = sum(small_nums)
-
+        # We already count nums[0] as the cost of the first subarray.
+        # So we only need to pick (k-1) more starting points.
+        k -= 1  
+        # Consider the first possible window of candidates:
+        # indices from 1 to dist+1 (inclusive).
+        initial_candidates = sorted(nums[1: dist + 2])
+        # 'chosen' will store the k smallest elements (potential subarray starts).
+        chosen = SortedList(initial_candidates[:k])
+        # 'remaining' will store the rest of the elements in the window.
+        remaining = SortedList(initial_candidates[k:])
+        # Current sum of chosen elements (cost of selected subarray starts).
+        current_sum = min_sum = sum(chosen)
+        # Slide the window across the array starting from index dist+2
         for i in range(dist + 2, n):
-            outside = nums[i - dist - 1]
-            if outside in small_nums:
-                small_nums.remove(outside)
-                cost -= outside
-                if large_nums:
-                    val = large_nums.pop(0)
-                    small_nums.add(val)
-                    cost += val
+            # Element that goes out of the window
+            outgoing = nums[i - dist - 1]
+            # Remove outgoing element from the correct set
+            if outgoing in chosen:
+                chosen.remove(outgoing)
+                current_sum -= outgoing
+                # If chosen lost an element, refill from remaining
+                if remaining:
+                    val = remaining.pop(0)  # smallest from remaining
+                    chosen.add(val)
+                    current_sum += val
             else:
-                large_nums.remove(outside)
+                remaining.remove(outgoing)
 
-            if len(small_nums) < k:
-                small_nums.add(nums[i])
-                cost += nums[i]
-            elif nums[i] < small_nums[-1]:
-                val = small_nums.pop()
-                cost -= val
-                large_nums.add(val)
-                small_nums.add(nums[i])
-                cost += nums[i]
+            # Add the new incoming element nums[i]
+            if len(chosen) < k:
+                # If chosen has fewer than k elements, directly add
+                chosen.add(nums[i])
+                current_sum += nums[i]
+            elif nums[i] < chosen[-1]:
+                # If new element is smaller than the largest in chosen,
+                # replace the largest with this new smaller element
+                val = chosen.pop()
+                current_sum -= val
+                remaining.add(val)
+                chosen.add(nums[i])
+                current_sum += nums[i]
             else:
-                large_nums.add(nums[i])
+                # Otherwise, just add to remaining
+                remaining.add(nums[i])
 
-            min_cost = min(min_cost, cost)
+            # Track the minimum sum of chosen elements across all windows
+            min_sum = min(current_sum, min_sum)
 
-        return nums[0] + min_cost
+        # Final answer = cost of first subarray (nums[0]) + best possible sum
+        return nums[0] + min_sum

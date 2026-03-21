@@ -1,0 +1,133 @@
+3625. Count Number of Trapezoids II
+Solved
+Hard
+Topics
+premium lock icon
+Companies
+Hint
+You are given a 2D integer array points where points[i] = [xi, yi] represents the coordinates of the ith point on the Cartesian plane.
+
+Return the number of unique trapezoids that can be formed by choosing any four distinct points from points.
+
+A trapezoid is a convex quadrilateral with at least one pair of parallel sides. Two lines are parallel if and only if they have the same slope.
+
+ 
+
+Example 1:
+
+Input: points = [[-3,2],[3,0],[2,3],[3,2],[2,-3]]
+
+Output: 2
+
+Explanation:
+
+
+
+There are two distinct ways to pick four points that form a trapezoid:
+
+The points [-3,2], [2,3], [3,2], [2,-3] form one trapezoid.
+The points [2,3], [3,2], [3,0], [2,-3] form another trapezoid.
+Example 2:
+
+Input: points = [[0,0],[1,0],[0,1],[2,1]]
+
+Output: 1
+
+Explanation:
+
+
+
+There is only one trapezoid which can be formed.
+
+ 
+
+Constraints:
+
+4 <= points.length <= 500
+–1000 <= xi, yi <= 1000
+All points are pairwise distinct.
+
+
+Solution 1:
+
+class Solution:
+    def countTrapezoids(self, points: List[List[int]]) -> int:
+        MAX_SLOPE = 1e9 + 7   # Special marker for vertical lines (infinite slope)
+        n = len(points)
+
+        # slope_map: slope -> list of line intercepts
+        #   Used to group lines by slope so we can count trapezoids
+        slope_map = defaultdict(list)
+
+        # mid_point_map: encoded midpoint -> list of slopes
+        #   Used to detect parallelograms (which get counted twice in slope_map)
+        mid_point_map = defaultdict(list)
+
+        # Step 1: Build slope_map and mid_point_map by iterating over all pairs of points
+        for i in range(n):
+            x1, y1 = points[i]
+            for j in range(i + 1, n):
+                x2, y2 = points[j]
+
+                dx = x2 - x1
+                dy = y2 - y1
+
+                # Handle vertical lines separately
+                if dx == 0:
+                    slope = MAX_SLOPE
+                    intercept = x1   # For vertical lines, intercept is the x-coordinate
+                else:
+                    slope = dy / dx
+                    # Line equation: y = slope*x + intercept → intercept = y - slope*x
+                    intercept = (y1 * dx - x1 * dy) / dx
+
+                # Encode midpoint uniquely (scaled to avoid collisions)
+                mid_point_key = (x1 + x2) * 10000 + (y1 + y2)
+
+                # Store line info
+                slope_map[slope].append(intercept)
+                mid_point_map[mid_point_key].append(slope)
+
+        result = 0
+
+        # Step 2: Count trapezoids using slope groups
+        # For each slope, we need at least 2 distinct lines (different intercepts).
+        # Each pair of parallel lines can form trapezoids with points lying on them.
+        for slope, intercepts in slope_map.items():
+            if len(intercepts) <= 1:
+                continue
+
+            # Count how many lines exist for each intercept
+            intercept_count = defaultdict(int)
+            for intercept in intercepts:
+                intercept_count[intercept] += 1
+
+            # For each intercept group, count trapezoids formed with previous groups
+            previous_lines = 0
+            for intercept in intercept_count:
+                lines = intercept_count[intercept]
+                # Each new line can form trapezoids with all previous lines of same slope
+                result += lines * previous_lines
+                previous_lines += lines
+
+        # Step 3: Remove duplicates caused by parallelograms
+        # A parallelogram has two pairs of parallel sides.
+        # It gets counted once when considering slope of one pair,
+        # and again when considering slope of the other pair.
+        # Using midpoint grouping, we detect and subtract these duplicates.
+        for mid_key, slopes in mid_point_map.items():
+            if len(slopes) <= 1:
+                continue
+
+            slope_count = defaultdict(int)
+            for slope in slopes:
+                slope_count[slope] += 1
+
+            previous_lines = 0
+            for slope in slope_count:
+                lines = slope_count[slope]
+                # Subtract duplicate trapezoids formed by parallelograms
+                result -= lines * previous_lines
+                previous_lines += lines
+
+        return result

@@ -1,0 +1,79 @@
+693. Binary Number with Alternating Bits
+Solved
+Easy
+Topics
+premium lock icon
+Companies
+Given a positive integer, check whether it has alternating bits: namely, if two adjacent bits will always have different values.
+
+ 
+
+Example 1:
+
+Input: n = 5
+Output: true
+Explanation: The binary representation of 5 is: 101
+Example 2:
+
+Input: n = 7
+Output: false
+Explanation: The binary representation of 7 is: 111.
+Example 3:
+
+Input: n = 11
+Output: false
+Explanation: The binary representation of 11 is: 1011.
+ 
+
+Constraints:
+
+1 <= n <= 231 - 1
+
+
+Solution 1:
+
+class Solution:
+    def hasAlternatingBits(self, n: int) -> bool:
+        # Convert the integer 'n' into its binary representation as a string.
+        # bin(n) returns something like '0b101', so we slice off the '0b' prefix with [2:].
+        bits = bin(n)[2:]
+        
+        # Iterate through the binary string, comparing each bit with the next one.
+        for i in range(len(bits) - 1):
+            # If two consecutive bits are the same (both '0' or both '1'),
+            # then the number does NOT have alternating bits.
+            if bits[i] == bits[i + 1]:
+                return False
+        
+        # If we finish the loop without finding equal adjacent bits,
+        # then the number DOES have alternating bits.
+        return True
+
+
+Solution 2:
+
+class Solution:
+    def hasAlternatingBits(self, n: int) -> bool:
+        # Shift 'n' right by 1 and XOR with 'n'.
+        # Example: n = 5 (101), n >> 1 = 2 (010), XOR = 111 (binary).
+        x = n ^ (n >> 1)
+        
+        # If 'n' has alternating bits, 'x' will be all 1s (like 111...).
+        # Check if 'x' is of the form 111... by verifying x & (x + 1) == 0.
+        return (x & (x + 1)) == 0
+
+
+Solution 3:
+
+class Solution:
+    def hasAlternatingBits(self, n: int) -> bool:
+        # Keep checking the last bit and the next one.
+        while n > 0:
+            # Extract the last bit.
+            last_bit = n & 1
+            # Shift right to move to the next bit.
+            n >>= 1
+            # Compare with the new last bit (next bit in original number).
+            if n > 0 and last_bit == (n & 1):
+                return False
+        return True

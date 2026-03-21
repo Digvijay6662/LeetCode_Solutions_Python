@@ -1,0 +1,46 @@
+1523. Count Odd Numbers in an Interval Range
+Solved
+Easy
+Topics
+premium lock icon
+Companies
+Hint
+Given two non-negative integers low and high. Return the count of odd numbers between low and high (inclusive).
+
+ 
+
+Example 1:
+
+Input: low = 3, high = 7
+Output: 3
+Explanation: The odd numbers between 3 and 7 are [3,5,7].
+Example 2:
+
+Input: low = 8, high = 10
+Output: 1
+Explanation: The odd numbers between 8 and 10 are [9].
+ 
+
+Constraints:
+
+0 <= low <= high <= 10^9
+
+
+Solution 1:
+
+class Solution:
+    def countOdds(self, low: int, high: int) -> int:
+        # The idea:
+        # Half of the numbers between low and high are odd.
+        # If either endpoint is odd, we need to add one more.
+
+        # Base count: number of odd numbers in the range
+        # (high - low) // 2 gives how many complete pairs (odd+even) fit in the range.
+        count = (high - low) // 2
+
+        # If either endpoint is odd, then there is one extra odd number in the range.
+        if low % 2 == 1 or high % 2 == 1:
+            count += 1
+
+        # Return the total count of odd numbers
+        return count

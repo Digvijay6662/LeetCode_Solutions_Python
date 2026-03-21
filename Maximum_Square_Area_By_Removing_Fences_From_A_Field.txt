@@ -44,30 +44,37 @@ Solution 1:
 
 class Solution:
     def maximizeSquareArea(self, m: int, n: int, hFences: List[int], vFences: List[int]) -> int:
-        mod = 1000000007
-        hFences.extend([1, m])
-        vFences.extend([1, n])
+        MOD = 10**9 + 7  # modulus for large results
+        
+        # Add the boundary fences (cannot be removed)
+        hFences.extend([1, m])  
+        vFences.extend([1, n])  
 
+        # Sort fences to make distance calculation easier
         hFences.sort()
         vFences.sort()
 
-        size = len(hFences)
-        hDiff = set()
+        # Step 1: Compute all possible vertical distances between horizontal fences
+        # These represent possible "heights" of subfields
+        horizontal_gaps = set()
+        for i in range(len(hFences)):
+            for j in range(i + 1, len(hFences)):
+                gap = hFences[j] - hFences[i]
+                horizontal_gaps.add(gap)
 
-        for i in range(size):
-            for j in range(i + 1, size):
-                hDiff.add(hFences[j] - hFences[i])
+        # Step 2: Check vertical gaps between vertical fences
+        # If a vertical gap matches a horizontal gap, we can form a square
+        max_side_length = -1
+        for i in range(len(vFences)):
+            for j in range(i + 1, len(vFences)):
+                gap = vFences[j] - vFences[i]
+                if gap in horizontal_gaps:
+                    max_side_length = max(max_side_length, gap)
 
-        result = -1
-        size = len(vFences)
+        # Step 3: Return result
+        # If no square can be formed, return -1
+        if max_side_length == -1:
+            return -1
 
-        for i in range(size):
-            for j in range(i + 1, size):
-                vDiff = vFences[j] - vFences[i]
-                if vDiff in hDiff:
-                    result = max(result, vDiff)
-
-        if result == -1:
-            return result
-            
-        return (result * result) % mod
+        # Otherwise return area of largest square modulo MOD
+        return (max_side_length * max_side_length) % MOD

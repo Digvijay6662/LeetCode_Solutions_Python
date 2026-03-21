@@ -1,0 +1,74 @@
+757. Set Intersection Size At Least Two
+Solved
+Hard
+Topics
+premium lock icon
+Companies
+You are given a 2D integer array intervals where intervals[i] = [starti, endi] represents all the integers from starti to endi inclusively.
+
+A containing set is an array nums where each interval from intervals has at least two integers in nums.
+
+For example, if intervals = [[1,3], [3,7], [8,9]], then [1,2,4,7,8,9] and [2,3,4,8,9] are containing sets.
+Return the minimum possible size of a containing set.
+
+ 
+
+Example 1:
+
+Input: intervals = [[1,3],[3,7],[8,9]]
+Output: 5
+Explanation: let nums = [2, 3, 4, 8, 9].
+It can be shown that there cannot be any containing array of size 4.
+Example 2:
+
+Input: intervals = [[1,3],[1,4],[2,5],[3,5]]
+Output: 3
+Explanation: let nums = [2, 3, 4].
+It can be shown that there cannot be any containing array of size 2.
+Example 3:
+
+Input: intervals = [[1,2],[2,3],[2,4],[4,5]]
+Output: 5
+Explanation: let nums = [1, 2, 3, 4, 5].
+It can be shown that there cannot be any containing array of size 4.
+ 
+
+Constraints:
+
+1 <= intervals.length <= 3000
+intervals[i].length == 2
+0 <= starti < endi <= 108
+
+
+Solution 1:
+
+class Solution:
+    def intersectionSizeTwo(self, intervals: List[List[int]]) -> int:
+        # Step 1: Sort intervals by their end value (ascending).
+        # If two intervals have the same end, sort by start (descending).
+        # This ensures we handle tighter intervals first.
+        intervals.sort(key=lambda x: (x[1], -x[0]))
+        
+        result = 0  # Final size of the containing set
+        last1 = last2 = -1  # Track the last two chosen numbers in the set
+        
+        # Step 2: Process each interval
+        for start, end in intervals:
+            # Case 1: Current interval already contains both last1 and last2
+            if start <= last1:
+                # Already satisfied, no need to add new numbers
+                continue
+            
+            # Case 2: Current interval does not contain last2
+            # → We must add two new numbers at the end of this interval
+            if start > last2:
+                last1, last2 = end - 1, end  # Pick the last two numbers of the interval
+                result += 2  # Added two new numbers
+            
+            # Case 3: Current interval contains last2 but not last1
+            # → We only need to add one more number
+            else:
+                last1, last2 = last2, end  # Keep last2, add 'end' as new number
+                result += 1  # Added one new number
+        
+        return result

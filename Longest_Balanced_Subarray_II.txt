@@ -1,0 +1,155 @@
+3721. Longest Balanced Subarray II
+Solved
+Hard
+Topics
+premium lock icon
+Companies
+Hint
+You are given an integer array nums.
+
+A subarray is called balanced if the number of distinct even numbers in the subarray is equal to the number of distinct odd numbers.
+
+Return the length of the longest balanced subarray.
+
+ 
+
+Example 1:
+
+Input: nums = [2,5,4,3]
+
+Output: 4
+
+Explanation:
+
+The longest balanced subarray is [2, 5, 4, 3].
+It has 2 distinct even numbers [2, 4] and 2 distinct odd numbers [5, 3]. Thus, the answer is 4.
+Example 2:
+
+Input: nums = [3,2,2,5,4]
+
+Output: 5
+
+Explanation:
+
+The longest balanced subarray is [3, 2, 2, 5, 4].
+It has 2 distinct even numbers [2, 4] and 2 distinct odd numbers [3, 5]. Thus, the answer is 5.
+Example 3:
+
+Input: nums = [1,2,3,2]
+
+Output: 3
+
+Explanation:
+
+The longest balanced subarray is [2, 3, 2].
+It has 1 distinct even number [2] and 1 distinct odd number [3]. Thus, the answer is 3.
+ 
+
+Constraints:
+
+1 <= nums.length <= 105
+1 <= nums[i] <= 105
+
+
+Solution 1:
+
+class SegmentTree:
+    def __init__(self, n):
+        self.n = n
+        # Lazy propagation array: stores pending increments for each node
+        self.lazy = [0] * (4 * n)
+        # Track minimum and maximum values in each segment
+        # These represent the range of (distinct evens - distinct odds) values
+        self.min = [0] * (4 * n)
+        self.max = [0] * (4 * n)
+
+    def propagate(self, node, l, r):
+        # Apply any pending lazy updates to the current node
+        if self.lazy[node] != 0:
+            self.min[node] += self.lazy[node]
+            self.max[node] += self.lazy[node]
+            if l != r:  # If not a leaf, push lazy values to children
+                self.lazy[2 * node + 1] += self.lazy[node]
+                self.lazy[2 * node + 2] += self.lazy[node]
+            # Clear lazy value for current node after applying
+            self.lazy[node] = 0
+
+    def update_range(self, start, end, value, l, r, node):
+        # Ensure current node is up-to-date before processing
+        self.propagate(node, l, r)
+
+        # Case 1: No overlap
+        if l > end or r < start:
+            return
+
+        # Case 2: Complete overlap -> apply lazy update
+        if l >= start and r <= end:
+            self.lazy[node] += value
+            self.propagate(node, l, r)
+            return
+
+        # Case 3: Partial overlap -> recurse into children
+        mid = l + (r - l) // 2
+        self.update_range(start, end, value, l, mid, 2 * node + 1)
+        self.update_range(start, end, value, mid + 1, r, 2 * node + 2)
+
+        # After children are updated, recalc min/max for current node
+        self.min[node] = min(self.min[2 * node + 1], self.min[2 * node + 2])
+        self.max[node] = max(self.max[2 * node + 1], self.max[2 * node + 2])
+
+    def query_range(self, start, end, l, r, node):
+        # Ensure current node is up-to-date
+        self.propagate(node, l, r)
+
+        # If out of range OR no zero exists in this segment, return -1
+        if l > end or r < start or self.min[node] > 0 or self.max[node] < 0:
+            return -1
+
+        # If leaf node, check if value is zero
+        if l == r:
+            return l if self.min[node] == 0 else -1
+
+        # Otherwise, search children
+        mid = l + (r - l) // 2
+        # Search left child first to find leftmost zero
+        left_idx = self.query_range(start, end, l, mid, 2 * node + 1)
+        if left_idx != -1:
+            return left_idx
+        # If not found in left, search right
+        return self.query_range(start, end, mid + 1, r, 2 * node + 2)
+
+class Solution:
+    def longestBalanced(self, nums: List[int]) -> int:
+        n = len(nums)
+        # Dictionary: value -> last index where it appeared
+        last_seen = {}
+        tree = SegmentTree(n)
+        longest = 0
+
+        # Iterate over right endpoint of subarray
+        for r in range(n):
+            # delta = +1 for even number, -1 for odd number
+            delta = 1 if nums[r] % 2 == 0 else -1
+
+            # Find last occurrence of nums[r] (or -1 if new)
+            prev_index = last_seen.get(nums[r], -1)
+
+            # Update contribution of nums[r]:
+            # For all possible start indices s in [prev_index+1, r],
+            # this new occurrence adds delta to (distinct evens - distinct odds).
+            # Why? Because nums[r] is now a new distinct number for those starts.
+            if prev_index + 1 <= r:
+                tree.update_range(prev_index + 1, r, delta, 0, n - 1, 0)
+
+            # Record last occurrence of nums[r]
+            last_seen[nums[r]] = r
+
+            # Query for leftmost start index s in [0, r] where
+            # (distinct evens - distinct odds) == 0
+            zero_start = tree.query_range(0, r, 0, n - 1, 0)
+
+            if zero_start != -1:
+                # If found, update longest length
+                longest = max(longest, r - zero_start + 1)
+
+        return longest

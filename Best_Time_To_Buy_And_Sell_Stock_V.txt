@@ -1,0 +1,205 @@
+3573. Best Time to Buy and Sell Stock V
+Solved
+Medium
+Topics
+premium lock icon
+Companies
+Hint
+You are given an integer array prices where prices[i] is the price of a stock in dollars on the ith day, and an integer k.
+
+You are allowed to make at most k transactions, where each transaction can be either of the following:
+
+Normal transaction: Buy on day i, then sell on a later day j where i < j. You profit prices[j] - prices[i].
+
+Short selling transaction: Sell on day i, then buy back on a later day j where i < j. You profit prices[i] - prices[j].
+
+Note that you must complete each transaction before starting another. Additionally, you can't buy or sell on the same day you are selling or buying back as part of a previous transaction.
+
+Return the maximum total profit you can earn by making at most k transactions.
+
+ 
+
+Example 1:
+
+Input: prices = [1,7,9,8,2], k = 2
+
+Output: 14
+
+Explanation:
+
+We can make $14 of profit through 2 transactions:
+A normal transaction: buy the stock on day 0 for $1 then sell it on day 2 for $9.
+A short selling transaction: sell the stock on day 3 for $8 then buy back on day 4 for $2.
+Example 2:
+
+Input: prices = [12,16,19,19,8,1,19,13,9], k = 3
+
+Output: 36
+
+Explanation:
+
+We can make $36 of profit through 3 transactions:
+A normal transaction: buy the stock on day 0 for $12 then sell it on day 2 for $19.
+A short selling transaction: sell the stock on day 3 for $19 then buy back on day 4 for $8.
+A normal transaction: buy the stock on day 5 for $1 then sell it on day 6 for $19.
+ 
+
+Constraints:
+
+2 <= prices.length <= 103
+1 <= prices[i] <= 109
+1 <= k <= prices.length / 2
+
+
+Solution 1:
+
+class Solution:
+    def maximumProfit(self, prices: List[int], k: int) -> int:
+        n = len(prices)
+        
+        # dp[i][rem][state] stores the maximum profit achievable
+        # starting from day i, with rem transactions left, and current state:
+        # state = 0 → not holding anything (can start a transaction)
+        # state = 1 → holding a normal buy (waiting to sell)
+        # state = 2 → holding a short sell (waiting to buy back)
+        dp = [[[-1] * 3 for _ in range(k+1)] for _ in range(n+1)]
+        
+        def solve(day, transactions_left, state):
+            # Base case: if we've reached the end of the price list
+            if day == n:
+                # Valid only if we are not holding any unfinished transaction
+                return 0 if state == 0 else float('-inf')
+            
+            # If already computed, return memoized result
+            if dp[day][transactions_left][state] != -1:
+                return dp[day][transactions_left][state]
+            
+            # Option 1: skip today (do nothing)
+            skip_today = solve(day + 1, transactions_left, state)
+            best_profit = skip_today
+            
+            # Option 2: take an action if we still have transactions left
+            if transactions_left > 0:
+                if state == 1:
+                    # Currently holding a normal buy → sell today
+                    # Profit gained = +prices[day], transaction completed
+                    best_profit = max(best_profit,
+                                      prices[day] + solve(day + 1, transactions_left - 1, 0))
+                elif state == 2:
+                    # Currently holding a short sell → buy back today
+                    # Profit gained = -prices[day], transaction completed
+                    best_profit = max(best_profit,
+                                      -prices[day] + solve(day + 1, transactions_left - 1, 0))
+                else:  # state == 0 (not holding anything)
+                    # Start a new transaction:
+                    # Option A: normal buy (pay -prices[day])
+                    # Option B: short sell (gain +prices[day])
+                    best_profit = max(best_profit,
+                                      -prices[day] + solve(day + 1, transactions_left, 1),  # buy
+                                       prices[day] + solve(day + 1, transactions_left, 2))  # short sell
+            
+            # Memoize result
+            dp[day][transactions_left][state] = best_profit
+            return best_profit
+        
+        # Start from day 0, with k transactions available, and not holding anything
+        return solve(0, k, 0)
+
+
+Solution 2:
+
+class Solution:
+    def maximumProfit(self, prices: List[int], k: int) -> int:
+        n = len(prices)
+        
+        # dp[i][rem][state] represents the maximum profit achievable
+        # starting from day i, with rem transactions left, and current state:
+        # state = 0 → not holding anything (can start a transaction)
+        # state = 1 → holding a normal buy (waiting to sell)
+        # state = 2 → holding a short sell (waiting to buy back)
+        dp = [[[float('-inf')] * 3 for _ in range(k+1)] for _ in range(n+1)]
+        
+        # Base case: at the end of the array (day n),
+        # if we are not holding anything, profit = 0
+        # if we are holding something, it's invalid (unfinished transaction → -inf)
+        for rem in range(k + 1):
+            dp[n][rem][0] = 0
+        
+        # Fill the DP table backwards from day n-1 to day 0
+        for i in range(n - 1, -1, -1):
+            for rem in range(k + 1):
+                # Case 1: Skip today (do nothing)
+                dp[i][rem][0] = dp[i + 1][rem][0]  # not holding
+                dp[i][rem][1] = dp[i + 1][rem][1]  # holding normal buy
+                dp[i][rem][2] = dp[i + 1][rem][2]  # holding short sell
+                
+                if rem > 0:
+                    # Case 2: Close transactions if holding
+                    # If holding a normal buy → sell today
+                    dp[i][rem][1] = max(dp[i][rem][1],
+                                        prices[i] + dp[i + 1][rem - 1][0])
+                    
+                    # If holding a short sell → buy back today
+                    dp[i][rem][2] = max(dp[i][rem][2],
+                                        -prices[i] + dp[i + 1][rem - 1][0])
+                    
+                    # Case 3: Start a new transaction if not holding
+                    # Option A: start a normal buy (pay -prices[i])
+                    # Option B: start a short sell (gain +prices[i])
+                    dp[i][rem][0] = max(dp[i][rem][0],
+                                        -prices[i] + dp[i + 1][rem][1],  # buy
+                                         prices[i] + dp[i + 1][rem][2])  # short sell
+        
+        # Final answer: starting at day 0, with k transactions available,
+        # and not holding anything
+        return dp[0][k][0]
+
+
+Solution 3:
+
+class Solution:
+    def maximumProfit(self, prices: List[int], k: int) -> int:
+        n = len(prices)
+        
+        # next_dp[rem][state] = best profit starting from next day
+        # state = 0 → not holding
+        # state = 1 → holding normal buy
+        # state = 2 → holding short sell
+        next_dp = [[0 if state == 0 else float('-inf') for state in range(3)]
+                   for rem in range(k+1)]
+        
+        # Process days backwards
+        for day in range(n-1, -1, -1):
+            curr_dp = [[float('-inf')] * 3 for _ in range(k+1)]
+            
+            for rem in range(k+1):
+                # Case 1: not holding (state = 0)
+                # Option A: skip today
+                curr_dp[rem][0] = next_dp[rem][0]
+                # Option B: start new transaction if allowed
+                if rem > 0:
+                    curr_dp[rem][0] = max(curr_dp[rem][0],
+                                          -prices[day] + next_dp[rem][1],  # buy
+                                           prices[day] + next_dp[rem][2])  # short sell
+                
+                # Case 2: holding normal buy (state = 1)
+                # Option A: skip today
+                curr_dp[rem][1] = next_dp[rem][1]
+                # Option B: sell today if allowed
+                if rem > 0:
+                    curr_dp[rem][1] = max(curr_dp[rem][1],
+                                          prices[day] + next_dp[rem-1][0])
+                
+                # Case 3: holding short sell (state = 2)
+                # Option A: skip today
+                curr_dp[rem][2] = next_dp[rem][2]
+                # Option B: buy back today if allowed
+                if rem > 0:
+                    curr_dp[rem][2] = max(curr_dp[rem][2],
+                                          -prices[day] + next_dp[rem-1][0])
+            
+            # Move to previous day
+            next_dp = curr_dp
+        
+        # Final answer: start at day 0, k transactions available, not holding anything
+        return next_dp[k][0]

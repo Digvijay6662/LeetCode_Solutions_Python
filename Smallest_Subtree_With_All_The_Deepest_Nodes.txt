@@ -53,18 +53,28 @@ Solution 1:
 #         self.right = right
 class Solution:
     def subtreeWithAllDeepest(self, root: Optional[TreeNode]) -> Optional[TreeNode]:
-        
-        def dfs(root):
-            if not root:
-                return 0, None
+        # Postorder DFS that returns a pair:
+        # (node_that_is_root_of_smallest_subtree_containing_all_deepest, max_depth_from_this_node)
+        def dfs(node):
+            # If node is None, there is no subtree and depth is 0
+            if not node:
+                return (None, 0)
 
-            left = dfs(root.left)
-            right = dfs(root.right)
+            # Recurse left and right to get their candidate nodes and depths
+            left_node, left_depth = dfs(node.left)
+            right_node, right_depth = dfs(node.right)
 
-            if left[0] > right[0]:
-                return left[0] + 1, left[1]
-            if left[0] < right[0]:
-                return right[0] + 1, right[1]
-            return left[0] + 1, root
+            # If left and right depths are equal, current node is the LCA of deepest nodes
+            if left_depth == right_depth:
+                # return current node as the subtree root and increase depth by 1
+                return (node, left_depth + 1)
+            # If left side is deeper, propagate left's candidate upward
+            elif left_depth > right_depth:
+                return (left_node, left_depth + 1)
+            # If right side is deeper, propagate right's candidate upward
+            else:
+                return (right_node, right_depth + 1)
 
-        return dfs(root)[1]
+        # Start DFS from root and return the candidate node
+        result_node, _ = dfs(root)
+        return result_node

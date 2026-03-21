@@ -37,23 +37,37 @@ Solution 1:
 
 class Solution:
     def sumFourDivisors(self, nums: List[int]) -> int:
-
+        # Helper function to calculate the sum of divisors
+        # for a given number if it has exactly 4 divisors.
         def get_divisors_sum(num):
-            divisors_sum = 0
-            divisors_count = 0
+            divisors_sum = 0      # To store the sum of divisors
+            divisors_count = 0    # To count how many divisors we have found
+
+            # Loop through numbers from 1 to sqrt(num)
+            # Because divisors come in pairs (i and num//i)
             for i in range(1, int(num**0.5) + 1):
-                if num % i == 0:
+                if num % i == 0:  # If i divides num
                     if num // i == i:
+                        # Case when divisor pair is the same (perfect square)
                         divisors_sum += i
                         divisors_count += 1
                     else:
+                        # Add both divisors (i and num//i)
                         divisors_sum += i + (num // i)
                         divisors_count += 2
+
+                    # If divisors exceed 4, we can stop early
+                    # because we only care about numbers with exactly 4 divisors
                     if divisors_count > 4:
                         return 0
+
+            # Return sum only if the number has exactly 4 divisors
             return divisors_sum if divisors_count == 4 else 0
         
         result = 0
+        # Iterate through each number in the array
         for num in nums:
+            # Add the sum of divisors (if exactly 4) to the result
             result += get_divisors_sum(num)
+        
         return result

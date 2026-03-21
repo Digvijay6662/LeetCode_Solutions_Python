@@ -1,0 +1,123 @@
+3666. Minimum Operations to Equalize Binary String
+Solved
+Hard
+Topics
+premium lock icon
+Companies
+Hint
+You are given a binary string s, and an integer k.
+
+In one operation, you must choose exactly k different indices and flip each '0' to '1' and each '1' to '0'.
+
+Return the minimum number of operations required to make all characters in the string equal to '1'. If it is not possible, return -1.
+
+ 
+
+Example 1:
+
+Input: s = "110", k = 1
+
+Output: 1
+
+Explanation:
+
+There is one '0' in s.
+Since k = 1, we can flip it directly in one operation.
+Example 2:
+
+Input: s = "0101", k = 3
+
+Output: 2
+
+Explanation:
+
+One optimal set of operations choosing k = 3 indices in each operation is:
+
+Operation 1: Flip indices [0, 1, 3]. s changes from "0101" to "1000".
+Operation 2: Flip indices [1, 2, 3]. s changes from "1000" to "1111".
+Thus, the minimum number of operations is 2.
+
+Example 3:
+
+Input: s = "101", k = 2
+
+Output: -1
+
+Explanation:
+
+Since k = 2 and s has only one '0', it is impossible to flip exactly k indices to make all '1'. Hence, the answer is -1.
+
+ 
+
+Constraints:
+
+1 <= s.length <= 10​​​​​​​5
+s[i] is either '0' or '1'.
+1 <= k <= s.length
+
+
+Solution 1:
+
+class Solution:
+    def minOperations(self, s: str, k: int) -> int:
+        n = len(s)
+        zeros = s.count("0")   # initial number of zeros in the string
+
+        # If there are no zeros, the string is already all '1's
+        if zeros == 0:
+            return 0
+
+        # dist[z] = minimum operations required to reach a state with z zeros
+        dist = [float('inf')] * (n + 1)
+
+        # Maintain two sorted lists:
+        # - evenZeroStates: all states with an even number of zeros
+        # - oddZeroStates: all states with an odd number of zeros
+        # These help us quickly find valid next states without revisiting old ones
+        evenZeroStates = SortedList(range(0, n + 1, 2))
+        oddZeroStates = SortedList(range(1, n + 1, 2))
+        nodeSets = [evenZeroStates, oddZeroStates]
+
+        # BFS initialization
+        q = deque([zeros])
+        dist[zeros] = 0
+        nodeSets[zeros % 2].remove(zeros)  # mark starting state as visited
+
+        # BFS loop
+        while q:
+            z = q.popleft()  # current number of zeros
+
+            # Compute bounds for possible new zero counts
+            # c1 = minimum zeros flipped (depends on how many ones exist)
+            # c2 = maximum zeros flipped (cannot flip more zeros than exist)
+            c1 = max(k - (n - z), 0)
+            c2 = min(z, k)
+            # If we flip f zeros and k-f ones, the new zero count is:
+            # z' = z + k - 2f 
+            # New zero counts lie in the interval [lnode, rnode]
+            lnode = z + k - 2 * c2
+            rnode = z + k - 2 * c1
+
+            # Choose the correct parity set (even or odd)
+            currSet = nodeSets[lnode % 2]
+
+            # Find all candidate states in [lnode, rnode]
+            idx = currSet.bisect_left(lnode)
+            while idx < len(currSet) and currSet[idx] <= rnode:
+                newZ = currSet[idx]  # next possible zero count
+
+                # Update distance if not visited
+                dist[newZ] = dist[z] + 1
+
+                # If we reached 0 zeros, return the answer
+                if newZ == 0:
+                    return dist[newZ]
+
+                # Add new state to BFS queue
+                q.append(newZ)
+
+                # Remove from set so we don't revisit
+                currSet.pop(idx)
+
+        # If we never reached 0 zeros, it's impossible
+        return -1

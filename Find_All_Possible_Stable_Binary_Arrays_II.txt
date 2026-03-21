@@ -61,23 +61,49 @@ Solution 1:
 
 class Solution:
     def numberOfStableArrays(self, zero: int, one: int, limit: int) -> int:
-        mod = 1000000007
-        dp = [[[0 for _ in range(2)] for _ in range(zero + 1)] for _ in range(one + 1)]
+        MOD = 10**9 + 7  # Large prime for modulo arithmetic to avoid overflow
 
-        for i in range(1, min(limit, zero) + 1):
-            dp[0][i][0] = 1
-        
-        for i in range(1, min(limit, one) + 1):
-            dp[i][0][1] = 1
-        
-        for o in range(1, one + 1):
-            for z in range(1, zero + 1):
-                dp[o][z][0] = (dp[o][z - 1][0] + dp[o][z - 1][1]) % mod
-                if z - limit - 1 >= 0:
-                    dp[o][z][0] = (dp[o][z][0] - dp[o][z - limit - 1][1]) % mod
+        # dp[i][j][0] = number of stable arrays using i zeros and j ones, ending with a block of 0s
+        # dp[i][j][1] = number of stable arrays using i zeros and j ones, ending with a block of 1s
+        dp = [[[0] * 2 for _ in range(one + 1)] for _ in range(zero + 1)]
 
-                dp[o][z][1] = (dp[o - 1][z][1] + dp[o - 1][z][0]) % mod
-                if o - limit - 1 >= 0:
-                    dp[o][z][1] = (dp[o][z][1] - dp[o - limit - 1][z][0]) % mod
+        # Base cases:
+        # Arrays consisting only of zeros (up to 'limit' length) are valid if they end with 0
+        for i in range(1, min(zero, limit) + 1):
+            dp[i][0][0] = 1
 
-        return (dp[one][zero][0] + dp[one][zero][1]) % mod
+        # Arrays consisting only of ones (up to 'limit' length) are valid if they end with 1
+        for j in range(1, min(one, limit) + 1):
+            dp[0][j][1] = 1
+
+        # Fill DP table for all combinations of (i zeros, j ones)
+        for i in range(1, zero + 1):
+            for j in range(1, one + 1):
+
+                # -------------------------------
+                # Case 1: Array ends with 0s
+                # -------------------------------
+                # We can append a block of zeros (length ≤ limit) after an array ending with 1.
+                # To optimize, we use prefix sums:
+                # dp[i][j][0] = cumulative sum of dp[i-k][j][1] for k=1..limit
+                # Instead of looping, we maintain it incrementally:
+                dp[i][j][0] = (dp[i-1][j][0] + dp[i-1][j][1]) % MOD
+
+                # If we added too many zeros (more than 'limit'), subtract the invalid contribution
+                if i > limit:
+                    dp[i][j][0] = (dp[i][j][0] - dp[i-limit-1][j][1] + MOD) % MOD
+
+                # -------------------------------
+                # Case 2: Array ends with 1s
+                # -------------------------------
+                # Similarly, append a block of ones (length ≤ limit) after an array ending with 0.
+                # dp[i][j][1] = cumulative sum of dp[i][j-k][0] for k=1..limit
+                dp[i][j][1] = (dp[i][j-1][0] + dp[i][j-1][1]) % MOD
+
+                # Subtract invalid contribution if we exceeded 'limit' ones
+                if j > limit:
+                    dp[i][j][1] = (dp[i][j][1] - dp[i][j-limit-1][0] + MOD) % MOD
+
+        # Final answer: total stable arrays using all zeros and ones,
+        # regardless of whether they end with 0 or 1
+        return (dp[zero][one][0] + dp[zero][one][1]) % MOD

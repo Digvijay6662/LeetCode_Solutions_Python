@@ -1,0 +1,109 @@
+3651. Minimum Cost Path with Teleportations
+Solved
+Hard
+Topics
+premium lock icon
+Companies
+Hint
+You are given a m x n 2D integer array grid and an integer k. You start at the top-left cell (0, 0) and your goal is to reach the bottom‐right cell (m - 1, n - 1).
+
+There are two types of moves available:
+
+Normal move: You can move right or down from your current cell (i, j), i.e. you can move to (i, j + 1) (right) or (i + 1, j) (down). The cost is the value of the destination cell.
+
+Teleportation: You can teleport from any cell (i, j), to any cell (x, y) such that grid[x][y] <= grid[i][j]; the cost of this move is 0. You may teleport at most k times.
+
+Return the minimum total cost to reach cell (m - 1, n - 1) from (0, 0).
+
+ 
+
+Example 1:
+
+Input: grid = [[1,3,3],[2,5,4],[4,3,5]], k = 2
+
+Output: 7
+
+Explanation:
+
+Initially we are at (0, 0) and cost is 0.
+
+Current Position	Move	New Position	Total Cost
+(0, 0)	Move Down	(1, 0)	0 + 2 = 2
+(1, 0)	Move Right	(1, 1)	2 + 5 = 7
+(1, 1)	Teleport to (2, 2)	(2, 2)	7 + 0 = 7
+The minimum cost to reach bottom-right cell is 7.
+
+Example 2:
+
+Input: grid = [[1,2],[2,3],[3,4]], k = 1
+
+Output: 9
+
+Explanation:
+
+Initially we are at (0, 0) and cost is 0.
+
+Current Position	Move	New Position	Total Cost
+(0, 0)	Move Down	(1, 0)	0 + 2 = 2
+(1, 0)	Move Right	(1, 1)	2 + 3 = 5
+(1, 1)	Move Down	(2, 1)	5 + 4 = 9
+The minimum cost to reach bottom-right cell is 9.
+
+ 
+
+Constraints:
+
+2 <= m, n <= 80
+m == grid.length
+n == grid[i].length
+0 <= grid[i][j] <= 104
+0 <= k <= 10
+
+
+Solution 1:
+
+class Solution:
+    def minCost(self, grid: List[List[int]], k: int) -> int:
+        rows, cols = len(grid), len(grid[0])   # dimensions of the grid
+        max_cell_value = max(max(row) for row in grid)  # maximum value in the grid
+
+        # dp[r][c] = minimum cost to reach (r, c) from bottom-right
+        dp = [[float('inf')] * cols for _ in range(rows)]
+        dp[rows - 1][cols - 1] = 0  # base case: cost at destination is 0
+
+        # teleport[v] = minimum cost to reach any cell with value <= v
+        teleport = [float('inf')] * (max_cell_value + 1)
+
+        # We allow up to k teleports, so iterate k+1 times (0 teleports, 1 teleport, ..., k teleports)
+        for teleports_used in range(k + 1):
+
+            # Traverse grid backwards (bottom-right to top-left)
+            for r in range(rows - 1, -1, -1):
+                for c in range(cols - 1, -1, -1):
+                    if r == rows - 1 and c == cols - 1:
+                        continue  # skip destination cell
+
+                    # Normal move: move down
+                    if r + 1 < rows:
+                        dp[r][c] = min(dp[r][c], dp[r + 1][c] + grid[r + 1][c])
+
+                    # Normal move: move right
+                    if c + 1 < cols:
+                        dp[r][c] = min(dp[r][c], dp[r][c + 1] + grid[r][c + 1])
+
+                    # Teleport move: only if we have already used at least one teleport
+                    if teleports_used > 0:
+                        dp[r][c] = min(dp[r][c], teleport[grid[r][c]])
+
+            # Update teleport frontier with current dp values
+            for r in range(rows):
+                for c in range(cols):
+                    cell_value = grid[r][c]
+                    teleport[cell_value] = min(teleport[cell_value], dp[r][c])
+
+            # Propagate teleport costs so teleport[v] means "best cost to reach any cell with value ≤ v"
+            for v in range(1, max_cell_value + 1):
+                teleport[v] = min(teleport[v], teleport[v - 1])
+
+        # Answer is the minimum cost to reach (0,0)
+        return dp[0][0]

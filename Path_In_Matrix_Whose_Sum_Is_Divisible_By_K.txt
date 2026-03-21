@@ -1,0 +1,146 @@
+2435. Paths in Matrix Whose Sum Is Divisible by K
+Solved
+Hard
+Topics
+premium lock icon
+Companies
+Hint
+You are given a 0-indexed m x n integer matrix grid and an integer k. You are currently at position (0, 0) and you want to reach position (m - 1, n - 1) moving only down or right.
+
+Return the number of paths where the sum of the elements on the path is divisible by k. Since the answer may be very large, return it modulo 109 + 7.
+
+ 
+
+Example 1:
+
+
+Input: grid = [[5,2,4],[3,0,5],[0,7,2]], k = 3
+Output: 2
+Explanation: There are two paths where the sum of the elements on the path is divisible by k.
+The first path highlighted in red has a sum of 5 + 2 + 4 + 5 + 2 = 18 which is divisible by 3.
+The second path highlighted in blue has a sum of 5 + 3 + 0 + 5 + 2 = 15 which is divisible by 3.
+Example 2:
+
+
+Input: grid = [[0,0]], k = 5
+Output: 1
+Explanation: The path highlighted in red has a sum of 0 + 0 = 0 which is divisible by 5.
+Example 3:
+
+
+Input: grid = [[7,3,4,9],[2,3,6,2],[2,3,7,0]], k = 1
+Output: 10
+Explanation: Every integer is divisible by 1 so the sum of the elements on every possible path is divisible by k.
+ 
+
+Constraints:
+
+m == grid.length
+n == grid[i].length
+1 <= m, n <= 5 * 104
+1 <= m * n <= 5 * 104
+0 <= grid[i][j] <= 100
+1 <= k <= 50
+
+
+Solution 1:
+
+class Solution:
+    def numberOfPaths(self, grid: List[List[int]], k: int) -> int:
+        MOD = 10**9 + 7   # modulus for large results
+        rows, cols = len(grid), len(grid[0])  # dimensions of the matrix
+        
+        # dp[row][col][rem] stores the number of valid paths starting from (row, col)
+        # with current remainder 'rem' modulo k
+        dp = [[[-1] * k for _ in range(cols)] for _ in range(rows)]
+        
+        def dfs(row, col, remainder):
+            # If we go out of bounds → invalid path
+            if row == rows or col == cols:
+                return 0
+            
+            # Update remainder with current cell value
+            remainder = (remainder + grid[row][col]) % k
+            
+            # If we reached bottom-right cell, check divisibility
+            if row == rows - 1 and col == cols - 1:
+                return 1 if remainder == 0 else 0
+            
+            # If already computed, return cached result
+            if dp[row][col][remainder] != -1:
+                return dp[row][col][remainder]
+            
+            # Explore two possible moves: down and right
+            down_paths = dfs(row + 1, col, remainder)
+            right_paths = dfs(row, col + 1, remainder)
+            
+            # Store result in dp table
+            dp[row][col][remainder] = (down_paths + right_paths) % MOD
+            return dp[row][col][remainder]
+        
+        # Start DFS from top-left corner with remainder = 0
+        return dfs(0, 0, 0)
+
+
+Solution 2:
+
+class Solution:
+    def numberOfPaths(self, grid: List[List[int]], k: int) -> int:
+        MOD = 10**9 + 7   # modulus to avoid large numbers
+        n, m = len(grid), len(grid[0])  # dimensions of the grid
+        
+        # dp[row][col][rem] = number of paths starting from (row, col)
+        # with current remainder 'rem' modulo k
+        # We add +1 to dimensions to safely handle boundary cases (avoid index errors)
+        dp = [[[0] * k for _ in range(m + 1)] for _ in range(n + 1)]
+        
+        # Base case: at the destination cell (n-1, m-1)
+        # If (rem + grid value) % k == 0 → valid path
+        for rem in range(k):
+            dp[n - 1][m - 1][rem] = 1 if (rem + grid[n - 1][m - 1]) % k == 0 else 0
+        
+        # Fill DP table in reverse order (bottom-right → top-left)
+        for i in range(n - 1, -1, -1):       # iterate rows backwards
+            for j in range(m - 1, -1, -1):   # iterate cols backwards
+                for rem in range(k):         # iterate over all possible remainders
+                    # Skip destination cell (already initialized above)
+                    if i == n - 1 and j == m - 1:
+                        continue
+                    # Update remainder when including current cell value
+                    new_remainder = (rem + grid[i][j]) % k
+                    # Paths going down (i+1, j) and right (i, j+1)
+                    down_paths = dp[i + 1][j][new_remainder]
+                    right_paths = dp[i][j + 1][new_remainder]
+                    # Total paths from (i, j) with remainder 'rem'
+                    dp[i][j][rem] = (down_paths + right_paths) % MOD
+        
+        # Final answer: number of paths starting at (0,0) with remainder = 0
+        return dp[0][0][0]
+
+Solution 3:
+
+class Solution:
+    def numberOfPaths(self, grid: List[List[int]], k: int) -> int:
+        MOD = 10**9 + 7
+        n, m = len(grid), len(grid[0])
+        # dp[j][rem] = number of paths starting from (i+1, j) with remainder 'rem'
+        dp = [[0] * k for _ in range(m + 1)]  # row below
+        # Process rows from bottom to top
+        for i in range(n - 1, -1, -1):
+            # next_dp[j][rem] = number of paths starting from (i, j) with remainder 'rem'
+            next_dp = [[0] * k for _ in range(m + 1)]
+            for j in range(m - 1, -1, -1):
+                for rem in range(k):
+                    val = (rem + grid[i][j]) % k
+                    if i == n - 1 and j == m - 1:
+                        # Destination cell: valid path only if remainder == 0
+                        next_dp[j][rem] = 1 if val == 0 else 0
+                    else:
+                        # Move down (row below) and right (current row)
+                        down_paths = dp[j][val]
+                        right_paths = next_dp[j + 1][val]
+                        next_dp[j][rem] = (down_paths + right_paths) % MOD
+            # Roll the row: current row becomes "row below" for next iteration
+            dp = next_dp
+        # Final answer: paths starting at (0,0) with remainder = 0
+        return dp[0][0]

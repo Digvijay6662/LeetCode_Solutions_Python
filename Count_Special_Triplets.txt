@@ -1,0 +1,129 @@
+3583. Count Special Triplets
+Solved
+Medium
+Topics
+premium lock icon
+Companies
+Hint
+You are given an integer array nums.
+
+A special triplet is defined as a triplet of indices (i, j, k) such that:
+
+0 <= i < j < k < n, where n = nums.length
+nums[i] == nums[j] * 2
+nums[k] == nums[j] * 2
+Return the total number of special triplets in the array.
+
+Since the answer may be large, return it modulo 109 + 7.
+
+ 
+
+Example 1:
+
+Input: nums = [6,3,6]
+
+Output: 1
+
+Explanation:
+
+The only special triplet is (i, j, k) = (0, 1, 2), where:
+
+nums[0] = 6, nums[1] = 3, nums[2] = 6
+nums[0] = nums[1] * 2 = 3 * 2 = 6
+nums[2] = nums[1] * 2 = 3 * 2 = 6
+Example 2:
+
+Input: nums = [0,1,0,0]
+
+Output: 1
+
+Explanation:
+
+The only special triplet is (i, j, k) = (0, 2, 3), where:
+
+nums[0] = 0, nums[2] = 0, nums[3] = 0
+nums[0] = nums[2] * 2 = 0 * 2 = 0
+nums[3] = nums[2] * 2 = 0 * 2 = 0
+Example 3:
+
+Input: nums = [8,4,2,8,4]
+
+Output: 2
+
+Explanation:
+
+There are exactly two special triplets:
+
+(i, j, k) = (0, 1, 3)
+nums[0] = 8, nums[1] = 4, nums[3] = 8
+nums[0] = nums[1] * 2 = 4 * 2 = 8
+nums[3] = nums[1] * 2 = 4 * 2 = 8
+(i, j, k) = (1, 2, 4)
+nums[1] = 4, nums[2] = 2, nums[4] = 4
+nums[1] = nums[2] * 2 = 2 * 2 = 4
+nums[4] = nums[2] * 2 = 2 * 2 = 4
+ 
+
+Constraints:
+
+3 <= n == nums.length <= 105
+0 <= nums[i] <= 105
+
+
+Solution 1:
+
+class Solution:
+    def specialTriplets(self, nums: List[int]) -> int:
+        MOD = 10**9 + 7
+        n = len(nums)
+        # freq_left keeps track of frequency of numbers seen so far (to the left of current index)
+        # freq_right keeps track of frequency of numbers yet to be seen (to the right of current index)
+        freq_left, freq_right = defaultdict(int), defaultdict(int)
+
+        # Initially, all numbers are in the right side
+        for num in nums:
+            freq_right[num] += 1
+
+        result = 0
+        # Iterate through each number treating it as the middle element (j)
+        for mid in nums:
+            # Current element is now being processed, so remove it from right side
+            freq_right[mid] -= 1
+
+            # Condition: nums[i] == nums[j] * 2 and nums[k] == nums[j] * 2
+            # So we need count of nums[j]*2 on the left (possible i's)
+            # and count of nums[j]*2 on the right (possible k's)
+            result = (result + freq_left[2 * mid] * freq_right[2 * mid]) % MOD
+
+            # After processing, add current element to left side
+            freq_left[mid] += 1
+
+        return result
+
+
+Solution 2:
+
+class Solution:
+    def specialTriplets(self, nums: List[int]) -> int:
+        MOD = 10**9 + 7
+        n = len(nums)
+        # freq_left: counts how many times each number has appeared so far (potential i candidates)
+        # freq_pairs: counts how many valid (i, j) pairs exist for each number (potential j candidates)
+        freq_left, freq_pairs = defaultdict(int), defaultdict(int)
+
+        result = 0
+        # Iterate through each number treating it as potential k
+        for num in nums:
+            # If num is even, check if there are valid (i, j) pairs where nums[j] == num // 2
+            # Because condition requires nums[i] == nums[j] * 2 and nums[k] == nums[j] * 2
+            if num % 2 == 0:
+                result = (result + freq_pairs[num // 2]) % MOD
+
+            # Update freq_pairs: for current num, add all possible i's where nums[i] == 2 * num
+            # This means we are forming new (i, j) pairs with current num as j
+            freq_pairs[num] = (freq_pairs[num] + freq_left[2 * num]) % MOD
+
+            # Add current num to freq_left (it can now serve as a future i)
+            freq_left[num] += 1
+
+        return result

@@ -1,0 +1,87 @@
+
+Code
+Testcase
+Testcase
+Test Result
+3623. Count Number of Trapezoids I
+Solved
+Medium
+Topics
+premium lock icon
+Companies
+Hint
+You are given a 2D integer array points, where points[i] = [xi, yi] represents the coordinates of the ith point on the Cartesian plane.
+
+A horizontal trapezoid is a convex quadrilateral with at least one pair of horizontal sides (i.e. parallel to the x-axis). Two lines are parallel if and only if they have the same slope.
+
+Return the number of unique horizontal trapezoids that can be formed by choosing any four distinct points from points.
+
+Since the answer may be very large, return it modulo 109 + 7.
+
+ 
+
+Example 1:
+
+Input: points = [[1,0],[2,0],[3,0],[2,2],[3,2]]
+
+Output: 3
+
+Explanation:
+
+
+
+There are three distinct ways to pick four points that form a horizontal trapezoid:
+
+Using points [1,0], [2,0], [3,2], and [2,2].
+Using points [2,0], [3,0], [3,2], and [2,2].
+Using points [1,0], [3,0], [3,2], and [2,2].
+Example 2:
+
+Input: points = [[0,0],[1,0],[0,1],[2,1]]
+
+Output: 1
+
+Explanation:
+
+
+
+There is only one horizontal trapezoid that can be formed.
+
+ 
+
+Constraints:
+
+4 <= points.length <= 105
+–108 <= xi, yi <= 108
+All points are pairwise distinct.
+
+
+Solution 1:
+
+class Solution:
+    def countTrapezoids(self, points: List[List[int]]) -> int:
+        MOD = 1000000007
+        # Dictionary to count how many points lie on each horizontal line (same y-coordinate)
+        y_count = defaultdict(int)
+        
+        # Count points per y-coordinate
+        for x, y in points:
+            y_count[y] += 1
+        
+        result = 0
+        # Keeps track of total number of horizontal line segments formed so far
+        accumulated_segments = 0
+        
+        # Iterate through each distinct y-coordinate
+        for y in y_count:
+            num_points_on_line = y_count[y]
+            # Number of possible horizontal line segments from points on this line
+            # (choose any 2 points on the same y-coordinate)
+            segments_on_line = num_points_on_line * (num_points_on_line - 1) // 2
+            # Each trapezoid is formed by pairing one horizontal segment from this line
+            # with another horizontal segment from a previously processed line
+            result = (result + accumulated_segments * segments_on_line) % MOD
+            # Update accumulated segments for future trapezoid combinations
+            accumulated_segments += segments_on_line
+        
+        return result

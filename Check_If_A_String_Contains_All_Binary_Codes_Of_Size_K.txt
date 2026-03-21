@@ -1,0 +1,98 @@
+1461. Check If a String Contains All Binary Codes of Size K
+Solved
+Medium
+Topics
+premium lock icon
+Companies
+Hint
+Given a binary string s and an integer k, return true if every binary code of length k is a substring of s. Otherwise, return false.
+
+ 
+
+Example 1:
+
+Input: s = "00110110", k = 2
+Output: true
+Explanation: The binary codes of length 2 are "00", "01", "10" and "11". They can be all found as substrings at indices 0, 1, 3 and 2 respectively.
+Example 2:
+
+Input: s = "0110", k = 1
+Output: true
+Explanation: The binary codes of length 1 are "0" and "1", it is clear that both exist as a substring. 
+Example 3:
+
+Input: s = "0110", k = 2
+Output: false
+Explanation: The binary code "00" is of length 2 and does not exist in the array.
+ 
+
+Constraints:
+
+1 <= s.length <= 5 * 105
+s[i] is either '0' or '1'.
+1 <= k <= 20
+
+
+Solution 1:
+
+class Solution:
+    def hasAllCodes(self, s: str, k: int) -> bool:
+        n = len(s)                          # Length of the input string
+        total_patterns = 1 << k             # Total distinct binary codes of length k (2^k)
+
+        # Quick feasibility check:
+        # If the number of possible codes is greater than the number of substrings we can extract,
+        # it's impossible to cover all codes.
+        if total_patterns > n - k + 1:
+            return False
+
+        found_patterns = set()              # Store unique substrings of length k
+
+        # Iterate through all substrings of length k
+        for start in range(n - k + 1):
+            substring = s[start:start + k]  # Extract substring of length k
+            found_patterns.add(substring)   # Add to set (duplicates automatically ignored)
+            # If we collected all possible codes, return True
+            if len(found_patterns) == total_patterns:
+                return True
+        # If we collected all possible codes, return True
+        return len(found_patterns) == total_patterns
+
+
+Solution 2:
+
+class Solution:
+    def hasAllCodes(self, s: str, k: int) -> bool:
+        n = len(s)                          # Length of the input string
+        total_patterns = 1 << k             # Total distinct binary codes of length k (2^k)
+
+        # Quick feasibility check:
+        # If the number of possible codes is greater than the number of substrings we can extract,
+        # it's impossible to cover all codes.
+        if total_patterns > n - k + 1:
+            return False
+
+        seen_patterns = set()               # Store unique k-length binary patterns
+        current_window = 0                  # Integer representation of the current k-length window
+
+        # Build the first window of size k
+        for i in range(k):
+            # Shift left and add current bit (convert '0'/'1' to int using ord)
+            current_window = (current_window << 1) | (ord(s[i]) - ord('0'))
+        seen_patterns.add(current_window)
+
+        # Mask to keep only the last k bits (ensures window size stays k)
+        mask = total_patterns - 1
+
+        # Slide the window across the string
+        for i in range(k, n):
+            # Shift left, apply mask to drop old bits, add new bit
+            current_window = ((current_window << 1) & mask) | (ord(s[i]) - ord('0'))
+            seen_patterns.add(current_window)
+
+            # Early exit: if we've already seen all possible codes
+            if len(seen_patterns) == total_patterns:
+                return True
+
+        # Final check: did we collect all possible codes?
+        return len(seen_patterns) == total_patterns

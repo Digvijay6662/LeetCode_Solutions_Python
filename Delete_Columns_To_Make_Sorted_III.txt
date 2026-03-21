@@ -1,0 +1,73 @@
+960. Delete Columns to Make Sorted III
+Solved
+Hard
+Topics
+premium lock icon
+Companies
+You are given an array of n strings strs, all of the same length.
+
+We may choose any deletion indices, and we delete all the characters in those indices for each string.
+
+For example, if we have strs = ["abcdef","uvwxyz"] and deletion indices {0, 2, 3}, then the final array after deletions is ["bef", "vyz"].
+
+Suppose we chose a set of deletion indices answer such that after deletions, the final array has every string (row) in lexicographic order. (i.e., (strs[0][0] <= strs[0][1] <= ... <= strs[0][strs[0].length - 1]), and (strs[1][0] <= strs[1][1] <= ... <= strs[1][strs[1].length - 1]), and so on). Return the minimum possible value of answer.length.
+
+ 
+
+Example 1:
+
+Input: strs = ["babca","bbazb"]
+Output: 3
+Explanation: After deleting columns 0, 1, and 4, the final array is strs = ["bc", "az"].
+Both these rows are individually in lexicographic order (ie. strs[0][0] <= strs[0][1] and strs[1][0] <= strs[1][1]).
+Note that strs[0] > strs[1] - the array strs is not necessarily in lexicographic order.
+Example 2:
+
+Input: strs = ["edcba"]
+Output: 4
+Explanation: If we delete less than 4 columns, the only row will not be lexicographically sorted.
+Example 3:
+
+Input: strs = ["ghi","def","abc"]
+Output: 0
+Explanation: All rows are already lexicographically sorted.
+ 
+
+Constraints:
+
+n == strs.length
+1 <= n <= 100
+1 <= strs[i].length <= 100
+strs[i] consists of lowercase English letters.
+
+
+Solution 1:
+
+class Solution:
+    def minDeletionSize(self, strs: List[str]) -> int:
+        num_rows, num_cols = len(strs), len(strs[0])
+        # dp[col] = length of the longest valid subsequence ending at column 'col'
+        dp = [1] * num_cols  
+        # Track the maximum subsequence length found so far
+        longest_subseq = 1  
+        # Iterate over each column as potential "end" of subsequence
+        for curr_col in range(1, num_cols):
+            # Try all previous columns as potential predecessors
+            for prev_col in range(curr_col):
+                # Check if column prev_col can come before curr_col
+                # Condition: for every row, strs[row][prev_col] <= strs[row][curr_col]
+                is_valid = True  
+                for row in range(num_rows):
+                    if strs[row][prev_col] > strs[row][curr_col]:
+                        is_valid = False
+                        break  # violation found, stop checking this pair
+                
+                # If valid, update dp[curr_col] using dp[prev_col]
+                if is_valid:
+                    dp[curr_col] = max(dp[curr_col], dp[prev_col] + 1)
+            
+            # Update global maximum subsequence length
+            longest_subseq = max(longest_subseq, dp[curr_col])
+
+        # Minimum deletions = total columns - longest valid subsequence length
+        return num_cols - longest_subseq

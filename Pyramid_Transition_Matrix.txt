@@ -1,0 +1,96 @@
+756. Pyramid Transition Matrix
+Solved
+Medium
+Topics
+premium lock icon
+Companies
+You are stacking blocks to form a pyramid. Each block has a color, which is represented by a single letter. Each row of blocks contains one less block than the row beneath it and is centered on top.
+
+To make the pyramid aesthetically pleasing, there are only specific triangular patterns that are allowed. A triangular pattern consists of a single block stacked on top of two blocks. The patterns are given as a list of three-letter strings allowed, where the first two characters of a pattern represent the left and right bottom blocks respectively, and the third character is the top block.
+
+For example, "ABC" represents a triangular pattern with a 'C' block stacked on top of an 'A' (left) and 'B' (right) block. Note that this is different from "BAC" where 'B' is on the left bottom and 'A' is on the right bottom.
+You start with a bottom row of blocks bottom, given as a single string, that you must use as the base of the pyramid.
+
+Given bottom and allowed, return true if you can build the pyramid all the way to the top such that every triangular pattern in the pyramid is in allowed, or false otherwise.
+
+ 
+
+Example 1:
+
+
+Input: bottom = "BCD", allowed = ["BCC","CDE","CEA","FFF"]
+Output: true
+Explanation: The allowed triangular patterns are shown on the right.
+Starting from the bottom (level 3), we can build "CE" on level 2 and then build "A" on level 1.
+There are three triangular patterns in the pyramid, which are "BCC", "CDE", and "CEA". All are allowed.
+Example 2:
+
+
+Input: bottom = "AAAA", allowed = ["AAB","AAC","BCD","BBE","DEF"]
+Output: false
+Explanation: The allowed triangular patterns are shown on the right.
+Starting from the bottom (level 4), there are multiple ways to build level 3, but trying all the possibilites, you will get always stuck before building level 1.
+ 
+
+Constraints:
+
+2 <= bottom.length <= 6
+0 <= allowed.length <= 216
+allowed[i].length == 3
+The letters in all input strings are from the set {'A', 'B', 'C', 'D', 'E', 'F'}.
+All the values of allowed are unique.
+
+
+Solution 1:
+
+class Solution:
+    def pyramidTransition(self, bottom: str, allowed: List[str]) -> bool:
+        # Build a mapping: each pair of blocks (2 chars) -> list of possible top blocks
+        # Example: "ABC" means pair "AB" can produce "C"
+        transitions = defaultdict(list)
+        for pattern in allowed:
+            transitions[pattern[:2]].append(pattern[2])
+
+        # Key: (row_string, index, next_row_string_so_far)
+        # Value: True/False (whether this state can eventually build to the top)
+        dp = {}
+
+        def solve(row, index, next_row) :
+            # If this state has been computed before, return cached result
+            if (row, index, next_row) in dp:
+                return dp[(row, index, next_row)]
+
+            length = len(row)
+
+            # Base case: if row length is 1, we've reached the pyramid top
+            if length == 1:
+                dp[(row, index, next_row)] = True
+                return True
+
+            # If we've processed all pairs in the current row,
+            # move to the next row (next_row becomes the new row)
+            if index == length - 1:
+                result = solve(next_row, 0, "")
+                dp[(row, index, next_row)] = result
+                return result
+
+            # Current pair of blocks
+            pair = row[index:index+2]
+
+            # If no valid transition exists for this pair, fail immediately
+            if pair not in transitions:
+                dp[(row, index, next_row)] = False
+                return False
+
+            # Try all possible top blocks for this pair
+            for ch in transitions[pair]:
+                if solve(row, index + 1, next_row + ch):
+                    dp[(row, index, next_row)] = True
+                    return True
+
+            # If none of the options worked, mark this state as unsolvable
+            dp[(row, index, next_row)] = False
+            return False
+
+        # Start recursion from the given bottom row, index 0, and empty next_row
+        return solve(bottom, 0, "")

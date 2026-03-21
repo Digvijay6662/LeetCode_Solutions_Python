@@ -41,20 +41,27 @@ Solution 1:
 
 class Solution:
     def maxMatrixSum(self, matrix: List[List[int]]) -> int:
-        n = len(matrix)
-        min_val = float('inf')
-        total = 0
-        neg_count = 0
+        n = len(matrix)              # Size of the matrix (n x n)
+        min_val = float('inf')       # Track the smallest absolute value in the matrix
+        total = 0                    # Sum of absolute values of all elements
+        neg_count = 0                # Count of negative numbers in the matrix
 
+        # Traverse the entire matrix
         for i in range(n):
             for j in range(n):
-                val = abs(matrix[i][j])
-                total += val
-                min_val = min(min_val, val)
-                if matrix[i][j] < 0:
+                val = abs(matrix[i][j])   # Work with absolute values since we can flip signs
+                total += val              # Add to total sum
+                min_val = min(min_val, val)  # Update smallest absolute value seen so far
+                if matrix[i][j] < 0:      # Count how many negative numbers exist
                     neg_count += 1
 
+        # If the count of negative numbers is odd:
+        # We cannot make all numbers positive (because each operation flips two signs).
+        # In this case, one number must remain negative.
+        # To maximize the sum, we sacrifice the smallest absolute value.
         if neg_count % 2 == 1:
-            return total - 2 * min_val
+            return total - 2 * min_val   # Subtract twice the smallest value (flip it negative)
 
+        # If the count of negative numbers is even:
+        # We can flip signs in pairs and make all numbers positive.
         return total

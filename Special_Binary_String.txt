@@ -1,0 +1,69 @@
+761. Special Binary String
+Solved
+Hard
+Topics
+premium lock icon
+Companies
+Hint
+Special binary strings are binary strings with the following two properties:
+
+The number of 0's is equal to the number of 1's.
+Every prefix of the binary string has at least as many 1's as 0's.
+You are given a special binary string s.
+
+A move consists of choosing two consecutive, non-empty, special substrings of s, and swapping them. Two strings are consecutive if the last character of the first string is exactly one index before the first character of the second string.
+
+Return the lexicographically largest resulting string possible after applying the mentioned operations on the string.
+
+ 
+
+Example 1:
+
+Input: s = "11011000"
+Output: "11100100"
+Explanation: The strings "10" [occuring at s[1]] and "1100" [at s[3]] are swapped.
+This is the lexicographically largest string possible after some number of swaps.
+Example 2:
+
+Input: s = "10"
+Output: "10"
+ 
+
+Constraints:
+
+1 <= s.length <= 50
+s[i] is either '0' or '1'.
+s is a special binary string.
+
+
+Solution 1:
+
+class Solution:
+    def makeLargestSpecial(self, s: str) -> str:
+        length = len(s)
+        substrings = []   # List to store special substrings
+        start_index = 0   # Marks the beginning of a special substring
+        balance = 0       # Tracks difference between count of '1's and '0's
+
+        # Iterate through the string to split into special substrings
+        for i in range(length):
+            balance += 1 if s[i] == '1' else -1
+
+            # When balance == 0, we found a valid special substring
+            if balance == 0:
+                # Recursively process the inner substring (excluding outer 1 and 0)
+                inner = self.makeLargestSpecial(s[start_index + 1: i])
+                # Wrap with '1' and '0' to maintain special property
+                special_substring = "1" + inner + "0"
+                substrings.append(special_substring)
+
+                # Move start_index to next position
+                start_index = i + 1
+
+        # Sort substrings in descending lexicographic order
+        substrings.sort(reverse=True)
+
+        # Concatenate sorted substrings to form the largest possible string
+        result = "".join(substrings)
+
+        return result

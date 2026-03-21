@@ -44,18 +44,63 @@ Solution 1:
 
 class Solution:
     def maxTwoEvents(self, events: List[List[int]]) -> int:
-        times = []
-        for e in events:
-            times.append([e[0], 1, e[2]])
-            times.append([e[1] + 1, 0, e[2]])
+        # Number of events
+        n = len(events)
+        # Sort events by start time (important for binary search later)
+        events.sort(key=lambda x: x[0])
+        
+        # Precompute suffix maximum values:
+        # suffix_max[i] = maximum event value among events[i..n-1]
+        suffix_max = [0] * n
+        suffix_max[n - 1] = events[n - 1][2]
+        for i in range(n - 2, -1, -1):
+            suffix_max[i] = max(events[i][2], suffix_max[i + 1])
 
-        times.sort()
-        result = max_val = 0
+        # Build suffix max array from right to left
+        for i in range(n - 2, -1, -1):
+            # At each index, store the max of current event value and suffix_max of next index
+            suffix_max[i] = max(events[i][2], suffix_max[i + 1])
+        
+        max_sum = 0  # track the maximum sum of values
+        # Iterate over each event, treating it as the "first" event
+        for i in range(n):
+            curr_sum = events[i][2]  # value of current event
+            # Binary search: find the first event whose startTime > events[i][1]
+            # (since endTime is inclusive, next event must start strictly later)
+            j = bisect_right(events, [events[i][1], float('inf'), float('inf')])
+            # If such an event exists, add the best possible value from suffix_max
+            if j < n:
+                curr_sum += suffix_max[j]
+            # Update maximum sum found so far
+            max_sum = max(max_sum, curr_sum)
+        
+        return max_sum
 
-        for t in times:
-            if t[1]:
-                result = max(result, t[2] + max_val)
+
+Solution 2:
+
+class Solution:
+    def maxTwoEvents(self, events: List[List[int]]) -> int:
+        timeline = []  # list to store event start and end markers
+        # For each event, add two entries:
+        # - [start, 1, value] → marker for event starting (candidate to attend)
+        # - [end+1, 0, value] → marker for event ending (update max value seen so far)
+        for start, end, value in events:
+            timeline.append([start, 1, value])
+            timeline.append([end + 1, 0, value])  # end+1 ensures non-overlap (inclusive end)
+
+        # Sort timeline by time (then by state implicitly)
+        timeline.sort()
+        max_value_so_far = 0   # best single event value seen up to current time
+        max_value_sum = 0      # best sum of two non-overlapping events
+
+        # Sweep through the timeline
+        for time, marker_type, value in timeline:
+            if marker_type == 1:
+                # Event starts: try combining this event with the best past event
+                max_value_sum = max(max_value_sum, value + max_value_so_far)
             else:
-                max_val = max(max_val, t[2])
+                # Event ends: update the best single event value seen so far
+                max_value_so_far = max(max_value_so_far, value)
 
-        return result
+        return max_value_sum

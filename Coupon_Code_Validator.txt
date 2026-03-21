@@ -1,0 +1,88 @@
+3606. Coupon Code Validator
+Solved
+Easy
+Topics
+premium lock icon
+Companies
+Hint
+You are given three arrays of length n that describe the properties of n coupons: code, businessLine, and isActive. The ith coupon has:
+
+code[i]: a string representing the coupon identifier.
+businessLine[i]: a string denoting the business category of the coupon.
+isActive[i]: a boolean indicating whether the coupon is currently active.
+A coupon is considered valid if all of the following conditions hold:
+
+code[i] is non-empty and consists only of alphanumeric characters (a-z, A-Z, 0-9) and underscores (_).
+businessLine[i] is one of the following four categories: "electronics", "grocery", "pharmacy", "restaurant".
+isActive[i] is true.
+Return an array of the codes of all valid coupons, sorted first by their businessLine in the order: "electronics", "grocery", "pharmacy", "restaurant", and then by code in lexicographical (ascending) order within each category.
+
+ 
+
+Example 1:
+
+Input: code = ["SAVE20","","PHARMA5","SAVE@20"], businessLine = ["restaurant","grocery","pharmacy","restaurant"], isActive = [true,true,true,true]
+
+Output: ["PHARMA5","SAVE20"]
+
+Explanation:
+
+First coupon is valid.
+Second coupon has empty code (invalid).
+Third coupon is valid.
+Fourth coupon has special character @ (invalid).
+Example 2:
+
+Input: code = ["GROCERY15","ELECTRONICS_50","DISCOUNT10"], businessLine = ["grocery","electronics","invalid"], isActive = [false,true,true]
+
+Output: ["ELECTRONICS_50"]
+
+Explanation:
+
+First coupon is inactive (invalid).
+Second coupon is valid.
+Third coupon has invalid business line (invalid).
+ 
+
+Constraints:
+
+n == code.length == businessLine.length == isActive.length
+1 <= n <= 100
+0 <= code[i].length, businessLine[i].length <= 100
+code[i] and businessLine[i] consist of printable ASCII characters.
+isActive[i] is either true or false.
+
+
+Solution 1:
+
+class Solution:
+    def validateCoupons(self, code: List[str], businessLine: List[str], isActive: List[bool]) -> List[str]:
+        # Define valid business lines and their sorting order
+        valid_business = {
+            "electronics": 0,
+            "grocery": 1,
+            "pharmacy": 2,
+            "restaurant": 3
+        }
+        valid_coupons = []  # List to store (businessLine, code) pairs of valid coupons
+        # Iterate through all coupons simultaneously using zip
+        for c, b, active in zip(code, businessLine, isActive):
+            # Condition 1: coupon must be active
+            if not active:
+                continue  # skip this coupon
+            # Condition 2: business line must be one of the allowed categories
+            if b not in valid_business:
+                continue  # skip this coupon
+            # Condition 3: code must be non-empty and contain only alphanumeric + underscore
+            # `not c` → catches empty strings
+            # `re.match(r'^[A-Za-z0-9_]+$', c)` → ensures only allowed characters
+            if not c or not re.match(r'^[A-Za-z0-9_]+$', c):
+                continue  # skip this coupon
+            # If all conditions are satisfied, add to valid list
+            valid_coupons.append((b, c))
+        # Sort coupons:
+        # First by business line order (using valid_business mapping),
+        # then lexicographically by code
+        valid_coupons.sort(key=lambda x: (valid_business[x[0]], x[1]))
+        # Extract only the codes from sorted list
+        return [c for _, c in valid_coupons]

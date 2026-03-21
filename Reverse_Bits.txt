@@ -30,15 +30,20 @@ The input must be a binary string of length 32
 
 Follow up: If this function is called many times, how would you optimize it?
 
-Solution:
+Solution 1:
 
 class Solution:
     def reverseBits(self, n: int) -> int:
-        res = 0
-
+        res = 0  # This will hold the reversed result
+        # Iterate through all 32 bits of the integer
         for i in range(32):
-            bit = n & 1
-            res = res | bit << (31 - i)
+            bit = n & 1  # Extract the least significant bit (LSB)
+            
+            # Place this bit in the reversed position:
+            # shift it to (31 - i) because we are reversing
+            res = res | (bit << (31 - i))
+            
+            # Right shift n to process the next bit
             n = n >> 1
 
-        return res
+        return res  # Return the reversed integer

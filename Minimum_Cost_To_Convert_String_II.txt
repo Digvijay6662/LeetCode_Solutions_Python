@@ -196,74 +196,83 @@ Solution 3:
 
 class Solution:
     def minimumCost(self, source: str, target: str, original: List[str], changed: List[str], cost: List[int]) -> int:
-        keyMap = {}
-
+        # Step 1: Map each unique substring (original/changed) to a unique integer ID
+        substring_to_id = {}
         for key in original:
-            if key not in keyMap:
-                keyMap[key] = len(keyMap)
-
+            if key not in substring_to_id:
+                substring_to_id[key] = len(substring_to_id)
         for key in changed:
-            if key not in keyMap:
-                keyMap[key] = len(keyMap)
+            if key not in substring_to_id:
+                substring_to_id[key] = len(substring_to_id)
 
-        n = len(keyMap)
+        n = len(substring_to_id)  # total number of unique substrings
+
+        # Step 2: Build directed graph of transformations
+        # graph[u] = list of (v, cost) meaning substring u -> substring v with given cost
         graph = defaultdict(list)
-
         for i in range(len(cost)):
-            src = keyMap[original[i]]
-            dest = keyMap[changed[i]]
-            path_cost = cost[i]
-            graph[src].append((dest, path_cost))
+            src_id = substring_to_id[original[i]]
+            dest_id = substring_to_id[changed[i]]
+            graph[src_id].append((dest_id, cost[i]))
 
-        def dijkstras(start):
+        # Step 3: Dijkstra’s algorithm to compute shortest path from one substring to all others
+        def dijkstra(start: int) -> List[float]:
             dist = [float('inf')] * n
             dist[start] = 0
-            minHeap = [(0, start)]
+            min_heap = [(0, start)]  # (current_cost, node)
 
-            while minHeap:
-                cost, node = heapq.heappop(minHeap)
+            while min_heap:
+                curr_cost, node = heapq.heappop(min_heap)
 
-                if cost > dist[node]:
+                # Skip if we already found a better path
+                if curr_cost > dist[node]:
                     continue
 
-                for neighbor, neighbor_cost in graph[node]:
-                    new_cost = cost + neighbor_cost
+                # Relax edges
+                for neighbor, edge_cost in graph[node]:
+                    new_cost = curr_cost + edge_cost
                     if new_cost < dist[neighbor]:
                         dist[neighbor] = new_cost
-                        heapq.heappush(minHeap, (new_cost, neighbor))
+                        heapq.heappush(min_heap, (new_cost, neighbor))
 
             return dist
 
-        dist = [[float('inf') for _ in range(n)] for _ in range(n)]
-
+        # Step 4: Precompute all-pairs shortest paths using Dijkstra from each node
+        # dist_matrix[u][v] = minimum cost to convert substring u -> substring v
+        dist_matrix = [[float('inf')] * n for _ in range(n)]
         for i in range(n):
-            dist[i] = dijkstras(i)
+            dist_matrix[i] = dijkstra(i)
 
-        possible_lengths = set(len(string) for string in original)
+        # Step 5: Collect possible substring lengths (only lengths that appear in original rules matter)
+        possible_lengths = sorted(set(len(s) for s in original))
 
+        # Step 6: Dynamic Programming over prefixes of source/target
         length = len(source)
-
         dp = [float('inf')] * (length + 1)
-        dp[0] = 0
+        dp[0] = 0  # base case: empty prefix costs 0
 
         for i in range(length):
             if dp[i] == float('inf'):
-                continue
+                continue  # skip unreachable states
 
-            if target[i] == source[i]:
+            # Case 1: Characters already match → no cost
+            if source[i] == target[i]:
                 dp[i + 1] = min(dp[i + 1], dp[i])
 
+            # Case 2: Try substring transformations of length l
             for l in possible_lengths:
-                if i + l >= len(dp):
-                    continue
+                if i + l > length:  # substring would go out of bounds
+                    break
 
-                src_string = source[i:i + l]
-                tar_string = target[i:i + l]
+                src_sub = source[i:i + l]
+                tar_sub = target[i:i + l]
 
-                c1 = keyMap.get(src_string, -1)
-                c2 = keyMap.get(tar_string, -1)
+                src_id = substring_to_id.get(src_sub, -1)
+                tar_id = substring_to_id.get(tar_sub, -1)
 
-                if c1 != -1 and c2 != -1:
-                    dp[i + l] = min(dp[i + l], dp[i] + dist[c1][c2])
+                # If both substrings exist in our graph, try converting
+                if src_id != -1 and tar_id != -1:
+                    dp[i + l] = min(dp[i + l], dp[i] + dist_matrix[src_id][tar_id])
 
+        # Final answer: minimum cost to convert full source → target
         return dp[-1] if dp[-1] != float('inf') else -1

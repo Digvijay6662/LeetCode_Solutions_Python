@@ -95,21 +95,31 @@ Solution 3:
 class Solution:
     def countPalindromicSubsequence(self, s: str) -> int:
         n = len(s)
-        first = [-1] * 26
-        last = [-1] * 26
+        # Arrays to store the first and last occurrence index of each character (a-z)
+        first_occurrence = [-1] * 26
+        last_occurrence = [-1] * 26
         
+        # Step 1: Record first and last occurrence of each character
         for i in range(n):
-            ind = ord(s[i]) - ord('a')
-            if first[ind] == -1:
-                first[ind] = i
-            last[ind] = i
+            char_index = ord(s[i]) - ord('a')  # Map 'a' -> 0, 'b' -> 1, ..., 'z' -> 25
+            if first_occurrence[char_index] == -1:
+                first_occurrence[char_index] = i  # First time we see this character
+            last_occurrence[char_index] = i       # Keep updating last occurrence
         
         count = 0
-        for i in range(26):
-            if first[i] == -1:
+        
+        # Step 2: For each character, check possible palindromes of form: c _ c
+        for char_index in range(26):
+            if first_occurrence[char_index] == -1:
+                # Character does not exist in the string
                 continue
             
-            unique = set(s[first[i] + 1: last[i]])
-            count += len(unique)
-
+            # Extract substring between first and last occurrence of this character
+            # Example: for 'a' in "aabca", substring = "bc"
+            middle_chars = set(s[first_occurrence[char_index] + 1 : last_occurrence[char_index]])
+            
+            # Each unique middle character forms a palindrome: c + middle + c
+            # Example: 'a' + 'b' + 'a' = "aba"
+            count += len(middle_chars)
+        
         return count

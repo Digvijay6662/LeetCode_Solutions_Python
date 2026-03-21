@@ -47,41 +47,64 @@ Solution 1:
 
 class Solution:
     def maxRunTime(self, n: int, batteries: List[int]) -> int:
-        left, right = 1, sum(batteries)//n
-        res = -1
+        # Binary search range:
+        # Minimum possible runtime = 1 minute
+        # Maximum possible runtime = total energy / number of computers
+        # (since each computer must run simultaneously)
+        left, right = 1, sum(batteries) // n
+        answer = -1   # store the best feasible runtime found
 
-        def isPossible(m):
-            total = 0
+        def canRunFor(time: int) -> bool:
+            """
+            Check if it's possible to run all 'n' computers
+            simultaneously for 'time' minutes.
+            Each battery can contribute at most 'time' minutes,
+            because one computer only needs 'time' minutes.
+            """
+            total_energy = 0
             for b in batteries:
-                if b > m:
-                    total += m
-                else:
-                    total += b
+                # Each battery contributes either its full capacity
+                # or 'time' (whichever is smaller).
+                total_energy += min(b, time)
 
-            return total//n >= mid
+            # To run 'n' computers for 'time' minutes,
+            # we need at least n * time total energy.
+            return total_energy >= n * time
 
+        # Standard binary search for maximum feasible time
         while left <= right:
-            mid = left + (right - left)//2         
+            mid = left + (right - left) // 2  # candidate runtime
 
-            if isPossible(mid):
-                res = mid
+            if canRunFor(mid):
+                # If feasible, store result and try longer runtime
+                answer = mid
                 left = mid + 1
             else:
+                # If not feasible, try shorter runtime
                 right = mid - 1
 
-        return res
-
+        return answer
 
 Solution 2:
 
 class Solution:
     def maxRunTime(self, n: int, batteries: List[int]) -> int:
-        total = sum(batteries)
+        # Step 1: Calculate total energy available across all batteries
+        total_energy = sum(batteries)
+
+        # Step 2: Sort batteries so we can easily access the largest one
         batteries.sort()
-        
-        while batteries[-1] > total // n:
-            total -= batteries.pop()
+
+        # Step 3: Greedy adjustment
+        # If the largest battery has more energy than the average share (total_energy // num_computers),
+        # it means that battery cannot be fully utilized in a balanced distribution.
+        # So we "assign" that battery to one computer and remove it from the pool.
+        while batteries[-1] > total_energy // n:
+            # Remove the largest battery from the pool
+            largest_battery = batteries.pop()
+            # Subtract its energy from the total pool
+            total_energy -= largest_battery
+            # Reduce the number of computers to balance among
             n -= 1
-
-        return total // n
-
+        # Step 4: After balancing, the maximum runtime is simply the average energy per computer
+        return total_energy // n

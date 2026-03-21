@@ -1,0 +1,90 @@
+3643. Flip Square Submatrix Vertically
+Solved
+Easy
+Topics
+premium lock icon
+Companies
+Hint
+You are given an m x n integer matrix grid, and three integers x, y, and k.
+
+The integers x and y represent the row and column indices of the top-left corner of a square submatrix and the integer k represents the size (side length) of the square submatrix.
+
+Your task is to flip the submatrix by reversing the order of its rows vertically.
+
+Return the updated matrix.
+
+ 
+
+Example 1:
+
+
+Input: grid = [[1,2,3,4],[5,6,7,8],[9,10,11,12],[13,14,15,16]], x = 1, y = 0, k = 3
+
+Output: [[1,2,3,4],[13,14,15,8],[9,10,11,12],[5,6,7,16]]
+
+Explanation:
+
+The diagram above shows the grid before and after the transformation.
+
+Example 2:
+
+​​​​​​​
+Input: grid = [[3,4,2,3],[2,3,4,2]], x = 0, y = 2, k = 2
+
+Output: [[3,4,4,2],[2,3,2,3]]
+
+Explanation:
+
+The diagram above shows the grid before and after the transformation.
+
+ 
+
+Constraints:
+
+m == grid.length
+n == grid[i].length
+1 <= m, n <= 50
+1 <= grid[i][j] <= 100
+0 <= x < m
+0 <= y < n
+1 <= k <= min(m - x, n - y)
+
+
+Solution 1:
+
+class Solution:
+    def reverseSubmatrix(self, grid: List[List[int]], x: int, y: int, k: int) -> List[List[int]]:
+        # Step 1: Extract the submatrix of dimension 'size x size'
+        submatrix = []
+        for row_offset in range(k):
+            # Collect one row of the submatrix
+            current_row = []
+            for col_offset in range(k):
+                current_row.append(grid[x + row_offset][y + col_offset])
+            submatrix.append(current_row)
+
+        # Step 2: Place the submatrix back into the grid, but with rows reversed
+        for row_offset in range(k):
+            for col_offset in range(k):
+                # Replace the element in the grid with the vertically flipped row
+                grid[x + row_offset][y + col_offset] = submatrix[k - 1 - row_offset][col_offset]
+
+        return grid
+
+
+Solution 2:
+
+class Solution:
+    def reverseSubmatrix(self, grid: List[List[int]], x: int, y: int, k: int) -> List[List[int]]:
+        # We only need to swap rows inside the submatrix
+        for offset in range(k // 2):
+            # Row indices to swap
+            top_row = x + offset
+            bottom_row = x + k - 1 - offset
+
+            # Swap the relevant columns between top_row and bottom_row
+            for col_offset in range(k):
+                col = y + col_offset
+                grid[top_row][col], grid[bottom_row][col] = grid[bottom_row][col], grid[top_row][col]
+
+        return grid

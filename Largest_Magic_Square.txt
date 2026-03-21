@@ -1,0 +1,146 @@
+1895. Largest Magic Square
+Solved
+Medium
+Topics
+premium lock icon
+Companies
+Hint
+A k x k magic square is a k x k grid filled with integers such that every row sum, every column sum, and both diagonal sums are all equal. The integers in the magic square do not have to be distinct. Every 1 x 1 grid is trivially a magic square.
+
+Given an m x n integer grid, return the size (i.e., the side length k) of the largest magic square that can be found within this grid.
+
+ 
+
+Example 1:
+
+
+Input: grid = [[7,1,4,5,6],[2,5,1,6,4],[1,5,4,3,2],[1,2,7,3,4]]
+Output: 3
+Explanation: The largest magic square has a size of 3.
+Every row sum, column sum, and diagonal sum of this magic square is equal to 12.
+- Row sums: 5+1+6 = 5+4+3 = 2+7+3 = 12
+- Column sums: 5+5+2 = 1+4+7 = 6+3+3 = 12
+- Diagonal sums: 5+4+3 = 6+4+2 = 12
+Example 2:
+
+
+Input: grid = [[5,1,3,1],[9,3,3,1],[1,3,3,8]]
+Output: 2
+ 
+
+Constraints:
+
+m == grid.length
+n == grid[i].length
+1 <= m, n <= 50
+1 <= grid[i][j] <= 106
+
+
+Solution 1:
+
+class Solution:
+    def largestMagicSquare(self, grid: List[List[int]]) -> int:
+        rows_count, cols_count = len(grid), len(grid[0])   # dimensions of the grid
+
+        # Helper function to check if a k x k subgrid starting at (row, col) is a magic square
+        def is_magic_square(row, col, size):
+            row_sums = [0] * size     # store sum of each row in the subgrid
+            col_sums = [0] * size     # store sum of each column in the subgrid
+            main_diag_sum = 0         # sum of main diagonal (top-left to bottom-right)
+            anti_diag_sum = 0         # sum of anti diagonal (top-right to bottom-left)
+
+            # Traverse the k x k subgrid
+            for i in range(size):
+                for j in range(size):
+                    val = grid[row + i][col + j]   # current cell value
+                    row_sums[i] += val             # add to the corresponding row sum
+                    col_sums[j] += val             # add to the corresponding column sum
+                    if i == j:                     # cell lies on main diagonal
+                        main_diag_sum += val
+                    if i + j == size - 1:          # cell lies on anti diagonal
+                        anti_diag_sum += val
+
+            # Both diagonals must have the same sum
+            if main_diag_sum != anti_diag_sum:
+                return False
+
+            target_sum = main_diag_sum  # the "magic sum" all rows/cols must match
+
+            # Check all row sums
+            if not all(r == target_sum for r in row_sums):
+                return False
+
+            # Check all column sums
+            if not all(c == target_sum for c in col_sums):
+                return False
+
+            return True
+
+        # Try all possible square sizes starting from the largest down to 2
+        for size in range(min(rows_count, cols_count), 1, -1):
+            # Iterate over all possible top-left corners of subgrids of this size
+            for row in range(rows_count - size + 1):
+                for col in range(cols_count - size + 1):
+                    if is_magic_square(row, col, size):
+                        return size   # return immediately when largest found
+
+        return 1   # if no larger magic square found, return 1 (trivial case)
+
+
+Solution 2:
+
+class Solution:
+    def largestMagicSquare(self, grid: List[List[int]]) -> int:
+        n, m = len(grid), len(grid[0])  # dimensions of the grid
+
+        # Precompute prefix sums for rows, columns, and diagonals
+        # rowSum[i][j] = sum of row i from column 0 to j-1
+        rowSum = [[0] * (m + 1) for _ in range(n)]
+        # colSum[j][i] = sum of column j from row 0 to i-1
+        colSum = [[0] * (n + 1) for _ in range(m)]
+        # diag1[i][j] = sum of main diagonal (↘) ending at (i-1, j-1)
+        diag1 = [[0] * (m + 1) for _ in range(n + 1)]
+        # diag2[i][j] = sum of anti-diagonal (↙) ending at (i-1, j)
+        diag2 = [[0] * (m + 2) for _ in range(n + 1)]
+
+        # Fill prefix sums
+        for i in range(n):
+            for j in range(m):
+                # Row prefix sum
+                rowSum[i][j + 1] = rowSum[i][j] + grid[i][j]
+                # Column prefix sum
+                colSum[j][i + 1] = colSum[j][i] + grid[i][j]
+                # Main diagonal prefix sum
+                diag1[i + 1][j + 1] = diag1[i][j] + grid[i][j]
+                # Anti-diagonal prefix sum
+                diag2[i + 1][j] = diag2[i][j + 1] + grid[i][j]
+
+        # Function to check if sub-square of size k starting at (r, c) is magic
+        def check(r, c, k):
+            # Target sum = sum of main diagonal
+            magic_sum = diag1[r + k][c + k] - diag1[r][c]
+
+            # Check anti-diagonal sum
+            if diag2[r + k][c] - diag2[r][c + k] != magic_sum:
+                return False
+
+            # Check all rows in the square
+            for i in range(r, r + k):
+                if rowSum[i][c + k] - rowSum[i][c] != magic_sum:
+                    return False
+
+            # Check all columns in the square
+            for j in range(c, c + k):
+                if colSum[j][r + k] - colSum[j][r] != magic_sum:
+                    return False
+
+            return True  # All conditions satisfied → it's a magic square
+
+        # Try all possible square sizes from largest to smallest
+        for size in range(min(n, m), 1, -1):  # start from max possible size
+            for i in range(n - size + 1):     # iterate over possible top-left rows
+                for j in range(m - size + 1): # iterate over possible top-left cols
+                    if check(i, j, size):     # if valid magic square found
+                        return size           # return immediately (largest found)
+
+        return 1  # If no larger magic square found, smallest possible is 1x1

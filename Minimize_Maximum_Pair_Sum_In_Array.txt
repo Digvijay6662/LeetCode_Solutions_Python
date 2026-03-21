@@ -41,12 +41,20 @@ Solution 1:
 
 class Solution:
     def minPairSum(self, nums: List[int]) -> int:
-        n = len(nums)
+        # Step 1: Sort the array so we can pair smallest with largest
         nums.sort()
-        res = 0
-
+        
+        n = len(nums)
+        minimized_max_sum = 0  # This will store the minimized maximum pair sum
+        
+        # Step 2: Pair elements optimally
+        # Pair the smallest element with the largest, second smallest with second largest, etc.
         for i in range(n // 2):
-            pair_sum = nums[i] + nums[n - 1 - i]
-            res = max(res, pair_sum)
-
-        return res
+            # Create a pair: nums[i] (smallest side) + nums[n - 1 - i] (largest side)
+            current_pair_sum = nums[i] + nums[n - 1 - i]
+            
+            # Update the minimized maximum sum
+            minimized_max_sum = max(minimized_max_sum, current_pair_sum)
+        
+        # Step 3: Return the minimized maximum pair sum
+        return minimized_max_sum

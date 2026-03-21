@@ -1,0 +1,147 @@
+3567. Minimum Absolute Difference in Sliding Submatrix
+Solved
+Medium
+Topics
+premium lock icon
+Companies
+Hint
+You are given an m x n integer matrix grid and an integer k.
+
+For every contiguous k x k submatrix of grid, compute the minimum absolute difference between any two distinct values within that submatrix.
+
+Return a 2D array ans of size (m - k + 1) x (n - k + 1), where ans[i][j] is the minimum absolute difference in the submatrix whose top-left corner is (i, j) in grid.
+
+Note: If all elements in the submatrix have the same value, the answer will be 0.
+
+A submatrix (x1, y1, x2, y2) is a matrix that is formed by choosing all cells matrix[x][y] where x1 <= x <= x2 and y1 <= y <= y2.
+ 
+
+Example 1:
+
+Input: grid = [[1,8],[3,-2]], k = 2
+
+Output: [[2]]
+
+Explanation:
+
+There is only one possible k x k submatrix: [[1, 8], [3, -2]].
+Distinct values in the submatrix are [1, 8, 3, -2].
+The minimum absolute difference in the submatrix is |1 - 3| = 2. Thus, the answer is [[2]].
+Example 2:
+
+Input: grid = [[3,-1]], k = 1
+
+Output: [[0,0]]
+
+Explanation:
+
+Both k x k submatrix has only one distinct element.
+Thus, the answer is [[0, 0]].
+Example 3:
+
+Input: grid = [[1,-2,3],[2,3,5]], k = 2
+
+Output: [[1,2]]
+
+Explanation:
+
+There are two possible k × k submatrix:
+Starting at (0, 0): [[1, -2], [2, 3]].
+Distinct values in the submatrix are [1, -2, 2, 3].
+The minimum absolute difference in the submatrix is |1 - 2| = 1.
+Starting at (0, 1): [[-2, 3], [3, 5]].
+Distinct values in the submatrix are [-2, 3, 5].
+The minimum absolute difference in the submatrix is |3 - 5| = 2.
+Thus, the answer is [[1, 2]].
+ 
+
+Constraints:
+
+1 <= m == grid.length <= 30
+1 <= n == grid[i].length <= 30
+-105 <= grid[i][j] <= 105
+1 <= k <= min(m, n)
+
+
+
+Solution 1:
+
+class Solution:
+    def minAbsDiff(self, grid: List[List[int]], k: int) -> List[List[int]]:
+        # Number of rows and columns in the grid
+        rows, cols = len(grid), len(grid[0])
+
+        # Result matrix of size (rows - k + 1) x (cols - k + 1)
+        # Each entry corresponds to the minimum absolute difference
+        # in the k x k submatrix starting at that position
+        result = [[0] * (cols - k + 1) for _ in range(rows - k + 1)]
+
+        # Iterate over all possible top-left corners of k x k submatrices
+        for start_row in range(rows - k + 1):
+            for start_col in range(cols - k + 1):
+
+                # Collect all values inside the current k x k submatrix
+                values_in_submatrix = set()  # use set to keep only distinct values
+                for r in range(k):
+                    for c in range(k):
+                        values_in_submatrix.add(grid[start_row + r][start_col + c])
+
+                # Sort the distinct values so consecutive differences can be checked
+                sorted_values = sorted(values_in_submatrix)
+
+                # Initialize minimum difference as infinity
+                min_diff = float('inf')
+
+                # Compare consecutive values in sorted list
+                # This works because the smallest absolute difference
+                # must be between two adjacent numbers in sorted order
+                for idx in range(1, len(sorted_values)):
+                    min_diff = min(min_diff, sorted_values[idx] - sorted_values[idx - 1])
+
+                # If all values are the same, min_diff will remain infinity
+                # In that case, the answer should be 0
+                result[start_row][start_col] = 0 if min_diff == float('inf') else min_diff
+
+        return result
+
+
+Solution 2:
+
+class Solution:
+    def minAbsDiff(self, grid: List[List[int]], k: int) -> List[List[int]]:
+        # Get number of rows and columns in the grid
+        rows, cols = len(grid), len(grid[0])
+
+        # Initialize result matrix of size (rows - k + 1) x (cols - k + 1)
+        # Each entry will store the minimum absolute difference
+        # for the k x k submatrix starting at that position
+        result = [[0] * (cols - k + 1) for _ in range(rows - k + 1)]
+
+        # Iterate over all possible top-left corners of k x k submatrices
+        for start_row in range(rows - k + 1):
+            for start_col in range(cols - k + 1):
+
+                # Collect all values inside the current k x k submatrix
+                values_in_submatrix = []
+                for r in range(k):
+                    for c in range(k):
+                        values_in_submatrix.append(grid[start_row + r][start_col + c])
+
+                # Sort values so consecutive differences can be checked efficiently
+                values_in_submatrix.sort()
+
+                # Initialize minimum difference as infinity
+                min_diff = float('inf')
+
+                # Compare consecutive values in sorted list
+                # The smallest absolute difference must be between adjacent numbers
+                for idx in range(1, len(values_in_submatrix)):
+                    if values_in_submatrix[idx] == values_in_submatrix[idx - 1]:
+                        # Skip duplicates since we need to consider only distinct value
+                        continue
+                    min_diff = min(min_diff, values_in_submatrix[idx] - values_in_submatrix[idx - 1])
+
+                # If all values are identical, min_diff stays infinity → answer is 0
+                result[start_row][start_col] = 0 if min_diff == float('inf') else min_diff
+
+        return result
