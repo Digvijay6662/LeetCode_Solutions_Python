@@ -1,0 +1,159 @@
+1345. Jump Game IV
+Solved
+Hard
+Topics
+premium lock icon
+Companies
+Hint
+Given an array of integers arr, you are initially positioned at the first index of the array.
+
+In one step you can jump from index i to index:
+
+i + 1 where: i + 1 < arr.length.
+i - 1 where: i - 1 >= 0.
+j where: arr[i] == arr[j] and i != j.
+Return the minimum number of steps to reach the last index of the array.
+
+Notice that you can not jump outside of the array at any time.
+
+ 
+
+Example 1:
+
+Input: arr = [100,-23,-23,404,100,23,23,23,3,404]
+Output: 3
+Explanation: You need three jumps from index 0 --> 4 --> 3 --> 9. Note that index 9 is the last index of the array.
+Example 2:
+
+Input: arr = [7]
+Output: 0
+Explanation: Start index is the last index. You do not need to jump.
+Example 3:
+
+Input: arr = [7,6,9,6,9,6,9,7]
+Output: 1
+Explanation: You can jump directly from index 0 to index 7 which is last index of the array.
+ 
+
+Constraints:
+
+1 <= arr.length <= 5 * 104
+-108 <= arr[i] <= 108
+
+
+Solution 1:
+
+class Solution:
+    def minJumps(self, arr: List[int]) -> int:
+        arrayLen = len(arr)
+
+        # ── EDGE CASES ────────────────────────────────────────────────────────
+
+        # Single element → already at last index → 0 jumps needed
+        if arrayLen == 1:
+            return 0
+
+        # First and last elements have same value → direct teleport in 1 jump
+        # e.g. arr=[7,3,5,7] → arr[0]==arr[3] → jump directly → 1
+        if arr[0] == arr[-1]:
+            return 1
+
+        # ── STEP 1: Build value → indices map ────────────────────────────────
+        # valueToIndices[v] = all indices where arr[index] == v
+        # Enables O(1) lookup of all teleport destinations for any value
+        #
+        # e.g. arr=[100,-23,-23,404,100,23,23,23,3,404]
+        #   valueToIndices = {
+        #     100: [0, 4],
+        #     -23: [1, 2],
+        #     404: [3, 9],
+        #      23: [5, 6, 7],
+        #       3: [8]
+        #   }
+        valueToIndices = defaultdict(list)
+        for idx, val in enumerate(arr):
+            valueToIndices[val].append(idx)
+
+        # ── STEP 2: BFS Setup ─────────────────────────────────────────────────
+        # BFS guarantees MINIMUM jumps (shortest path in unweighted graph)
+        # Each level of BFS = one more jump from start
+        #
+        # visitedIndices: prevents re-adding same index to queue
+        #   Using SET for O(1) lookup vs O(N) for list
+        # bfsQueue: indices to process at current jump distance
+        bfsQueue       = deque([0])         # start BFS from index 0
+        visitedIndices = {0}                # mark start as visited immediately
+        jumpCount      = 0                  # current BFS level = jumps so far
+
+        # ── STEP 3: BFS Level-by-level Processing ────────────────────────────
+        # Each iteration of outer while = one complete BFS level
+        # All indices in current level reachable in exactly 'jumpCount' jumps
+        while bfsQueue:
+
+            # Process ALL indices at current jump distance before incrementing
+            # len(bfsQueue) frozen at start of level → only process current level
+            # New indices added during this loop belong to NEXT level
+            for _ in range(len(bfsQueue)):
+                currIdx = bfsQueue.popleft()
+
+                # ── DESTINATION CHECK ─────────────────────────────────────────
+                # Reached last index → BFS guarantees this is minimum jumps
+                # Return BEFORE incrementing jumpCount (we're still in this level)
+                if currIdx == arrayLen - 1:
+                    return jumpCount
+
+                # ── JUMP LEFT: currIdx → currIdx - 1 ─────────────────────────
+                # Step one position to the left
+                # Guard: must stay within bounds AND not already visited
+                #
+                # e.g. currIdx=4 → leftIdx=3
+                leftIdx = currIdx - 1
+                if leftIdx >= 0 and leftIdx not in visitedIndices:
+                    visitedIndices.add(leftIdx)     # mark immediately
+                    bfsQueue.append(leftIdx)
+
+                # ── JUMP RIGHT: currIdx → currIdx + 1 ────────────────────────
+                # Step one position to the right
+                # Guard: must stay within bounds AND not already visited
+                #
+                # e.g. currIdx=4 → rightIdx=5
+                rightIdx = currIdx + 1
+                if rightIdx < arrayLen and rightIdx not in visitedIndices:
+                    visitedIndices.add(rightIdx)    # mark immediately
+                    bfsQueue.append(rightIdx)
+
+                # ── VALUE TELEPORT: currIdx → any j where arr[j]==arr[currIdx] ─
+                # Jump to ANY index with same value as arr[currIdx]
+                # All such indices stored in valueToIndices[arr[currIdx]]
+                #
+                # e.g. currIdx=0, arr[0]=100 → teleport to index 4
+                for teleportIdx in valueToIndices[arr[currIdx]]:
+                    if teleportIdx not in visitedIndices:
+                        visitedIndices.add(teleportIdx)     # mark immediately
+                        bfsQueue.append(teleportIdx)
+
+                # ── CRITICAL OPTIMIZATION: Clear processed value's indices ────
+                # WHY needed:
+                #   Without clearing: if another index later has arr[idx]=100,
+                #   it re-scans valueToIndices[100]=[0,4] → redundant O(N) work
+                #   For popular values (many duplicates) → O(N²) total!
+                #
+                # WHY safe:
+                #   All indices for arr[currIdx] are now either:
+                #     a) Already in visitedIndices (won't be re-added)
+                #     b) Just added to queue with visitedIndices mark
+                #   Any future index with same value finds empty list → skips
+                #   → Zero information lost, massive time saved
+                #
+                # e.g. valueToIndices[100]=[0,4] → after processing index 0:
+                #   index 4 added to queue, visitedIndices has both 0 and 4
+                #   clear → valueToIndices[100]=[]
+                #   when index 4 is later processed → teleport list is empty ✓
+                valueToIndices[arr[currIdx]].clear()
+
+            # Finished all indices at current jump distance
+            # Increment before processing next level
+            jumpCount += 1
+
+        # Should never reach here if array is valid (path always exists)
+        return -1

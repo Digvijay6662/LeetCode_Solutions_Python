@@ -1,0 +1,211 @@
+1665. Minimum Initial Energy to Finish Tasks
+Solved
+Hard
+Topics
+premium lock icon
+Companies
+Hint
+You are given an array tasks where tasks[i] = [actuali, minimumi]:
+
+actuali is the actual amount of energy you spend to finish the ith task.
+minimumi is the minimum amount of energy you require to begin the ith task.
+For example, if the task is [10, 12] and your current energy is 11, you cannot start this task. However, if your current energy is 13, you can complete this task, and your energy will be 3 after finishing it.
+
+You can finish the tasks in any order you like.
+
+Return the minimum initial amount of energy you will need to finish all the tasks.
+
+ 
+
+Example 1:
+
+Input: tasks = [[1,2],[2,4],[4,8]]
+Output: 8
+Explanation:
+Starting with 8 energy, we finish the tasks in the following order:
+    - 3rd task. Now energy = 8 - 4 = 4.
+    - 2nd task. Now energy = 4 - 2 = 2.
+    - 1st task. Now energy = 2 - 1 = 1.
+Notice that even though we have leftover energy, starting with 7 energy does not work because we cannot do the 3rd task.
+Example 2:
+
+Input: tasks = [[1,3],[2,4],[10,11],[10,12],[8,9]]
+Output: 32
+Explanation:
+Starting with 32 energy, we finish the tasks in the following order:
+    - 1st task. Now energy = 32 - 1 = 31.
+    - 2nd task. Now energy = 31 - 2 = 29.
+    - 3rd task. Now energy = 29 - 10 = 19.
+    - 4th task. Now energy = 19 - 10 = 9.
+    - 5th task. Now energy = 9 - 8 = 1.
+Example 3:
+
+Input: tasks = [[1,7],[2,8],[3,9],[4,10],[5,11],[6,12]]
+Output: 27
+Explanation:
+Starting with 27 energy, we finish the tasks in the following order:
+    - 5th task. Now energy = 27 - 5 = 22.
+    - 2nd task. Now energy = 22 - 2 = 20.
+    - 3rd task. Now energy = 20 - 3 = 17.
+    - 1st task. Now energy = 17 - 1 = 16.
+    - 4th task. Now energy = 16 - 4 = 12.
+    - 6th task. Now energy = 12 - 6 = 6.
+ 
+
+Constraints:
+
+1 <= tasks.length <= 105
+1 <= actual​i <= minimumi <= 104
+
+
+Solution 1:
+
+class Solution:
+    def minimumEffort(self, tasks: List[List[int]]) -> int:
+        numTasks = len(tasks)
+
+        # ── STEP 1: Sort tasks by (minimum - actual) in DESCENDING order ──────
+        # gap = minimum - actual = "wasted buffer" needed for this task
+        # High gap tasks → do FIRST (need more buffer relative to what they use)
+        # Low  gap tasks → do LAST  (nearly use all the energy they require)
+        #
+        # e.g. tasks=[[1,2],[2,4],[4,8]]:
+        #   gaps = [2-1=1, 4-2=2, 8-4=4]
+        #   sorted by gap desc → [[4,8],[2,4],[1,2]]
+        #
+        # Intuition: if task needs minimum=8 but uses actual=4,
+        #   we need 4 extra energy "just to start" → wasteful to keep this late
+        #   doing it early means our large initial energy covers the minimum
+        tasks.sort(key=lambda task: task[1] - task[0], reverse=True)
+
+        # ── STEP 2: Feasibility Check ─────────────────────────────────────────
+        # Given 'startingEnergy', can we complete ALL tasks in sorted order?
+        #
+        # Simulate task execution:
+        #   - current energy must be >= task's minimum to start
+        #   - after completing, subtract actual energy spent
+        #   - if ever current < minimum → impossible
+        def canCompleteAllTasks(startingEnergy):
+            currentEnergy = startingEnergy
+
+            for actualCost, minimumRequired in tasks:
+                if currentEnergy >= minimumRequired:
+                    currentEnergy -= actualCost    # spend energy to complete task
+                else:
+                    return False                   # not enough energy to even start
+
+            return True                            # all tasks completed successfully
+
+        # ── STEP 3: Binary Search on Answer ──────────────────────────────────
+        # Search space: [0, numTasks * 10000]
+        #   Lower bound: 0 (minimum possible starting energy)
+        #   Upper bound: numTasks * 10000
+        #     = maximum possible answer
+        #     = if every task has actual=1 and minimum=10000
+        #     = need 10000 energy for each of numTasks tasks
+        #     = numTasks * 10000
+        #
+        # Binary search finds smallest energy where canCompleteAllTasks=True:
+        #
+        #   energy: 0  1  2  3  4  5  6  7  8  9
+        #   works?: F  F  F  F  F  F  F  F  T  T
+        #                                   ↑
+        #                              answer = 8
+        lowerBound = 0
+        upperBound = numTasks * 10000
+
+        while lowerBound <= upperBound:
+
+            # midEnergy = candidate starting energy to test
+            midEnergy = lowerBound + (upperBound - lowerBound) // 2
+
+            if canCompleteAllTasks(midEnergy):
+                # midEnergy works → try LESS energy (search left half)
+                # Record midEnergy as potential answer, try to minimize further
+                upperBound = midEnergy - 1
+            else:
+                # midEnergy fails → need MORE energy (search right half)
+                lowerBound = midEnergy + 1
+
+        # lowerBound = smallest energy where canCompleteAllTasks = True
+        return lowerBound
+
+
+Solution 2:
+
+class Solution:
+    def minimumEffort(self, tasks: List[List[int]]) -> int:
+        # ── STEP 1: Sort tasks by (minimum - actual) in ASCENDING order ───────
+        # gap = minimum - actual = "wasted buffer" energy beyond actual cost
+        #
+        # LOW  gap tasks (nearly use all energy they need) → process FIRST
+        # HIGH gap tasks (need much more than they use)    → process LAST
+        #
+        # e.g. tasks=[[1,2],[2,4],[4,8]]:
+        #   gaps    = [2-1=1,  4-2=2,  8-4=4]
+        #   sorted  = [[1,2],  [2,4],  [4,8]]   ← ascending gap order
+        #              gap=1    gap=2    gap=4
+        #
+        # IMPORTANT: ascending sort + forward pass is EQUIVALENT to
+        #            descending sort + backward pass (reversed):
+        #
+        #   descending + reversed:         ascending + forward:
+        #   sorted  = [[4,8],[2,4],[1,2]]  sorted = [[1,2],[2,4],[4,8]]
+        #   process:    [1,2]→[2,4]→[4,8]  process:  [1,2]→[2,4]→[4,8]
+        #               ↑ same order! ↑
+        #
+        # Why this order minimizes starting energy:
+        #   Exchange argument: for adjacent tasks A and B,
+        #   doing A before B is optimal when (m_A - a_A) <= (m_B - a_B)
+        #   i.e. lower gap tasks should come first ✓
+        tasks.sort(key=lambda task: task[1] - task[0])
+
+        # ── STEP 2: Forward pass to compute minimum starting energy ───────────
+        # requiredEnergy = minimum energy needed to complete ALL remaining tasks
+        #                  starting from CURRENT task onward
+        #
+        # Process each task and ask:
+        #   "What energy do I need BEFORE this task to complete everything?"
+        #
+        # For each task (actualCost, minimumRequired):
+        #
+        #   Case 1: requiredEnergy + actualCost >= minimumRequired
+        #           Already have enough buffer to pass minimum check
+        #           Just need to add actualCost to current requirement
+        #           → new req = requiredEnergy + actualCost
+        #
+        #   Case 2: minimumRequired > requiredEnergy + actualCost
+        #           Minimum threshold is the bottleneck
+        #           Must have at least minimumRequired before this task
+        #           → new req = minimumRequired
+        #
+        #   Combined: requiredEnergy = max(minimumRequired,
+        #                                  requiredEnergy + actualCost)
+        #
+        # Intuition: max() chooses whichever constraint is STRICTER:
+        #   - actual energy accumulation constraint  (requiredEnergy + actualCost)
+        #   - minimum threshold constraint           (minimumRequired)
+        requiredEnergy = 0          # before any task → need 0 energy initially
+
+        for actualCost, minimumRequired in tasks:
+
+            # Update: what energy do we need before THIS task
+            # so that we can complete this task AND all tasks after it?
+            #
+            # e.g. tasks sorted = [[1,2], [2,4], [4,8]]
+            #
+            #   [1,2]: req = max(min=2, 0+actual=1)   = max(2,1) = 2
+            #          "need ≥2 before task 1 (threshold is stricter)"
+            #
+            #   [2,4]: req = max(min=4, 2+actual=4)   = max(4,4) = 4
+            #          "need ≥4 before task 2 (both equally strict)"
+            #
+            #   [4,8]: req = max(min=8, 4+actual=8)   = max(8,8) = 8
+            #          "need ≥8 before task 3 (both equally strict)"
+            #
+            # After all tasks: requiredEnergy = 8 = minimum starting energy ✓
+            requiredEnergy = max(minimumRequired, requiredEnergy + actualCost)
+
+        # requiredEnergy now holds minimum energy needed before the FIRST task
+        # = minimum initial energy to complete ALL tasks ✓
+        return requiredEnergy

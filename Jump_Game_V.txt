@@ -1,0 +1,152 @@
+1340. Jump Game V
+Solved
+Hard
+Topics
+premium lock icon
+Companies
+Hint
+Given an array of integers arr and an integer d. In one step you can jump from index i to index:
+
+i + x where: i + x < arr.length and  0 < x <= d.
+i - x where: i - x >= 0 and  0 < x <= d.
+In addition, you can only jump from index i to index j if arr[i] > arr[j] and arr[i] > arr[k] for all indices k between i and j (More formally min(i, j) < k < max(i, j)).
+
+You can choose any index of the array and start jumping. Return the maximum number of indices you can visit.
+
+Notice that you can not jump outside of the array at any time.
+
+ 
+
+Example 1:
+
+
+Input: arr = [6,4,14,6,8,13,9,7,10,6,12], d = 2
+Output: 4
+Explanation: You can start at index 10. You can jump 10 --> 8 --> 6 --> 7 as shown.
+Note that if you start at index 6 you can only jump to index 7. You cannot jump to index 5 because 13 > 9. You cannot jump to index 4 because index 5 is between index 4 and 6 and 13 > 9.
+Similarly You cannot jump from index 3 to index 2 or index 1.
+Example 2:
+
+Input: arr = [3,3,3,3,3], d = 3
+Output: 1
+Explanation: You can start at any index. You always cannot jump to any index.
+Example 3:
+
+Input: arr = [7,6,5,4,3,2,1], d = 1
+Output: 7
+Explanation: Start at index 0. You can visit all the indicies. 
+ 
+
+Constraints:
+
+1 <= arr.length <= 1000
+1 <= arr[i] <= 105
+1 <= d <= arr.length
+
+
+Solution 1:
+
+class Solution:
+    def maxJumps(self, arr: List[int], d: int) -> int:
+        n = len(arr)
+        
+        # Memoization table: dp[i] stores the max indices reachable starting from index i
+        # Initialized to -1 to indicate "not yet computed"
+        dp = [-1] * n
+        
+        def maxReachableFrom(current_idx):
+            # If already computed for this index, return cached result (avoid recomputation)
+            if dp[current_idx] != -1:
+                return dp[current_idx]
+            
+            # At minimum, we can always visit the current index itself → count = 1
+            max_count = 1
+            
+            # ── LEFT DIRECTION: explore indices to the left within jump range ──
+            # Range: (current_idx - 1) down to (current_idx - d), inclusive
+            # max(-1, current_idx - d - 1) ensures we don't go out of bounds
+            for left_idx in range(current_idx - 1, max(-1, current_idx - d - 1), -1):
+                
+                # BLOCKER CHECK: if we hit an index whose height is >= current height,
+                # we CANNOT jump over it to reach anything further left → stop immediately
+                # (The problem requires arr[current] > ALL elements between current and target)
+                if arr[left_idx] >= arr[current_idx]:
+                    break
+                
+                # Valid jump target found (current is taller than left_idx)
+                # Recursively find max reachable from left_idx and add 1 (for current index)
+                max_count = max(max_count, 1 + maxReachableFrom(left_idx))
+            
+            # ── RIGHT DIRECTION: explore indices to the right within jump range ──
+            # Range: (current_idx + 1) up to (current_idx + d), inclusive
+            # min(n, current_idx + d + 1) ensures we don't exceed array bounds
+            for right_idx in range(current_idx + 1, min(n, current_idx + d + 1)):
+                
+                # BLOCKER CHECK: same logic — if any index in between is >= current height,
+                # we can't jump past it to reach anything further right → stop immediately
+                if arr[right_idx] >= arr[current_idx]:
+                    break
+                
+                # Valid jump target found (current is taller than right_idx)
+                # Recursively find max reachable from right_idx and add 1 (for current index)
+                max_count = max(max_count, 1 + maxReachableFrom(right_idx))
+            
+            # Cache the result before returning
+            dp[current_idx] = max_count
+            return max_count
+        
+        # Try starting from every index and track the global maximum
+        global_max = 0
+        for start_idx in range(n):
+            global_max = max(global_max, maxReachableFrom(start_idx))
+        
+        return global_max
+
+
+Solution 2:
+
+class Solution:
+    def maxJumps(self, arr: List[int], d: int) -> int:
+        n = len(arr)
+
+        # dp[i] = max number of indices visitable starting from index i
+        # Every index is reachable by itself at minimum → initialize to 1
+        dp = [1] * n
+
+        # ── CORE OPTIMIZATION ──
+        # Sort indices by their array VALUE (ascending).
+        # Since jumps only go from TALLER → SHORTER bars,
+        # processing shorter bars first guarantees that when we
+        # compute dp[i], every valid jump target j (arr[j] < arr[i])
+        # already has its dp[j] finalized. No recursion needed!
+        sorted_indices = sorted(range(n), key=lambda i: arr[i])
+
+        for current_idx in sorted_indices:
+
+            # ── LEFT DIRECTION ──
+            # Scan leftward within jump range [current_idx-d, current_idx-1]
+            for left_idx in range(current_idx - 1, max(-1, current_idx - d - 1), -1):
+
+                # BLOCKER: any bar >= current bar blocks everything further left
+                # (can't jump over it — problem constraint)
+                if arr[left_idx] >= arr[current_idx]:
+                    break
+
+                # left_idx is a valid target (shorter bar, no blocker in between)
+                # dp[left_idx] already computed since arr[left_idx] < arr[current_idx]
+                # and we process in ascending order of value
+                dp[current_idx] = max(dp[current_idx], 1 + dp[left_idx])
+
+            # ── RIGHT DIRECTION ──
+            # Scan rightward within jump range [current_idx+1, current_idx+d]
+            for right_idx in range(current_idx + 1, min(n, current_idx + d + 1)):
+
+                # BLOCKER: any bar >= current bar blocks everything further right
+                if arr[right_idx] >= arr[current_idx]:
+                    break
+
+                # right_idx is a valid target — dp[right_idx] already resolved
+                dp[current_idx] = max(dp[current_idx], 1 + dp[right_idx])
+
+        # Best starting point across all indices
+        return max(dp)

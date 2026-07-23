@@ -1,0 +1,227 @@
+3534. Path Existence Queries in a Graph II
+Solved
+Hard
+Topics
+premium lock icon
+Companies
+Hint
+You are given an integer n representing the number of nodes in a graph, labeled from 0 to n - 1.
+
+You are also given an integer array nums of length n and an integer maxDiff.
+
+An undirected edge exists between nodes i and j if the absolute difference between nums[i] and nums[j] is at most maxDiff (i.e., |nums[i] - nums[j]| <= maxDiff).
+
+You are also given a 2D integer array queries. For each queries[i] = [ui, vi], find the minimum distance between nodes ui and vi. If no path exists between the two nodes, return -1 for that query.
+
+Return an array answer, where answer[i] is the result of the ith query.
+
+Note: The edges between the nodes are unweighted.
+
+ 
+
+Example 1:
+
+Input: n = 5, nums = [1,8,3,4,2], maxDiff = 3, queries = [[0,3],[2,4]]
+
+Output: [1,1]
+
+Explanation:
+
+The resulting graph is:
+
+
+
+Query	Shortest Path	Minimum Distance
+[0, 3]	0 → 3	1
+[2, 4]	2 → 4	1
+Thus, the output is [1, 1].
+
+Example 2:
+
+Input: n = 5, nums = [5,3,1,9,10], maxDiff = 2, queries = [[0,1],[0,2],[2,3],[4,3]]
+
+Output: [1,2,-1,1]
+
+Explanation:
+
+The resulting graph is:
+
+
+
+Query	Shortest Path	Minimum Distance
+[0, 1]	0 → 1	1
+[0, 2]	0 → 1 → 2	2
+[2, 3]	None	-1
+[4, 3]	3 → 4	1
+Thus, the output is [1, 2, -1, 1].
+
+Example 3:
+
+Input: n = 3, nums = [3,6,1], maxDiff = 1, queries = [[0,0],[0,1],[1,2]]
+
+Output: [0,-1,-1]
+
+Explanation:
+
+There are no edges between any two nodes because:
+
+Nodes 0 and 1: |nums[0] - nums[1]| = |3 - 6| = 3 > 1
+Nodes 0 and 2: |nums[0] - nums[2]| = |3 - 1| = 2 > 1
+Nodes 1 and 2: |nums[1] - nums[2]| = |6 - 1| = 5 > 1
+Thus, no node can reach any other node, and the output is [0, -1, -1].
+
+ 
+
+Constraints:
+
+1 <= n == nums.length <= 105
+0 <= nums[i] <= 105
+0 <= maxDiff <= 105
+1 <= queries.length <= 105
+queries[i] == [ui, vi]
+0 <= ui, vi < n
+
+
+Solution 1:
+
+class Solution:
+    def pathExistenceQueries(self, n: int, nums: List[int], maxDiff: int, queries: List[List[int]]) -> List[int]:
+        # ── CORE INSIGHT ──
+        # Sort nodes by value. In sorted order, two nodes can be directly
+        # connected (distance=1) if their values differ by at most maxDiff.
+        # Because values are sorted, all direct neighbors of position i
+        # form a CONTIGUOUS RANGE [i, right_reach[i]] in sorted order.
+        #
+        # KEY PROPERTY: right_reach[i] is NON-DECREASING in i.
+        # Proof: as i grows, sorted_nodes[i][0] grows → the upper value bound
+        #        (sorted_nodes[i][0] + maxDiff) also grows → right_reach can only grow.
+        #
+        # This contiguous + monotone structure enables BINARY LIFTING:
+        #   jump_table[i][j] = furthest sorted position reachable in 2^j hops from i
+        # → minimum hop count from a to b found in O(log n) per query
+
+        # ── STEP 1: SORT NODES BY VALUE ──
+        # sorted_nodes[k] = (value, original_node_index)
+        # Nodes with similar values become adjacent → range reachability becomes contiguous.
+        sorted_nodes = sorted((nums[i], i) for i in range(n))
+
+        # sorted_position[original_index] = position of that node in sorted_nodes
+        # O(1) lookup: "where does original node u sit in the sorted order?"
+        sorted_position = [-1] * n
+        for k in range(n):
+            sorted_position[sorted_nodes[k][1]] = k
+
+        # ── STEP 2: BUILD BINARY LIFTING TABLE ──
+        # jump_table[i][j] = FURTHEST sorted position reachable from i in 2^j hops.
+        # "Furthest rightward" is the greedy choice: it maximises coverage per hop,
+        # minimising total hops needed to reach any target to the right.
+        #
+        # Size: n rows × (log2(n)+1) columns
+        # log2(n)+1 bits are sufficient to represent any value up to n.
+        num_nodes = n
+        max_log   = int(log2(n)) + 1
+        jump_table = [[0] * max_log for _ in range(num_nodes)]
+
+        # ── BASE CASE (j=0): jump_table[i][0] = furthest position in exactly 1 hop ──
+        #
+        # SLIDING WINDOW — O(n) total to fill the entire base case column:
+        #   right_reach starts at 0 and ONLY EVER MOVES RIGHT.
+        #   For each sorted position i, extend right_reach while the next
+        #   sorted position's value is still within maxDiff of sorted_nodes[i][0].
+        #
+        # Why doesn't right_reach need to reset at each i?
+        #   Because right_reach is non-decreasing (proven above).
+        #   At iteration i, right_reach from iteration i-1 is still a valid
+        #   lower bound (position right_reach is still reachable from i).
+        #
+        # Why is right_reach always >= i after each iteration?
+        #   maxDiff >= 0 means sorted_nodes[i][0] - sorted_nodes[i][0] = 0 <= maxDiff.
+        #   So the while loop extends right_reach to at least i (node i reaches itself).
+        right_reach = 0
+        for i in range(num_nodes):
+
+            # Extend right_reach as far right as possible while within maxDiff of i.
+            # sorted_nodes values are ascending, so this terminates correctly.
+            while (right_reach + 1 < n and
+                   sorted_nodes[right_reach + 1][0] - sorted_nodes[i][0] <= maxDiff):
+                right_reach += 1
+
+            # Store: from sorted position i, 1 direct hop (1 edge) reaches up to right_reach.
+            # Any position in [i, right_reach] is a direct neighbor of i.
+            jump_table[i][0] = right_reach
+
+        # ── FILL HIGHER LEVELS j = 1, 2, ..., max_log-1 ──
+        # Recurrence (binary lifting standard formula):
+        #   "To make 2^j hops from i:
+        #     first make 2^(j-1) hops → arrive at mid_position,
+        #     then make 2^(j-1) more hops from mid_position."
+        #
+        # jump_table[i][j] = jump_table[ jump_table[i][j-1] ][j-1]
+        #
+        # MUST fill j in increasing order: level j depends on level j-1.
+        for j in range(1, max_log):
+            for i in range(num_nodes):
+
+                # mid_position = furthest reach after 2^(j-1) hops from i
+                mid_position = jump_table[i][j - 1]
+
+                # From mid_position, 2^(j-1) more hops → furthest total reach
+                jump_table[i][j] = jump_table[mid_position][j - 1]
+
+        # ── STEP 3: ANSWER EACH QUERY IN O(log n) ──
+        query_answers = []
+
+        for node_u, node_v in queries:
+
+            # Same node → trivially distance 0 (no edge traversals needed)
+            if node_u == node_v:
+                query_answers.append(0)
+                continue
+
+            # Translate original node labels to sorted-order positions
+            sorted_pos_u = sorted_position[node_u]
+            sorted_pos_v = sorted_position[node_v]
+
+            # Normalise so sorted_pos_u <= sorted_pos_v.
+            # We always jump LEFT → RIGHT; distance is symmetric so swap is safe.
+            if sorted_pos_u > sorted_pos_v:
+                sorted_pos_u, sorted_pos_v = sorted_pos_v, sorted_pos_u
+
+            # ── BINARY LIFTING QUERY: min hops from sorted_pos_u to sorted_pos_v ──
+            # GREEDY STRATEGY (scan bits from highest to lowest):
+            #   Try taking a 2^j hop from current_pos.
+            #   ONLY take it if the resulting position is STILL < sorted_pos_v
+            #   (i.e., we haven't reached or overshot the target yet).
+            #   After scanning all bits, check one final single hop.
+            #
+            # This is the standard "binary lifting to count steps" pattern:
+            # we accumulate the minimum number of hops in jump_count.
+            current_pos = sorted_pos_u
+            jump_count  = 0
+
+            for j in range(max_log - 1, -1, -1):
+
+                if jump_table[current_pos][j] < sorted_pos_v:
+                    # Taking a 2^j hop from current_pos still falls SHORT of target.
+                    # Greedily take it: moves us as far right as possible
+                    # without overshooting, minimising remaining work.
+                    current_pos  = jump_table[current_pos][j]
+                    jump_count  += (1 << j)   # record: 2^j hops consumed
+
+                # If jump_table[current_pos][j] >= sorted_pos_v:
+                # Taking this jump would reach OR overshoot → skip it.
+                # (We'd either land past the target or land on it prematurely
+                #  before we've counted the exact minimum path.)
+
+            # ── FINAL HOP CHECK ──
+            # After the greedy loop, current_pos is the position CLOSEST to
+            # sorted_pos_v without having reached it.
+            # Check if ONE single hop (1 edge) from current_pos covers the gap.
+            if jump_table[current_pos][0] >= sorted_pos_v:
+                # One more hop reaches sorted_pos_v → min distance = jumps + 1
+                query_answers.append(jump_count + 1)
+            else:
+                # Even a direct hop can't reach → nodes are in different components
+                query_answers.append(-1)
+
+        return query_answers

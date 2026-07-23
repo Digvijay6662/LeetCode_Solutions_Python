@@ -1,0 +1,152 @@
+1914. Cyclically Rotating a Grid
+Solved
+Medium
+Topics
+premium lock icon
+Companies
+Hint
+You are given an m x n integer matrix grid​​​, where m and n are both even integers, and an integer k.
+
+The matrix is composed of several layers, which is shown in the below image, where each color is its own layer:
+
+
+
+A cyclic rotation of the matrix is done by cyclically rotating each layer in the matrix. To cyclically rotate a layer once, each element in the layer will take the place of the adjacent element in the counter-clockwise direction. An example rotation is shown below:
+
+
+Return the matrix after applying k cyclic rotations to it.
+
+ 
+
+Example 1:
+
+
+Input: grid = [[40,10],[30,20]], k = 1
+Output: [[10,20],[40,30]]
+Explanation: The figures above represent the grid at every state.
+Example 2:
+
+
+Input: grid = [[1,2,3,4],[5,6,7,8],[9,10,11,12],[13,14,15,16]], k = 2
+Output: [[3,4,8,12],[2,11,10,16],[1,7,6,15],[5,9,13,14]]
+Explanation: The figures above represent the grid at every state.
+ 
+
+Constraints:
+
+m == grid.length
+n == grid[i].length
+2 <= m, n <= 50
+Both m and n are even integers.
+1 <= grid[i][j] <= 5000
+1 <= k <= 109
+
+
+Solution 1:
+
+class Solution:
+    def rotateGrid(self, grid: List[List[int]], k: int) -> List[List[int]]:
+        numRows   = len(grid)
+        numCols   = len(grid[0])
+
+        # Number of layers = half of smaller dimension
+        # e.g. 4×4 → 2 layers, 4×6 → 2 layers, 2×6 → 1 layer
+        #
+        # Visual for 4×4 grid:
+        #   0 0 0 0
+        #   0 1 1 0   ← layer 0 = outermost ring
+        #   0 1 1 0   ← layer 1 = inner ring
+        #   0 0 0 0
+        numLayers = min(numRows // 2, numCols // 2)
+
+        for layerIdx in range(numLayers):
+
+            # ── Boundaries of current layer ───────────────────────────────────
+            # Each layer is one step inward from the previous
+            # Layer 0: full border,  Layer 1: one step inside, etc.
+            #
+            # e.g. 4×4 grid:
+            #   Layer 0: top=0, bottom=3, left=0, right=3
+            #   Layer 1: top=1, bottom=2, left=1, right=2
+            topRow    = layerIdx
+            bottomRow = numRows - layerIdx - 1
+            leftCol   = layerIdx
+            rightCol  = numCols - layerIdx - 1
+
+            # ── STEP 1: Extract layer elements in CLOCKWISE order ─────────────
+            # We read the boundary in 4 segments:
+            #   → top row    : left  to right  (left  to right-1)
+            #   → right col  : top   to bottom (top   to bottom-1)
+            #   → bottom row : right to left   (right to left+1)
+            #   → left col   : bottom to top   (bottom to top+1)
+            #
+            # Each segment excludes its last element to avoid duplicating corners
+            #
+            # Visual traversal direction:
+            #   → → → →
+            #   ↑       ↓
+            #   ↑       ↓
+            #   ← ← ← ←
+            layerElements = []
+
+            # Segment 1 — Top row: left → right (stop before rightCol)
+            for col in range(leftCol, rightCol):
+                layerElements.append(grid[topRow][col])
+
+            # Segment 2 — Right col: top → bottom (stop before bottomRow)
+            for row in range(topRow, bottomRow):
+                layerElements.append(grid[row][rightCol])
+
+            # Segment 3 — Bottom row: right → left (stop before leftCol)
+            for col in range(rightCol, leftCol, -1):
+                layerElements.append(grid[bottomRow][col])
+
+            # Segment 4 — Left col: bottom → top (stop before topRow)
+            for row in range(bottomRow, topRow, -1):
+                layerElements.append(grid[row][leftCol])
+
+            # ── STEP 2: Compute effective rotation ────────────────────────────
+            # Rotating by full layerSize = no change → use modulo
+            # 'rot' tells us: start reading layerElements from index 'rot'
+            # and wrap around → achieves counter-clockwise rotation
+            #
+            # e.g. layerElements=[1,2,3,4], rot=1
+            #   Read from index 1 → [2,3,4,1] (shifted left by 1)
+            #   = counter-clockwise rotation by 1 step
+            #
+            # NOTE: using local 'effectiveRot' not modifying k →
+            #       k stays unchanged for every layer
+            layerSize     = len(layerElements)
+            effectiveRot  = k % layerSize          # handle k > layerSize
+            readIdx       = effectiveRot            # start reading from here
+
+            # ── STEP 3: Write rotated elements BACK into grid ─────────────────
+            # Place elements back in same clockwise traversal order
+            # but reading from layerElements starting at 'readIdx'
+            # wrapping around with modulo when readIdx exceeds layerSize
+            #
+            # e.g. layerElements=[40,10,20,30], effectiveRot=1
+            #   readIdx=1 → place 10,20,30,40 back in order
+            #   grid gets counter-clockwise rotated layer ✓
+
+            # Segment 1 — Top row: left → right
+            for col in range(leftCol, rightCol):
+                grid[topRow][col] = layerElements[readIdx % layerSize]
+                readIdx += 1
+
+            # Segment 2 — Right col: top → bottom
+            for row in range(topRow, bottomRow):
+                grid[row][rightCol] = layerElements[readIdx % layerSize]
+                readIdx += 1
+
+            # Segment 3 — Bottom row: right → left
+            for col in range(rightCol, leftCol, -1):
+                grid[bottomRow][col] = layerElements[readIdx % layerSize]
+                readIdx += 1
+
+            # Segment 4 — Left col: bottom → top
+            for row in range(bottomRow, topRow, -1):
+                grid[row][leftCol] = layerElements[readIdx % layerSize]
+                readIdx += 1
+
+        return grid

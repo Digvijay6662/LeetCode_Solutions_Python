@@ -36,29 +36,92 @@ Solution 1:
 
 class Solution:
     def maximumLength(self, nums: List[int]) -> int:
-        count = Counter(nums)
-        result = 1
+        # ── CORE INSIGHT ──
+        # The target pattern is a PALINDROME of squares:
+        #   [x, x², x⁴, ..., xᵏ, ..., x⁴, x², x]
+        #
+        # Key observations:
+        #   1. Every element EXCEPT the center appears EXACTLY TWICE
+        #      (once on each side of the palindrome)
+        #   2. The center appears EXACTLY ONCE
+        #   3. Each next element = square of the previous
+        #      (2 → 4 → 16 → 256 → ...)
+        #
+        # So for each starting value x:
+        #   - We need count[x] >= 2 to form a pair on both sides
+        #   - We need count[x²] >= 2 to extend further
+        #   - The chain ends when count[next] < 2;
+        #     that last value (if it exists at least once) becomes the center
 
-        if 1 in count:
-            result = max(result, count[1] - (count[1] % 2 == 0))
-            del count[1]
+        # Count frequency of each value in nums
+        freq = Counter(nums)
 
-        for num in count:
-            if count[num] == 1:
+        # ── SPECIAL CASE: num = 1 ──
+        # When x = 1: x² = 1, so the entire chain stays at 1.
+        # Pattern: [1, 1, 1, ..., 1] — all elements are the same value.
+        #
+        # The palindrome structure requires ODD length (center + pairs):
+        #   If freq[1] is ODD  → use all of them         (already odd)
+        #   If freq[1] is EVEN → use freq[1] - 1         (drop one to make odd)
+        #
+        # Formula: freq[1] - (1 if freq[1] is even else 0)
+        #        = freq[1] - (freq[1] % 2 == 0)
+        #          └─ True/False coerces to 1/0 in arithmetic context
+        max_length = 1  # minimum is always 1 (single element is always valid)
+
+        if 1 in freq:
+            ones_contribution = freq[1] - (freq[1] % 2 == 0)
+            max_length = max(max_length, ones_contribution)
+            del freq[1]  # remove so the main loop below doesn't re-process 1
+
+        # ── MAIN LOOP: process each unique starting value x ──
+        for base_val in freq:
+
+            # Need at least 2 copies to form the outermost pair [x, ..., x]
+            # A single copy can only be a standalone center (length 1), already covered
+            if freq[base_val] == 1:
                 continue
-            x = num * num
-            length = 2
-            while x in count and count[x] >= 2:
-                length += 2
-                x = x * x
-                if x >= 10**5:
+
+            # ── CHAIN EXTENSION ──
+            # Start with the outermost pair [base_val, ..., base_val] → length 2
+            # Then try to extend inward by squaring: base_val → base_val² → base_val⁴ → ...
+            chain_length = 2   # outermost pair contributes 2 elements
+            squared_val  = base_val * base_val   # next candidate toward the center
+
+            # Extend the chain as long as squared_val appears AT LEAST TWICE
+            # (needs >= 2 copies to form an inner pair on both sides of center)
+            while squared_val in freq and freq[squared_val] >= 2:
+                chain_length += 2        # add one pair (left side + right side)
+                squared_val  = squared_val * squared_val   # move one level deeper
+
+                # ── OVERFLOW GUARD ──
+                # nums[i] <= 10^9, so squared_val >= 10^5 means
+                # squared_val² >= 10^10 > 10^9, which can NEVER appear in nums.
+                # No point computing further — break and check current squared_val.
+                if squared_val >= 10**5:
                     break
 
-            if x in count:
-                length += 1
+            # ── DETERMINE THE CENTER ELEMENT ──
+            # After the while loop, squared_val is the first value that either:
+            #   A) Doesn't exist in freq at all, OR
+            #   B) Exists but with count == 1 (can't form a pair, but CAN be center)
+            #   C) Was reached via the overflow guard (squared_val >= 10^5)
+            #
+            # Case A: squared_val not in freq
+            #   → Can't extend further AND can't add a center
+            #   → The PREVIOUS level's element becomes the center
+            #   → But we already counted it twice (as a pair) → subtract 1
+            #   → net: chain_length - 1
+            #
+            # Case B/C: squared_val in freq (count >= 1)
+            #   → Use it as the single center element → add 1
+            #   → net: chain_length + 1
+            if squared_val in freq:
+                chain_length += 1   # squared_val has at least 1 copy → use as center
             else:
-                length -= 1
+                chain_length -= 1   # no center available → previous pair's left
+                                    # element acts as center (remove one from its pair)
 
-            result = max(result, length)
+            max_length = max(max_length, chain_length)
 
-        return result
+        return max_length

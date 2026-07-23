@@ -1,0 +1,90 @@
+396. Rotate Function
+Solved
+Medium
+Topics
+premium lock icon
+Companies
+You are given an integer array nums of length n.
+
+Assume arrk to be an array obtained by rotating nums by k positions clock-wise. We define the rotation function F on nums as follow:
+
+F(k) = 0 * arrk[0] + 1 * arrk[1] + ... + (n - 1) * arrk[n - 1].
+Return the maximum value of F(0), F(1), ..., F(n-1).
+
+The test cases are generated so that the answer fits in a 32-bit integer.
+
+ 
+
+Example 1:
+
+Input: nums = [4,3,2,6]
+Output: 26
+Explanation:
+F(0) = (0 * 4) + (1 * 3) + (2 * 2) + (3 * 6) = 0 + 3 + 4 + 18 = 25
+F(1) = (0 * 6) + (1 * 4) + (2 * 3) + (3 * 2) = 0 + 4 + 6 + 6 = 16
+F(2) = (0 * 2) + (1 * 6) + (2 * 4) + (3 * 3) = 0 + 6 + 8 + 9 = 23
+F(3) = (0 * 3) + (1 * 2) + (2 * 6) + (3 * 4) = 0 + 2 + 12 + 12 = 26
+So the maximum value of F(0), F(1), F(2), F(3) is F(3) = 26.
+Example 2:
+
+Input: nums = [100]
+Output: 0
+ 
+
+Constraints:
+
+n == nums.length
+1 <= n <= 105
+-100 <= nums[i] <= 100
+
+
+Solution 1:
+
+class Solution:
+    def maxRotateFunction(self, nums: List[int]) -> int:
+        n = len(nums)
+
+        # total_sum: sum of all elements (stays constant across all rotations)
+        # f0: F(0) value — computed once as the base case
+        total_sum = 0
+        f0 = 0
+
+        # Compute total_sum and F(0) in a single pass
+        # F(0) = 0*nums[0] + 1*nums[1] + 2*nums[2] + ... + (n-1)*nums[n-1]
+        for i in range(n):
+            total_sum += nums[i]          # accumulate total sum of array
+            f0 += i * nums[i]             # accumulate weighted sum for F(0)
+
+        current_f = f0                    # current_f tracks F(k) as we iterate
+        max_f = current_f                 # max_f stores the best F(k) seen so far
+
+        # Derive F(k) from F(k-1) using the recurrence relation:
+        #
+        #   F(k) = F(k-1) + total_sum - n * nums[n - k]
+        #
+        # WHY this formula works (the key insight):
+        #
+        #   When we rotate by 1 more step (k-1 → k):
+        #   - Every element shifts one index to the RIGHT → each gains weight +1
+        #   - The LAST element (nums[n-k]) wraps around to index 0 → loses weight (n-1)
+        #
+        #   Net change = (+1 * every element) + (-(n-1) * nums[n-k])
+        #              = total_sum - n * nums[n-k]
+        #
+        # Example with [4,3,2,6], n=4, total_sum=15:
+        #
+        #   F(0) = 0*4 + 1*3 + 2*2 + 3*6 = 25   (base case)
+        #   F(1) = F(0) + 15 - 4*nums[3]          ← nums[3]=6 wraps to front
+        #        = 25 + 15 - 24 = 16
+        #   F(2) = F(1) + 15 - 4*nums[2]          ← nums[2]=2 wraps to front
+        #        = 16 + 15 - 8  = 23
+        #   F(3) = F(2) + 15 - 4*nums[1]          ← nums[1]=3 wraps to front
+        #        = 23 + 15 - 12 = 26  ← max
+
+        # i goes from n-1 down to 1
+        # at each step, nums[i] is the element wrapping around to the front
+        for i in range(n - 1, 0, -1):
+            current_f = current_f + total_sum - n * nums[i]   # recurrence relation
+            max_f = max(max_f, current_f)                      # track the maximum
+
+        return max_f

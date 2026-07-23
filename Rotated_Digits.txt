@@ -1,0 +1,226 @@
+788. Rotated Digits
+Solved
+Medium
+Topics
+premium lock icon
+Companies
+An integer x is a good if after rotating each digit individually by 180 degrees, we get a valid number that is different from x. Each digit must be rotated - we cannot choose to leave it alone.
+
+A number is valid if each digit remains a digit after rotation. For example:
+
+0, 1, and 8 rotate to themselves,
+2 and 5 rotate to each other (in this case they are rotated in a different direction, in other words, 2 or 5 gets mirrored),
+6 and 9 rotate to each other, and
+the rest of the numbers do not rotate to any other number and become invalid.
+Given an integer n, return the number of good integers in the range [1, n].
+
+ 
+
+Example 1:
+
+Input: n = 10
+Output: 4
+Explanation: There are four good numbers in the range [1, 10] : 2, 5, 6, 9.
+Note that 1 and 10 are not good numbers, since they remain unchanged after rotating.
+Example 2:
+
+Input: n = 1
+Output: 0
+Example 3:
+
+Input: n = 2
+Output: 1
+ 
+
+Constraints:
+
+1 <= n <= 104
+
+
+Solution 1:
+
+class Solution:
+    def rotatedDigits(self, n: int) -> int:
+        # Digits that make a number INVALID when rotated (3,4,7 have no valid rotation)
+        INVALID_DIGITS = {3, 4, 7}
+
+        # Digits that CHANGE to a different digit when rotated
+        # 2→5, 5→2, 6→9, 9→6
+        CHANGING_DIGITS = {2, 5, 6, 9}
+
+        # Digits that stay the SAME when rotated
+        # 0→0, 1→1, 8→8
+        # (no need to store, handled by elimination)
+
+        def isGoodNumber(num):
+            # Tracks if at least ONE digit changed after rotation
+            # A good number must be DIFFERENT from original, so we need
+            # at least one digit from CHANGING_DIGITS
+            hasAtLeastOneChange = False
+
+            # Check each digit of the number one by one
+            # by repeatedly extracting the last digit using mod 10
+            remaining = num
+            while remaining > 0:
+
+                lastDigit = remaining % 10          # extract rightmost digit
+
+                if lastDigit in INVALID_DIGITS:
+                    return False                    # whole number is invalid, stop early
+
+                elif lastDigit in CHANGING_DIGITS:
+                    hasAtLeastOneChange = True      # number will differ from original
+
+                # if digit is 0, 1, or 8 → valid but unchanged, just continue
+
+                remaining //= 10                   # remove the last digit, move to next
+
+            # number is "good" only if it's valid AND different from original
+            return hasAtLeastOneChange
+
+        goodNumberCount = 0
+
+        for currentNum in range(1, n + 1):
+            if isGoodNumber(currentNum):
+                goodNumberCount += 1
+
+        return goodNumberCount
+
+
+Solution 2:
+
+class Solution:
+    def rotatedDigits(self, n: int) -> int:
+        # Status codes:
+        #   0 (UNCHANGED) → valid but unchanged  (only digits 0, 1, 8)
+        #   1 (CHANGED)   → valid and changed    (has at least one of 2,5,6,9)
+        #   2 (INVALID)   → contains 3, 4, or 7
+
+        UNCHANGED = 0
+        CHANGED   = 1
+        INVALID   = 2
+
+        # DP list to memoize results of solve(num)
+        # dp[num] = -1  → not computed yet
+        # dp[num] = 0   → UNCHANGED
+        # dp[num] = 1   → CHANGED
+        # dp[num] = 2   → INVALID
+        # Size n+1 to cover indices 0 through n
+        dp = [-1] * (n + 1)
+
+        def solve(num):
+            # BASE CASE: no digits left to process → valid and unchanged so far
+            if num == 0:
+                return UNCHANGED
+
+            # CACHE HIT: result already computed for this number → reuse it
+            if dp[num] != -1:
+                return dp[num]
+
+            # ── STEP 1: recursively check all digits except the last ──────────
+            # e.g. solve(196) → checks solve(19) → solve(1) → solve(0)
+            prefixStatus = solve(num // 10)
+
+            # If any prefix digit was invalid, whole number is invalid
+            # No need to check remaining digits → short-circuit
+            if prefixStatus == INVALID:
+                result = INVALID
+            else:
+                # ── STEP 2: check the last digit of current number ───────────
+                lastDigit = num % 10
+
+                if lastDigit in [0, 1, 8]:
+                    currentDigitChanged = False     # valid, stays same after rotation
+                elif lastDigit in [2, 5, 6, 9]:
+                    currentDigitChanged = True      # valid, becomes different after rotation
+                else:
+                    # digit is 3, 4, or 7 → no valid rotation exists
+                    result = INVALID
+                    # store and return early
+                    dp[num] = result
+                    return result
+
+                # ── STEP 3: combine prefix status with current digit ─────────
+                #
+                #   prefix=UNCHANGED + current=UNCHANGED → UNCHANGED (no change yet)
+                #   prefix=UNCHANGED + current=CHANGED   → CHANGED   (first change found)
+                #   prefix=CHANGED   + current=UNCHANGED → CHANGED   (change already seen)
+                #   prefix=CHANGED   + current=CHANGED   → CHANGED   (change already seen)
+                #
+                if not currentDigitChanged and prefixStatus == UNCHANGED:
+                    result = UNCHANGED      # no change seen in any digit so far
+                else:
+                    result = CHANGED        # at least one digit changed
+
+            # CACHE STORE: save computed result before returning
+            dp[num] = result
+            return result
+
+        goodCount = 0
+        for num in range(1, n + 1):
+            if solve(num) == CHANGED:       # valid AND rotates to a different number
+                goodCount += 1
+
+        return goodCount
+
+
+Solution 3:
+
+class Solution:
+    def rotatedDigits(self, n: int) -> int:
+        # Status codes stored in dp:
+        #   0 (UNCHANGED) → valid but unchanged  (only digits 0, 1, 8)
+        #   1 (CHANGED)   → valid and changed    (has at least one of 2,5,6,9)
+        #   2 (INVALID)   → contains 3, 4, or 7
+
+        # dp[0] = 0 naturally from initialization → base case "no digits = UNCHANGED"
+        # dp list size n+1 to cover indices 0 through n
+        dp = [0] * (n + 1)
+        goodCount = 0
+
+        # Build dp iteratively from 1 to n
+        # Each number's result depends on dp[num // 10] (all digits except last)
+        # which is always already computed since num // 10 < num
+        for num in range(1, n + 1):
+
+            # STEP 1: fetch the status of all digits except the last
+            # e.g. for num=196 → prefixStatus = dp[19] (status of digits 1 and 9)
+            # e.g. for num=6   → prefixStatus = dp[0]  = 0 (base case, no prefix)
+            prefixStatus = dp[num // 10]
+
+            # If prefix is already INVALID → whole number is INVALID
+            # No need to check the last digit → skip to next number
+            if prefixStatus == 2:
+                dp[num] = 2                 # mark as INVALID
+                continue                    # short-circuit, move to next num
+
+            # STEP 2: check the last digit in isolation
+            lastDigit = num % 10
+
+            if lastDigit in [0, 1, 8]:
+                currentDigitChanged = 0     # valid but unchanged after rotation
+            elif lastDigit in [2, 5, 6, 9]:
+                currentDigitChanged = 1     # valid and changes after rotation
+            else:
+                # digit is 3, 4, or 7 → no valid rotation → whole number INVALID
+                dp[num] = 2
+                continue                    # short-circuit, move to next num
+
+            # STEP 3: combine prefix status with current digit status
+            #
+            #   prefix=UNCHANGED(0) + current=UNCHANGED(0) → UNCHANGED (0) no change anywhere
+            #   prefix=UNCHANGED(0) + current=CHANGED  (1) → CHANGED   (1) first change found
+            #   prefix=CHANGED  (1) + current=UNCHANGED(0) → CHANGED   (1) change already seen
+            #   prefix=CHANGED  (1) + current=CHANGED  (1) → CHANGED   (1) change already seen
+            #
+            if currentDigitChanged == 0 and prefixStatus == 0:
+                dp[num] = 0                 # no change seen in ANY digit so far
+            else:
+                dp[num] = 1                 # at least one digit changed → GOOD number
+
+            # STEP 4: count good numbers as we go
+            # no need for a second pass at the end
+            if dp[num] == 1:
+                goodCount += 1
+
+        return goodCount

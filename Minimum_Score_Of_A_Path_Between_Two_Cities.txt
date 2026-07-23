@@ -1,0 +1,132 @@
+2492. Minimum Score of a Path Between Two Cities
+Solved
+Medium
+Topics
+premium lock icon
+Companies
+Hint
+You are given a positive integer n representing n cities numbered from 1 to n. You are also given a 2D array roads where roads[i] = [ai, bi, distancei] indicates that there is a bidirectional road between cities ai and bi with a distance equal to distancei. The cities graph is not necessarily connected.
+
+The score of a path between two cities is defined as the minimum distance of a road in this path.
+
+Return the minimum possible score of a path between cities 1 and n.
+
+Note:
+
+A path is a sequence of roads between two cities.
+It is allowed for a path to contain the same road multiple times, and you can visit cities 1 and n multiple times along the path.
+The test cases are generated such that there is at least one path between 1 and n.
+ 
+
+Example 1:
+
+
+Input: n = 4, roads = [[1,2,9],[2,3,6],[2,4,5],[1,4,7]]
+Output: 5
+Explanation: The path from city 1 to 4 with the minimum score is: 1 -> 2 -> 4. The score of this path is min(9,5) = 5.
+It can be shown that no other path has less score.
+Example 2:
+
+
+Input: n = 4, roads = [[1,2,2],[1,3,4],[3,4,7]]
+Output: 2
+Explanation: The path from city 1 to 4 with the minimum score is: 1 -> 2 -> 1 -> 3 -> 4. The score of this path is min(2,2,4,7) = 2.
+ 
+
+Constraints:
+
+2 <= n <= 105
+1 <= roads.length <= 105
+roads[i].length == 3
+1 <= ai, bi <= n
+ai != bi
+1 <= distancei <= 104
+There are no repeated edges.
+There is at least one path between 1 and n.
+
+
+Solution 1:
+
+class Solution:
+    def minScore(self, n: int, roads: List[List[int]]) -> int:
+        graph = defaultdict(list)
+        # Build adjacency list for the graph
+        for u, v, dist in roads:
+            graph[u].append((v, dist))   # add edge u -> v with distance
+            graph[v].append((u, dist))   # add edge v -> u with distance (bidirectional)
+
+        visited = set()          # keep track of visited cities
+        q = deque([1])           # start BFS from city 1
+        visited.add(1)           # mark city 1 as visited
+        result = float('inf')    # initialize result with infinity (we want minimum)
+
+        while q:
+            node = q.popleft()   # take the next city from the queue
+            for nei, dist in graph[node]:   # check all neighbors of current city
+                result = min(result, dist)  # update result with smallest edge seen so far
+                if nei not in visited:      # if neighbor city not visited yet
+                    visited.add(nei)        # mark it visited
+                    q.append(nei)           # add it to queue for further exploration
+
+        return result
+
+
+Solution 2:
+
+class Solution:
+    def minScore(self, n: int, roads: List[List[int]]) -> int:
+        graph = defaultdict(list)
+        # Build adjacency list for the graph
+        for u, v, dist in roads:
+            graph[u].append((v, dist))   # add edge u -> v with distance
+            graph[v].append((u, dist))   # add edge v -> u with distance (bidirectional)
+
+        visited = set()          # keep track of visited cities
+        result = float('inf')    # initialize result with infinity (we want minimum)
+
+        def dfs(node):
+            nonlocal result
+            visited.add(node)    # mark current city as visited
+            for nei, dist in graph[node]:   # check all neighbors of current city
+                result = min(result, dist)  # update result with smallest edge seen so far
+                if nei not in visited:      # if neighbor city not visited yet
+                    dfs(nei)                # recursively explore neighbor
+
+        dfs(1)  # start DFS from city 1
+        return result  
+
+
+Solution 3:
+
+class Solution:
+    def minScore(self, n: int, roads: List[List[int]]) -> int:
+        # Each city initially belongs to its own set (self parent)
+        parent = list(range(n+1))
+
+        def find(city):
+            """
+            Find the representative (root) of the set containing 'city'.
+            Uses path compression to flatten the structure for efficiency.
+            """
+            while parent[city] != city:
+                parent[city] = parent[parent[city]]  # compress path
+                city = parent[city]
+            return city
+
+        # Union step: connect cities that share a road
+        for u, v, dist in roads:
+            parent[find(u)] = find(v)  # merge sets of u and v
+
+        # Find the representative of the component containing city 1
+        min_edge_weight = float('inf')
+        root_of_city1 = find(1)
+
+        # Iterate over all roads again
+        for u, v, dist in roads:
+            # If this road belongs to the same component as city 1
+            if find(u) == root_of_city1:
+                # Update the minimum edge weight seen in this component
+                min_edge_weight = min(min_edge_weight, dist)
+
+        # Return the smallest edge weight in the connected component of city 1
+        return min_edge_weight

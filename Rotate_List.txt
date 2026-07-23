@@ -35,36 +35,94 @@ Solution 1:
 #         self.next = next
 class Solution:
     def rotateRight(self, head: Optional[ListNode], k: int) -> Optional[ListNode]:
+        # Edge case: empty list → nothing to rotate
         if not head:
-            return None
-
-        curr = head
-        n = 0
-
-        while curr:
-            curr = curr.next
-            n += 1
-
-        n = k % n
-
-        if n == 0:
             return head
 
-        left = right = head
+        # ── STEP 1: count total number of nodes ──────────────────────────────
+        listLength = 0
+        curr       = head
 
-        while n:
-            right = right.next
-            n -= 1
+        while curr:                 # traverse every node until None
+            curr       = curr.next
+            listLength += 1         # count each real node
 
-        while right.next:
-            right = right.next
-            left = left.next
+        # e.g. [1,2,3,4,5] → listLength = 5
 
-        right.next = head
-        head = left.next
-        left.next = None
+        # ── STEP 2: normalize k ───────────────────────────────────────────────
+        # rotating by listLength steps = back to original = no-op
+        # so only the remainder (effective rotation) matters
+        # e.g. k=7, listLength=5 → same as rotating by 2
+        # e.g. k=5, listLength=5 → same as rotating by 0 → return as-is
+        effectiveRotation = k % listLength
+        if effectiveRotation == 0:
+            return head
 
-        return head
+        # ── STEP 3: position two pointers 'effectiveRotation' apart ──────────
+        # Goal: find the new tail (node just before new head)
+        #
+        # Strategy: move 'fastPointer' exactly 'effectiveRotation' steps ahead
+        # Then walk both pointers until fastPointer reaches the last node
+        # At that point, slowPointer is exactly at the new tail
+        #
+        # e.g. [1,2,3,4,5], effectiveRotation=2
+        #       after loop: fastPointer → node3
+        #
+        #        head                          
+        #         ↓                            
+        #         1 → 2 → 3 → 4 → 5 → None   
+        #         ↑       ↑                    
+        #      slowPtr  fastPtr  (gap = 2)     
+        fastPointer = head
+        for i in range(effectiveRotation):
+            fastPointer = fastPointer.next
+
+        # ── STEP 4: walk both pointers until fastPointer hits last node ───────
+        # Both move together, maintaining the gap of 'effectiveRotation'
+        # Loop stops when fastPointer.next is None → fastPointer is at last node
+        # At that point slowPointer is exactly at the NEW TAIL
+        #
+        # e.g. [1,2,3,4,5], effectiveRotation=2
+        #
+        #   start:    slow=1, fast=3
+        #   step 1:   slow=2, fast=4
+        #   step 2:   slow=3, fast=5  → fast.next=None → stop
+        #
+        #    head                          lastNode
+        #     ↓                               ↓
+        #     1 → 2 → 3 → 4 → 5 → None
+        #             ↑
+        #          newTail
+        #          slowPtr
+        slowPointer = head
+        while fastPointer.next:
+            fastPointer = fastPointer.next
+            slowPointer = slowPointer.next
+
+        # ── STEP 5: rewire the three key pointers ─────────────────────────────
+        #
+        #  Before rewiring:
+        #     head                    lastNode
+        #      ↓                         ↓
+        #      1 → 2 → 3 → 4 → 5 → None
+        #              ↑    ↑
+        #           newTail newHead
+        #           slowPtr
+        #
+        #  After rewiring:
+        #     newHead        lastNode
+        #        ↓               ↓
+        #        4 → 5 → None    5 → 1 → 2 → 3 → None
+        #              ↑              ↑
+        #           lastNode       head (old)
+        #
+        #  Final: 4 → 5 → 1 → 2 → 3 → None
+
+        newHead            = slowPointer.next  # node after newTail is the new head
+        slowPointer.next   = None              # cut list at newTail → end old list
+        fastPointer.next   = head              # last node points to old head
+
+        return newHead
 
 
 Solution 2:
@@ -76,30 +134,77 @@ Solution 2:
 #         self.next = next
 class Solution:
     def rotateRight(self, head: Optional[ListNode], k: int) -> Optional[ListNode]:
+        # Edge case: empty list or no rotation needed
         if not head or k == 0:
             return head
 
-        length = 1
-        curr = head
+        # ── STEP 1: count length AND land on last node simultaneously ─────────
+        # Unlike previous approach, we stop at last node (curr.next == None)
+        # so we can directly connect it to head to form a circle
+        #
+        # e.g. [1,2,3,4,5]:
+        #   start: length=1, lastNode → node1
+        #   end:   length=5, lastNode → node5  (last node)
+        listLength = 1
+        lastNode   = head
 
-        while curr.next:
-            length += 1
-            curr = curr.next
+        while lastNode.next:            # stop WHEN next is None → at last node
+            listLength += 1
+            lastNode    = lastNode.next
 
-        k %= length
+        # lastNode now points to the last node of the list
+        # e.g. [1,2,3,4,5] → lastNode = node5, listLength = 5
 
-        if k == 0:
+        # ── STEP 2: normalize k ───────────────────────────────────────────────
+        # rotating by listLength = no change
+        # e.g. k=7, listLength=5 → effectiveRotation = 2
+        effectiveRotation = k % listLength
+        if effectiveRotation == 0:      # already in correct position
             return head
 
-        curr.next = head
+        # ── STEP 3: make the list circular ────────────────────────────────────
+        # connect last node back to head → forms a ring
+        # This lets us traverse past the "end" to find new head
+        #
+        # Before:  1 → 2 → 3 → 4 → 5 → None
+        # After:   1 → 2 → 3 → 4 → 5 ─┐
+        #          ↑                  │
+        #          └──────────────────┘
+        lastNode.next = head
 
-        steps = length - k - 1
-        newHead = head
+        # ── STEP 4: find the new tail ─────────────────────────────────────────
+        # New tail is (listLength - effectiveRotation - 1) steps from head
+        #
+        # Why this formula?
+        #   New head is at position (listLength - effectiveRotation) from start
+        #   New tail is one before new head
+        #   So new tail = listLength - effectiveRotation - 1 steps from head
+        #
+        # e.g. [1,2,3,4,5], effectiveRotation=2
+        #   steps = 5 - 2 - 1 = 2
+        #   newTail starts at node1
+        #   step1 → node2
+        #   step2 → node3   ← new tail
+        #   newHead = node3.next = node4 ✓
+        stepsToNewTail = listLength - effectiveRotation - 1
+        newTail        = head
 
-        for _ in range(steps):
-            newHead = newHead.next
+        for _ in range(stepsToNewTail):
+            newTail = newTail.next
 
-        head = newHead.next
-        newHead.next = None
+        # newTail is now at the last node of the rotated list
+        # newTail.next is the new head of the rotated list
 
-        return head
+        # ── STEP 5: break the circle at new tail ──────────────────────────────
+        #
+        #  Circle:  1 → 2 → 3 → 4 → 5 ─┐
+        #           ↑       ↑          │
+        #          head     newTail    │
+        #                   └──── newHead = node4
+        #
+        #  After break:
+        #  newHead → 4 → 5 → 1 → 2 → 3 → None
+        newHead       = newTail.next    # node right after newTail = new head
+        newTail.next  = None            # break the circle → new tail points to None
+
+        return newHead

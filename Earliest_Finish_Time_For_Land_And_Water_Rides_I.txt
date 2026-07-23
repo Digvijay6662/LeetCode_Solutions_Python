@@ -1,0 +1,203 @@
+3633. Earliest Finish Time for Land and Water Rides I
+Solved
+Easy
+Topics
+premium lock icon
+Companies
+Hint
+You are given two categories of theme park attractions: land rides and water rides.
+
+Land rides
+landStartTime[i] – the earliest time the ith land ride can be boarded.
+landDuration[i] – how long the ith land ride lasts.
+Water rides
+waterStartTime[j] – the earliest time the jth water ride can be boarded.
+waterDuration[j] – how long the jth water ride lasts.
+A tourist must experience exactly one ride from each category, in either order.
+
+A ride may be started at its opening time or any later moment.
+If a ride is started at time t, it finishes at time t + duration.
+Immediately after finishing one ride the tourist may board the other (if it is already open) or wait until it opens.
+Return the earliest possible time at which the tourist can finish both rides.
+
+ 
+
+Example 1:
+
+Input: landStartTime = [2,8], landDuration = [4,1], waterStartTime = [6], waterDuration = [3]
+
+Output: 9
+
+Explanation:​​​​​​​
+
+Plan A (land ride 0 → water ride 0):
+Start land ride 0 at time landStartTime[0] = 2. Finish at 2 + landDuration[0] = 6.
+Water ride 0 opens at time waterStartTime[0] = 6. Start immediately at 6, finish at 6 + waterDuration[0] = 9.
+Plan B (water ride 0 → land ride 1):
+Start water ride 0 at time waterStartTime[0] = 6. Finish at 6 + waterDuration[0] = 9.
+Land ride 1 opens at landStartTime[1] = 8. Start at time 9, finish at 9 + landDuration[1] = 10.
+Plan C (land ride 1 → water ride 0):
+Start land ride 1 at time landStartTime[1] = 8. Finish at 8 + landDuration[1] = 9.
+Water ride 0 opened at waterStartTime[0] = 6. Start at time 9, finish at 9 + waterDuration[0] = 12.
+Plan D (water ride 0 → land ride 0):
+Start water ride 0 at time waterStartTime[0] = 6. Finish at 6 + waterDuration[0] = 9.
+Land ride 0 opened at landStartTime[0] = 2. Start at time 9, finish at 9 + landDuration[0] = 13.
+Plan A gives the earliest finish time of 9.
+
+Example 2:
+
+Input: landStartTime = [5], landDuration = [3], waterStartTime = [1], waterDuration = [10]
+
+Output: 14
+
+Explanation:​​​​​​​
+
+Plan A (water ride 0 → land ride 0):
+Start water ride 0 at time waterStartTime[0] = 1. Finish at 1 + waterDuration[0] = 11.
+Land ride 0 opened at landStartTime[0] = 5. Start immediately at 11 and finish at 11 + landDuration[0] = 14.
+Plan B (land ride 0 → water ride 0):
+Start land ride 0 at time landStartTime[0] = 5. Finish at 5 + landDuration[0] = 8.
+Water ride 0 opened at waterStartTime[0] = 1. Start immediately at 8 and finish at 8 + waterDuration[0] = 18.
+Plan A provides the earliest finish time of 14.​​​​​​​
+
+ 
+
+Constraints:
+
+1 <= n, m <= 100
+landStartTime.length == landDuration.length == n
+waterStartTime.length == waterDuration.length == m
+1 <= landStartTime[i], landDuration[i], waterStartTime[j], waterDuration[j] <= 1000
+
+
+Solution 1:
+
+class Solution:
+    def earliestFinishTime(self, landStartTime: List[int], landDuration: List[int], waterStartTime: List[int], waterDuration: List[int]) -> int:
+        num_land_rides  = len(landStartTime)
+        num_water_rides = len(waterStartTime)
+
+        # Track the globally best (earliest) finish time seen so far
+        # across all ride-pair combinations and orderings
+        earliest_finish = float('inf')
+
+        # ── Try every possible combination of one land ride + one water ride ──
+        # Total combinations: num_land_rides × num_water_rides
+        for land_idx in range(num_land_rides):
+            for water_idx in range(num_water_rides):
+
+                # ═══════════════════════════════════════════════════
+                # OPTION A — Take the land ride FIRST, water ride SECOND
+                # ═══════════════════════════════════════════════════
+
+                # Step 1: Start land ride at its opening time (or later if needed),
+                #         finish = opening_time + duration
+                land_free_at = landStartTime[land_idx] + landDuration[land_idx]
+
+                # Step 2: After finishing the land ride at land_free_at,
+                #         we head to the water ride.
+                #         We can board the water ride at:
+                #           - land_free_at           if water ride is ALREADY OPEN
+                #           - waterStartTime[water_idx] if we arrive BEFORE it opens
+                #                                        (must wait for it to open)
+                #         max() handles both cases cleanly
+                water_board_time = max(land_free_at, waterStartTime[water_idx])
+
+                # Step 3: Finish time for Option A
+                #         Board water at water_board_time, ride takes waterDuration
+                option_a_finish = water_board_time + waterDuration[water_idx]
+
+                # ═══════════════════════════════════════════════════
+                # OPTION B — Take the water ride FIRST, land ride SECOND
+                # ═══════════════════════════════════════════════════
+
+                # Step 1: Start water ride at its opening time,
+                #         finish = opening_time + duration
+                water_free_at = waterStartTime[water_idx] + waterDuration[water_idx]
+
+                # Step 2: After finishing the water ride at water_free_at,
+                #         we head to the land ride.
+                #         Board at max(water_free_at, landStartTime[land_idx]):
+                #           - water_free_at           if land ride is ALREADY OPEN
+                #           - landStartTime[land_idx] if we must wait for it to open
+                land_board_time = max(water_free_at, landStartTime[land_idx])
+
+                # Step 3: Finish time for Option B
+                #         Board land at land_board_time, ride takes landDuration
+                option_b_finish = land_board_time + landDuration[land_idx]
+
+                # ═══════════════════════════════════════════════════
+                # Keep the best finish time across:
+                #   - all land/water ride pairings (i, j)
+                #   - both orderings A and B for each pairing
+                # ═══════════════════════════════════════════════════
+                earliest_finish = min(earliest_finish, option_a_finish, option_b_finish)
+
+        return earliest_finish
+
+
+Solution 2:
+
+class Solution:
+    def earliestFinishTime(self, landStartTime: List[int], landDuration: List[int], waterStartTime: List[int], waterDuration: List[int]) -> int:
+        def solve(first_starts, first_durations, second_starts, second_durations):
+            """
+            Computes the earliest finish time when rides are taken in a fixed order:
+              1. Pick one ride from category 1 (first_starts / first_durations)
+              2. Pick one ride from category 2 (second_starts / second_durations)
+
+            ── GREEDY INSIGHT ──
+            For the FIRST ride, always pick the one that finishes EARLIEST.
+
+            Why is this safe?
+              For any fixed second ride j, the total finish time is:
+                max(free_time, second_starts[j]) + second_durations[j]
+              This expression is NON-DECREASING in free_time:
+                a smaller free_time → boards sooner or same → finishes sooner or same
+              So finishing the first ride as early as possible NEVER hurts —
+              it can only make every possible second ride finish sooner (or equal).
+              Therefore: greedily minimize free_time, then scan all second rides.
+            """
+
+            # ── STEP 1: Find the earliest we can be free after the first ride ──
+            # For each first ride i:
+            #   finish = start as early as allowed + duration
+            #          = first_starts[i] + first_durations[i]
+            # Pick the ride with the MINIMUM finish time (greedy — see above).
+            earliest_free_time = float('inf')
+            for i in range(len(first_starts)):
+                # Earliest possible finish for first ride i
+                first_ride_finish   = first_starts[i] + first_durations[i]
+                earliest_free_time  = min(earliest_free_time, first_ride_finish)
+
+            # ── STEP 2: Find the best second ride given we're free at earliest_free_time ──
+            # For each second ride j, we board it at:
+            #   max(earliest_free_time, second_starts[j])
+            #     ├─ earliest_free_time  : if the ride is ALREADY OPEN when we arrive
+            #     └─ second_starts[j]   : if we must WAIT for the ride to open
+            # Total finish = board_time + second_durations[j]
+            # We scan all j and pick the one giving the smallest total finish.
+            earliest_total_finish = float('inf')
+            for j in range(len(second_starts)):
+                # Board immediately if open, otherwise wait until it opens
+                board_time    = max(earliest_free_time, second_starts[j])
+                total_finish  = board_time + second_durations[j]
+                earliest_total_finish = min(earliest_total_finish, total_finish)
+
+            return earliest_total_finish
+
+        # ── Try both orderings, return whichever finishes sooner ──
+
+        # Ordering A: land ride first, then water ride
+        land_then_water = solve(
+            landStartTime,  landDuration,
+            waterStartTime, waterDuration
+        )
+
+        # Ordering B: water ride first, then land ride
+        water_then_land = solve(
+            waterStartTime, waterDuration,
+            landStartTime,  landDuration
+        )
+
+        return min(land_then_water, water_then_land)

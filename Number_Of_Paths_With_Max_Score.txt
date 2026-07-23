@@ -1,0 +1,193 @@
+1301. Number of Paths with Max Score
+Solved
+Hard
+Topics
+premium lock icon
+Companies
+Hint
+You are given a square board of characters. You can move on the board starting at the bottom right square marked with the character 'S'.
+
+You need to reach the top left square marked with the character 'E'. The rest of the squares are labeled either with a numeric character 1, 2, ..., 9 or with an obstacle 'X'. In one move you can go up, left or up-left (diagonally) only if there is no obstacle there.
+
+Return a list of two integers: the first integer is the maximum sum of numeric characters you can collect, and the second is the number of such paths that you can take to get that maximum sum, taken modulo 10^9 + 7.
+
+In case there is no path, return [0, 0].
+
+ 
+
+Example 1:
+
+Input: board = ["E23","2X2","12S"]
+Output: [7,1]
+Example 2:
+
+Input: board = ["E12","1X1","21S"]
+Output: [4,2]
+Example 3:
+
+Input: board = ["E11","XXX","11S"]
+Output: [0,0]
+ 
+
+Constraints:
+
+2 <= board.length == board[i].length <= 100
+
+
+Solution 1:
+
+class Solution:
+    def pathsWithMaxScore(self, board: List[str]) -> List[int]:
+        # Define the modulo constant to prevent integer overflow as required by the problem statement
+        MOD = 10**9 + 7
+        board_size = len(board)
+        
+        # Since we start at the bottom-right (n-1, n-1) and want to reach the top-left (0, 0),
+        # our top-down recursion will move backwards towards (0, 0).
+        # The allowed moves on the board are Up, Left, and Up-Left. 
+        # In terms of coordinate adjustments: Left is (0, -1), Up-Left is (-1, -1), Up is (-1, 0).
+        moves_toward_start = [(0, -1), (-1, -1), (-1, 0)]
+        
+        # Initialize the DP table with (-1, -1) to signify unvisited states.
+        # dp[row][col] will store a tuple: (max_score_from_here, total_paths_achieving_that_score)
+        dp = [[(-1, -1) for _ in range(board_size)] for _ in range(board_size)]
+
+        def find_max_score_and_paths(row, col):
+            # BASE CASE 1: Successfully reached the target 'E' at the top-left corner.
+            # The character 'E' itself contributes 0 to our score, and we have found 1 valid path.
+            if row == 0 and col == 0:
+                return (0, 1)
+            
+            # BASE CASE 2: We hit an obstacle 'X'. This is a dead end.
+            # We return negative infinity for the score and 0 paths to mark it invalid.
+            if board[row][col] == 'X':
+                return (-float('inf'), 0)
+
+            # MEMOIZATION CHECK: If we've already calculated the results for this cell, reuse it.
+            if dp[row][col] != (-1, -1):
+                return dp[row][col]
+            
+            max_score_from_cell = -float('inf')
+            total_paths_to_target = 0
+            
+            # The start cell 'S' does not have a numeric value, so it contributes 0.
+            # Any other valid numeric cell (1-9) contributes its actual integer value.
+            current_cell_value = int(board[row][col]) if board[row][col].isdigit() else 0
+
+            # Look at all 3 valid movements leading towards the top-left (0, 0)
+            for d_row, d_col in moves_toward_start:
+                next_row, next_col = row + d_row, col + d_col
+                
+                # Check boundaries to ensure the move stays inside the grid
+                if 0 <= next_row < board_size and 0 <= next_col < board_size:
+                    # Recursively get the max score and paths from that next step
+                    next_score, next_ways = find_max_score_and_paths(next_row, next_col)
+                    
+                    # If the next cell was a dead end (-inf), we cannot use it
+                    if next_score == -float('inf'):
+                        continue
+                    
+                    # Calculate what our score would be if we stepped onto that next cell
+                    potential_score = next_score + current_cell_value
+                    
+                    # CASE A: This choice yields a strictly higher score than any option checked so far
+                    if potential_score > max_score_from_cell:
+                        max_score_from_cell = potential_score
+                        total_paths_to_target = next_ways  # Reset path count to match this new optimal path
+                    
+                    # CASE B: This choice yields the exact same maximum score (a tie)
+                    elif potential_score == max_score_from_cell:
+                        # Combine the paths and apply modulo
+                        total_paths_to_target = (total_paths_to_target + next_ways) % MOD
+
+            # Save our calculated results to the DP matrix before returning
+            dp[row][col] = (max_score_from_cell, total_paths_to_target)
+            return dp[row][col]
+
+        # Kick off our recursive search from the bottom-right corner 'S'
+        final_score, final_paths = find_max_score_and_paths(board_size - 1, board_size - 1)
+        
+        # If the final score remains negative infinity, 'E' is completely blocked off by 'X's
+        if final_score == -float('inf'):
+            return [0, 0]
+            
+        return [final_score, final_paths]
+
+
+Solution 2:
+
+class Solution:
+    def pathsWithMaxScore(self, board: List[str]) -> List[int]:
+        # Modulo constant to keep path totals within standard bounds and prevent overflow
+        MOD = 10**9 + 7
+        grid_size = len(board)
+        
+        # In a bottom-up approach, we iterate through the grid from top-left to bottom-right.
+        # To find out how to reach the current cell (row, col), we look backward at the 
+        # cells that could have transitioned into it: Left, Up-Left, and Up.
+        incoming_moves = [(0, -1), (-1, -1), (-1, 0)]
+        
+        # Initialize the DP matrix where each entry is a tuple: (max_score, path_count)
+        # We start everything at negative infinity score and 0 paths to represent unreached states.
+        dp_table = [[(float('-inf'), 0) for _ in range(grid_size)] for _ in range(grid_size)]
+        
+        # BASE CASE: The destination 'E' is at (0, 0). 
+        # Standing at 'E' gives a score of 0, and there is exactly 1 way to start there.
+        dp_table[0][0] = (0, 1)
+        
+        # Traverse the grid in a standard row-by-row, column-by-column order.
+        # This guarantees that when we evaluate (row, col), its dependencies to its 
+        # top and left are already fully computed.
+        for row in range(grid_size):
+            for col in range(grid_size):
+                # Critical safety check: Do not overwrite our base case at (0, 0)
+                if row == 0 and col == 0:
+                    continue
+                    
+                # If the current tile is an obstacle, leave it as (-inf, 0) and move on
+                if board[row][col] == 'X':
+                    continue
+
+                max_score_for_cell = -float('inf')
+                path_count_for_cell = 0
+                
+                # The starting point 'S' contributes 0 to the score.
+                # Valid numeric characters ('1'-'9') contribute their actual integer value.
+                current_cell_score = int(board[row][col]) if board[row][col].isdigit() else 0
+
+                # Look back at the 3 possible neighbors that can transition into the current cell
+                for delta_row, delta_col in incoming_moves:
+                    prev_row, prev_col = row + delta_row, col + delta_col
+                    
+                    # Ensure the neighbor is within the valid boundaries of the board
+                    if 0 <= prev_row < grid_size and 0 <= prev_col < grid_size:
+                        neighbor_score, neighbor_paths = dp_table[prev_row][prev_col]
+                        
+                        # If the neighbor itself is unreachable, it cannot contribute to a valid path
+                        if neighbor_score == -float('inf'):
+                            continue
+                            
+                        # Calculate the score achieved by stepping into this cell from that neighbor
+                        potential_score = neighbor_score + current_cell_score
+                        
+                        # CASE A: This path yields a strictly higher score than any previously evaluated choice
+                        if potential_score > max_score_for_cell:
+                            max_score_for_cell = potential_score
+                            path_count_for_cell = neighbor_paths  # Reset path count to match this new best path
+                            
+                        # CASE B: This path ties the current maximum score
+                        elif potential_score == max_score_for_cell:
+                            # Accumulate the alternative paths and apply modulo
+                            path_count_for_cell = (path_count_for_cell + neighbor_paths) % MOD
+
+                # Save the final optimal choices for this cell back into the DP table
+                dp_table[row][col] = (max_score_for_cell, path_count_for_cell)
+
+        # Retrieve the final accumulated results from the starting position 'S' at the bottom-right
+        final_score, final_paths = dp_table[grid_size - 1][grid_size - 1]
+        
+        # If the final score remains negative infinity, 'E' is entirely blocked off by obstacles
+        if final_score == -float('inf'):
+            return [0, 0]
+            
+        return [final_score, final_paths]

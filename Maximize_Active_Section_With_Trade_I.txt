@@ -1,0 +1,237 @@
+3499. Maximize Active Section with Trade I
+Solved
+Medium
+Topics
+premium lock icon
+Companies
+Hint
+You are given a binary string s of length n, where:
+
+'1' represents an active section.
+'0' represents an inactive section.
+You can perform at most one trade to maximize the number of active sections in s. In a trade, you:
+
+Convert a contiguous block of '1's that is surrounded by '0's to all '0's.
+Afterward, convert a contiguous block of '0's that is surrounded by '1's to all '1's.
+Return the maximum number of active sections in s after making the optimal trade.
+
+Note: Treat s as if it is augmented with a '1' at both ends, forming t = '1' + s + '1'. The augmented '1's do not contribute to the final count.
+
+ 
+
+Example 1:
+
+Input: s = "01"
+
+Output: 1
+
+Explanation:
+
+Because there is no block of '1's surrounded by '0's, no valid trade is possible. The maximum number of active sections is 1.
+
+Example 2:
+
+Input: s = "0100"
+
+Output: 4
+
+Explanation:
+
+String "0100" → Augmented to "101001".
+Choose "0100", convert "101001" → "100001" → "111111".
+The final string without augmentation is "1111". The maximum number of active sections is 4.
+Example 3:
+
+Input: s = "1000100"
+
+Output: 7
+
+Explanation:
+
+String "1000100" → Augmented to "110001001".
+Choose "000100", convert "110001001" → "110000001" → "111111111".
+The final string without augmentation is "1111111". The maximum number of active sections is 7.
+Example 4:
+
+Input: s = "01010"
+
+Output: 4
+
+Explanation:
+
+String "01010" → Augmented to "1010101".
+Choose "010", convert "1010101" → "1000101" → "1111101".
+The final string without augmentation is "11110". The maximum number of active sections is 4.
+ 
+
+Constraints:
+
+1 <= n == s.length <= 105
+s[i] is either '0' or '1'
+
+
+Solution 1:
+
+class Solution:
+    def maxActiveSectionsAfterTrade(self, s: str) -> int:
+        # Count the '1's that are already present in the string
+        total_ones = s.count('1')
+        
+        # Store the lengths of all contiguous blocks of '0's
+        zero_block_lengths = []
+        current_zero_count = 0
+
+        # Step 1: Collect the lengths of every consecutive '0' block
+        for char in s:
+            if char == '0':
+                current_zero_count += 1
+            else:
+                # Upon encountering a '1', save the active '0' block (if any) and reset
+                if current_zero_count > 0:
+                    zero_block_lengths.append(current_zero_count)
+                    current_zero_count = 0
+
+        # Push the final '0' block if the string ends with '0's
+        if current_zero_count > 0:
+            zero_block_lengths.append(current_zero_count)
+            
+        max_adjacent_zero_sum = 0
+        
+        # Step 2: Find the maximum sum of any two ADJACENT '0' blocks
+        # A valid trade converts the middle block of '1's into '0's, merging two adjacent 
+        # '0' blocks and the middle '1's into a single continuous section that flips to '1's.
+        #
+        # Note: If there are fewer than 2 '0' blocks (e.g., s = "01"), this loop naturally 
+        # skips execution and max_adjacent_zero_sum stays 0 (no trade possible).
+        for i in range(len(zero_block_lengths) - 1):
+            adjacent_sum = zero_block_lengths[i] + zero_block_lengths[i + 1]
+            max_adjacent_zero_sum = max(max_adjacent_zero_sum, adjacent_sum)
+        
+        # Return initial active '1's plus the extra active '1's gained from the trade
+        return total_ones + max_adjacent_zero_sum
+
+
+Solution 2:
+
+class Solution:
+    def maxActiveSectionsAfterTrade(self, s: str) -> int:
+        # Count the number of '1's already present in the string.
+        # These represent our base active sections before any trade.
+        initial_ones_count = s.count('1')
+        
+        # Track the maximum combined length of two adjacent blocks of '0's.
+        # A valid trade flips the '1's between two '0'-blocks to '0's, 
+        # merging them into one giant '0'-block, which we then flip entirely to '1's.
+        max_adjacent_zeros_sum = 0
+        
+        # Track the length of the previously completed block of '0's.
+        prev_zero_block_len = 0
+        
+        # Track the length of the '0'-block we are currently iterating through.
+        curr_zero_block_len = 0
+        
+        for char in s:
+            if char == '0':
+                # Expand the length of the current '0'-block
+                curr_zero_block_len += 1
+            else:
+                # We encountered a '1'. 
+                # If we were building a '0'-block, it has just ended.
+                if curr_zero_block_len > 0:
+                    # A valid trade requires a block of '1's surrounded by '0's on BOTH sides.
+                    # This means we MUST have seen a previous '0'-block before this one.
+                    if prev_zero_block_len > 0:
+                        # Update the max trade value using the sum of the two adjacent '0'-blocks
+                        max_adjacent_zeros_sum = max(
+                            max_adjacent_zeros_sum, 
+                            prev_zero_block_len + curr_zero_block_len
+                        )
+                    
+                    # The current '0'-block now becomes the "previous" one for future iterations.
+                    # We then reset the current counter to 0 to start fresh.
+                    prev_zero_block_len = curr_zero_block_len
+                    curr_zero_block_len = 0
+
+        # Handle the edge case where the string ends with a block of '0's (e.g., "0100").
+        # The loop finishes before this final block can be evaluated, so we check it here.
+        if curr_zero_block_len > 0 and prev_zero_block_len > 0:
+            max_adjacent_zeros_sum = max(
+                max_adjacent_zeros_sum, 
+                prev_zero_block_len + curr_zero_block_len
+            )
+        
+        # The maximum active sections equals the base '1's plus the maximum 
+        # number of new '1's we can create by executing the optimal trade.
+        return initial_ones_count + max_adjacent_zeros_sum
+
+
+
+Solution 3:
+
+class Solution:
+    def maxActiveSectionsAfterTrade(self, s: str) -> int:
+        # Baseline: number of '1's already present in the original string.
+        # These are active sections that remain unless we remove one 1-block in the trade.
+        total_ones = s.count('1')
+
+        # Augment the string with sentinel '1's at both ends so every zero-block
+        # and one-block in the original string is guaranteed to be "surrounded".
+        # The sentinel '1's are only for parsing convenience and do not count
+        # toward the final active-section total.
+        t = '1' + s + '1'
+
+        n = len(t)
+        idx = 0
+
+        # The best answer we can achieve (start from baseline ones).
+        best = total_ones
+
+        # Skip the initial sentinel '1' and any leading '1's that follow it.
+        # After this loop, idx will point to the first '0' of the first zero-block (if any).
+        while idx < n and t[idx] == '1':
+            idx += 1
+
+        # Read the first zero-block length (left_zero_len).
+        # This is the zero-block immediately to the right of the initial run of '1's.
+        left_zero_len = 0
+        while idx < n and t[idx] == '0':
+            left_zero_len += 1
+            idx += 1
+
+        # Now iterate through the rest of the augmented string in a sliding manner:
+        # for each pattern (zero-block) — one-block — (zero-block),
+        # compute the candidate gain left_zero_len + right_zero_len and update best.
+        while idx < n:
+            # Read the middle one-block length (the block of '1's between two zero-blocks).
+            mid_one_len = 0
+            while idx < n and t[idx] == '1':
+                mid_one_len += 1
+                idx += 1
+
+            # If there is no one-block, we cannot form the required pattern; stop.
+            if mid_one_len == 0:
+                break
+
+            # Read the right zero-block length (the zero-block after the middle one-block).
+            right_zero_len = 0
+            while idx < n and t[idx] == '0':
+                right_zero_len += 1
+                idx += 1
+
+            # If there is no right zero-block, we cannot form the required pattern; stop.
+            if right_zero_len == 0:
+                break
+
+            # Candidate result: baseline ones + the sum of the two adjacent zero-blocks.
+            # This corresponds to removing the middle one-block (turning it to zeros)
+            # and flipping the combined zero-block (turning them to ones).
+            candidate = total_ones + left_zero_len + right_zero_len
+            if candidate > best:
+                best = candidate
+
+            # Slide the window: the right zero-block becomes the left zero-block
+            # for the next iteration (we move one pattern forward).
+            left_zero_len = right_zero_len
+
+        # 'best' already includes baseline ones; return it.
+        return best

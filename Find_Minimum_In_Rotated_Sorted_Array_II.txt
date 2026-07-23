@@ -1,0 +1,98 @@
+154. Find Minimum in Rotated Sorted Array II
+Solved
+Hard
+Topics
+premium lock icon
+Companies
+Suppose an array of length n sorted in ascending order is rotated between 1 and n times. For example, the array nums = [0,1,4,4,5,6,7] might become:
+
+[4,5,6,7,0,1,4] if it was rotated 4 times.
+[0,1,4,4,5,6,7] if it was rotated 7 times.
+Notice that rotating an array [a[0], a[1], a[2], ..., a[n-1]] 1 time results in the array [a[n-1], a[0], a[1], a[2], ..., a[n-2]].
+
+Given the sorted rotated array nums that may contain duplicates, return the minimum element of this array.
+
+You must decrease the overall operation steps as much as possible.
+
+ 
+
+Example 1:
+
+Input: nums = [1,3,5]
+Output: 1
+Example 2:
+
+Input: nums = [2,2,2,0,1]
+Output: 0
+ 
+
+Constraints:
+
+n == nums.length
+1 <= n <= 5000
+-5000 <= nums[i] <= 5000
+nums is sorted and rotated between 1 and n times.
+ 
+
+Follow up: This problem is similar to Find Minimum in Rotated Sorted Array, but nums may contain duplicates. Would this affect the runtime complexity? How and why?
+
+
+Solution 1:
+
+class Solution:
+    def findMin(self, nums: List[int]) -> int:
+        n = len(nums)
+
+        leftIdx  = 0
+        rightIdx = n - 1
+        minIdx   = 0                    # tracks index of minimum found so far
+
+        while leftIdx <= rightIdx:
+            midIdx = leftIdx + (rightIdx - leftIdx) // 2
+
+            # ── CASE 1: All three equal → can't determine which side has min ──
+            # e.g. [10,10,10,1,10] mid=10, left=10, right=10
+            #   Can't tell if min is left or right of mid
+            # Strategy: shrink both ends by 1 (safe since we won't skip
+            #           the actual minimum — it'll be found in inner range)
+            #
+            # if minimum is exactly at midIdx when all equal,
+            # we skip it entirely and never update minIdx
+            #
+            # e.g. nums=[10,1,10,10,10], l=1,r=1,m=1: nums[m]=1
+            #   All equal branch fires → continue skips minIdx update
+            #   → minIdx stays 0, returns 10 instead of 1 ✗
+            if nums[leftIdx] == nums[midIdx] and nums[rightIdx] == nums[midIdx]:
+                if nums[midIdx] < nums[minIdx]:     # ✅ update BEFORE continue
+                    minIdx = midIdx
+                leftIdx  += 1
+                rightIdx -= 1
+                continue
+
+            # ── Track minimum seen so far ─────────────────────────────────────
+            # Update minIdx whenever we find a smaller element at midIdx
+            # Must do this BEFORE moving pointers (mid might get excluded)
+            if nums[midIdx] < nums[minIdx]:
+                minIdx = midIdx
+
+            # ── CASE 2: mid is in LEFT (larger) portion ───────────────────────
+            # nums[mid] > nums[right] means:
+            #   left portion is [... mid ...] (all larger)
+            #   right portion has the minimum → search right
+            #
+            # e.g. [4,5,6,7,|0,1,2]  mid=7 > right=2 → min is right of mid
+            if nums[midIdx] > nums[rightIdx]:
+                leftIdx = midIdx + 1            # exclude mid, search right half
+
+            # ── CASE 3: mid is in RIGHT (smaller) portion ────────────────────
+            # nums[mid] <= nums[right] means:
+            #   mid is in the smaller right portion
+            #   minimum is at mid or to its LEFT → search left
+            #
+            # e.g. [4,5,6,7,0,|1,2]  mid=1 < right=2 → min at mid or left
+            # Note: r=m-1 is OK here because we already updated minIdx above
+            #       so mid value is captured before being excluded
+            else:
+                rightIdx = midIdx - 1           # mid already saved in minIdx
+
+        return nums[minIdx]

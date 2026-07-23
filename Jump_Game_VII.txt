@@ -1,0 +1,132 @@
+1871. Jump Game VII
+Solved
+Medium
+Topics
+premium lock icon
+Companies
+Hint
+You are given a 0-indexed binary string s and two integers minJump and maxJump. In the beginning, you are standing at index 0, which is equal to '0'. You can move from index i to index j if the following conditions are fulfilled:
+
+i + minJump <= j <= min(i + maxJump, s.length - 1), and
+s[j] == '0'.
+Return true if you can reach index s.length - 1 in s, or false otherwise.
+
+ 
+
+Example 1:
+
+Input: s = "011010", minJump = 2, maxJump = 3
+Output: true
+Explanation:
+In the first step, move from index 0 to index 3. 
+In the second step, move from index 3 to index 5.
+Example 2:
+
+Input: s = "01101110", minJump = 2, maxJump = 3
+Output: false
+ 
+
+Constraints:
+
+2 <= s.length <= 105
+s[i] is either '0' or '1'.
+s[0] == '0'
+1 <= minJump <= maxJump < s.length
+
+
+Solution 1:
+
+class Solution:
+    def canReach(self, s: str, minJump: int, maxJump: int) -> bool:
+        n = len(s)
+
+        # dp[i] = 1 if index i is reachable from index 0, else 0
+        # We use 1/0 instead of True/False so we can numerically
+        # sum reachable indices in the sliding window below
+        is_reachable = [0] * n
+
+        # Base case: we always start at index 0 (guaranteed to be '0')
+        is_reachable[0] = 1
+
+        # ── SLIDING WINDOW SUM ──
+        # For each index i, we need to know:
+        # "How many indices in the window [i-maxJump, i-minJump] are reachable?"
+        # If that count > 0, then i can be reached.
+        #
+        # Instead of re-summing the window for every i (O(n·d) brute force),
+        # we MAINTAIN a running count as i moves forward:
+        #   → ADD dp[i - minJump]     when it enters the window (right edge)
+        #   → SUBTRACT dp[i - maxJump - 1]  when it leaves the window (left edge)
+        # This gives O(1) per index → O(n) total.
+        window_reachable_count = 0
+
+        for i in range(1, n):
+
+            # ── EXPAND WINDOW (right edge enters) ──
+            # Index (i - minJump) is the CLOSEST index that can jump to i.
+            # As i increases by 1, this new index just became a valid source,
+            # so include it in our running window sum.
+            if i - minJump >= 0:
+                window_reachable_count += is_reachable[i - minJump]
+
+            # ── SHRINK WINDOW (left edge exits) ──
+            # Index (i - maxJump - 1) is now TOO FAR LEFT to reach i
+            # (it would need a jump longer than maxJump).
+            # Remove it from the running window sum.
+            if i - maxJump - 1 >= 0:
+                window_reachable_count -= is_reachable[i - maxJump - 1]
+
+            # ── MARK i AS REACHABLE ──
+            # Two conditions must BOTH hold:
+            #   1. s[i] == '0' → we're allowed to land here
+            #   2. window_reachable_count > 0 → at least one index in
+            #      [i-maxJump, i-minJump] can reach i
+            if s[i] == "0" and window_reachable_count > 0:
+                is_reachable[i] = 1
+
+        # Final answer: can we reach the last index?
+        return is_reachable[n - 1] > 0
+
+
+Solution 2:
+
+class Solution:
+    def canReach(self, s: str, minJump: int, maxJump: int) -> bool:
+        # Early exit: last index is '1' → can never land there
+        if s[-1] == '1':
+            return False
+
+        n = len(s)
+
+        # ── KEY IDEA ──
+        # Instead of storing a full is_reachable[0..n] array,
+        # keep only the reachable indices that still fall within
+        # the valid jump window [i-maxJump, i-minJump].
+        # A deque naturally supports:
+        #   → popleft() : evict indices that are now too far left (> maxJump away)
+        #   → append()  : add newly confirmed reachable indices on the right
+        # At any point, deque holds at most maxJump indices → O(maxJump) space.
+        reachable_window = deque()
+        reachable_window.append(0)  # index 0 is always reachable (given)
+
+        for i in range(1, n):
+
+            # ── SHRINK LEFT ──
+            # Evict indices that are too far back to jump to i.
+            # A valid source j must satisfy j >= i - maxJump.
+            # Deque is sorted ascending, so only check the front.
+            while reachable_window and reachable_window[0] < i - maxJump:
+                reachable_window.popleft()
+
+            # ── CHECK REACHABILITY ──
+            # After eviction, the front (if any) is the closest valid source.
+            # For it to actually reach i, it must also satisfy j <= i - minJump.
+            # If front <= i - minJump → at least one source in [i-maxJump, i-minJump]
+            #                           exists → i is reachable (if s[i]=='0').
+            if (reachable_window                            # window not empty
+                    and reachable_window[0] <= i - minJump  # front is far enough
+                    and s[i] == '0'):                        # can land here
+                reachable_window.append(i)
+
+        # Reachable if the last index made it into the deque
+        return len(reachable_window) != 0 and reachable_window[-1] == n - 1

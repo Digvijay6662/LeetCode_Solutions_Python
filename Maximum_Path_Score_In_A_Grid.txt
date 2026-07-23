@@ -1,0 +1,202 @@
+3742. Maximum Path Score in a Grid
+Solved
+Medium
+Topics
+premium lock icon
+Companies
+Hint
+You are given an m x n grid where each cell contains one of the values 0, 1, or 2. You are also given an integer k.
+
+You start from the top-left corner (0, 0) and want to reach the bottom-right corner (m - 1, n - 1) by moving only right or down.
+
+Each cell contributes a specific score and incurs an associated cost, according to their cell values:
+
+0: adds 0 to your score and costs 0.
+1: adds 1 to your score and costs 1.
+2: adds 2 to your score and costs 1. ​​​​​​​
+Return the maximum score achievable without exceeding a total cost of k, or -1 if no valid path exists.
+
+Note: If you reach the last cell but the total cost exceeds k, the path is invalid.
+
+ 
+
+Example 1:
+
+Input: grid = [[0, 1],[2, 0]], k = 1
+
+Output: 2
+
+Explanation:​​​​​​​
+
+The optimal path is:
+
+Cell	grid[i][j]	Score	Total
+Score	Cost	Total
+Cost
+(0, 0)	0	0	0	0	0
+(1, 0)	2	2	2	1	1
+(1, 1)	0	0	2	0	1
+Thus, the maximum possible score is 2.
+
+Example 2:
+
+Input: grid = [[0, 1],[1, 2]], k = 1
+
+Output: -1
+
+Explanation:
+
+There is no path that reaches cell (1, 1)​​​​​​​ without exceeding cost k. Thus, the answer is -1.
+
+ 
+
+Constraints:
+
+1 <= m, n <= 200
+0 <= k <= 103​​​​​​​
+​​​​​​​grid[0][0] == 0
+0 <= grid[i][j] <= 2
+
+
+Solution 1:
+
+class Solution:
+    def maxPathScore(self, grid: List[List[int]], k: int) -> int:
+        rows, cols = len(grid), len(grid[0])
+        
+        # dp[row][col][remaining_cost] stores the maximum score achievable
+        # starting from (row, col) with 'remaining_cost' budget left.
+        dp = [[[-1] * (k + 1) for _ in range(cols)] for _ in range(rows)]
+
+        def dfs(row, col, remaining_cost):
+            # If cost budget goes negative, path is invalid
+            if remaining_cost < 0:
+                return float('-inf')
+
+            # Base case: reached destination cell (bottom-right)
+            if row == rows - 1 and col == cols - 1:
+                # Destination is valid only if cost fits
+                # If cell is 0 → no cost, always valid
+                # If cell is 1 or 2 → requires at least 1 cost left
+                if remaining_cost >= (1 if grid[row][col] != 0 else 0):
+                    return grid[row][col]
+                return float('-inf')
+
+            # Return memoized result if already computed
+            if dp[row][col][remaining_cost] != -1:
+                return dp[row][col][remaining_cost]
+
+            # Cost of entering current cell
+            cost_here = 1 if grid[row][col] != 0 else 0
+            best_down = best_right = float('-inf')
+
+            # Try moving down
+            if row + 1 < rows:
+                best_down = grid[row][col] + dfs(row + 1, col, remaining_cost - cost_here)
+
+            # Try moving right
+            if col + 1 < cols:
+                best_right = grid[row][col] + dfs(row, col + 1, remaining_cost - cost_here)
+
+            # Memoize the best result
+            dp[row][col][remaining_cost] = max(best_down, best_right)
+            return dp[row][col][remaining_cost]
+
+        # Start DFS from top-left with full cost budget
+        result = dfs(0, 0, k)
+        return result if result != float('-inf') else -1
+
+
+Solution 2:
+
+class Solution:
+    def maxPathScore(self, grid: List[List[int]], k: int) -> int:
+        rows, cols = len(grid), len(grid[0])
+        
+        # dp[r][c][cost] = max score to reach cell (r, c) using exactly 'cost'
+        # Initialize with -1 to represent unreachable states
+        dp = [[[-1] * (k + 1) for _ in range(cols)] for _ in range(rows)]
+
+        # Base Case: Starting at (0, 0)
+        # grid[0][0] is always 0 based on constraints, so cost is 0, score is 0.
+        dp[0][0][0] = 0
+
+        for r in range(rows):
+            for c in range(cols):
+                for current_cost in range(k + 1):
+                    # If this specific state (cell + cost) was never reached, skip it
+                    if dp[r][c][current_cost] == -1:
+                        continue
+                    
+                    # Current score accumulated at this cell
+                    current_score = dp[r][c][current_cost]
+                    
+                    # Look at possible moves: Right and Down
+                    for dr, dc in [(0, 1), (1, 0)]:
+                        nr, nc = r + dr, c + dc
+                        
+                        if nr < rows and nc < cols:
+                            # Calculate cost and score for the neighbor
+                            cell_val = grid[nr][nc]
+                            next_cost = current_cost + (1 if cell_val != 0 else 0)
+                            next_score = current_score + cell_val
+                            
+                            # Update if within budget and better than previous path to that neighbor
+                            if next_cost <= k:
+                                dp[nr][nc][next_cost] = max(dp[nr][nc][next_cost], next_score)
+
+        # The answer is the maximum score found in the destination cell (m-1, n-1)
+        # across all possible costs from 0 to k.
+        ans = max(dp[rows - 1][cols - 1])
+        return ans if ans != -1 else -1
+
+
+Solution 3:
+
+class Solution:
+    def maxPathScore(self, grid: List[List[int]], k: int) -> int:
+        rows, cols = len(grid), len(grid[0])
+        
+        # dp[col][cost] = max score to reach 'col' in the current row with 'cost'
+        # Initialize with -1 (unreachable)
+        dp = [[-1] * (k + 1) for _ in range(cols)]
+
+        # Base Case: Starting at (0, 0)
+        # grid[0][0] is 0, so cost is 0 and score is 0
+        dp[0][0] = 0
+
+        for r in range(rows):
+            # Create a new DP row to store results for the current row
+            # This prevents us from mixing up 'down' moves with 'right' moves incorrectly
+            new_dp = [[-1] * (k + 1) for _ in range(cols)]
+            
+            for c in range(cols):
+                cell_val = grid[r][c]
+                cost_here = 1 if cell_val != 0 else 0
+                
+                for p_cost in range(k + 1):
+                    # 1. Move DOWN (from the previous state of the same column)
+                    # Only possible if we aren't in the first row
+                    if r > 0 and dp[c][p_cost] != -1:
+                        next_cost = p_cost + cost_here
+                        if next_cost <= k:
+                            new_dp[c][next_cost] = max(new_dp[c][next_cost], dp[c][p_cost] + cell_val)
+                    
+                    # 2. Move RIGHT (from the current state of the previous column)
+                    # Only possible if we aren't in the first column
+                    if c > 0 and new_dp[c-1][p_cost] != -1:
+                        next_cost = p_cost + cost_here
+                        if next_cost <= k:
+                            new_dp[c][next_cost] = max(new_dp[c][next_cost], new_dp[c-1][p_cost] + cell_val)
+                
+                # Special Case for (0,0): it was initialized before the loop
+                # This ensures the starting point isn't overwritten as -1
+                if r == 0 and c == 0:
+                    new_dp[0][0] = 0
+
+            # Move current row results into the main dp table for the next row's iteration
+            dp = new_dp
+
+        # Result is the max score at the last column of the last processed row
+        ans = max(dp[cols - 1])
+        return ans if ans != -1 else -1

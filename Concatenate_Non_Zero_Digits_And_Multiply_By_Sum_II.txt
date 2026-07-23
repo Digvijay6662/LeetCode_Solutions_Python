@@ -1,0 +1,214 @@
+3756. Concatenate Non-Zero Digits and Multiply by Sum II
+Solved
+Medium
+Topics
+premium lock icon
+Companies
+Hint
+You are given a string s of length m consisting of digits. You are also given a 2D integer array queries, where queries[i] = [li, ri].
+
+For each queries[i], extract the substring s[li..ri]. Then, perform the following:
+
+Form a new integer x by concatenating all the non-zero digits from the substring in their original order. If there are no non-zero digits, x = 0.
+Let sum be the sum of digits in x. The answer is x * sum.
+Return an array of integers answer where answer[i] is the answer to the ith query.
+
+Since the answers may be very large, return them modulo 109 + 7.
+
+ 
+
+Example 1:
+
+Input: s = "10203004", queries = [[0,7],[1,3],[4,6]]
+
+Output: [12340, 4, 9]
+
+Explanation:
+
+s[0..7] = "10203004"
+x = 1234
+sum = 1 + 2 + 3 + 4 = 10
+Therefore, answer is 1234 * 10 = 12340.
+s[1..3] = "020"
+x = 2
+sum = 2
+Therefore, the answer is 2 * 2 = 4.
+s[4..6] = "300"
+x = 3
+sum = 3
+Therefore, the answer is 3 * 3 = 9.
+Example 2:
+
+Input: s = "1000", queries = [[0,3],[1,1]]
+
+Output: [1, 0]
+
+Explanation:
+
+s[0..3] = "1000"
+x = 1
+sum = 1
+Therefore, the answer is 1 * 1 = 1.
+s[1..1] = "0"
+x = 0
+sum = 0
+Therefore, the answer is 0 * 0 = 0.
+Example 3:
+
+Input: s = "9876543210", queries = [[0,9]]
+
+Output: [444444137]
+
+Explanation:
+
+s[0..9] = "9876543210"
+x = 987654321
+sum = 9 + 8 + 7 + 6 + 5 + 4 + 3 + 2 + 1 = 45
+Therefore, the answer is 987654321 * 45 = 44444444445.
+We return 44444444445 modulo (109 + 7) = 444444137.
+ 
+
+Constraints:
+
+1 <= m == s.length <= 105
+s consists of digits only.
+1 <= queries.length <= 105
+queries[i] = [li, ri]
+0 <= li <= ri < m
+
+
+Solution 1:
+
+class Solution:
+    def sumAndMultiply(self, s: str, queries: List[List[int]]) -> List[int]:
+        MOD      = 10**9 + 7
+        str_len  = len(s)
+
+        # ── CORE IDEA ──
+        # For a query [l, r]:
+        #   digit_sum = sum of ALL digits in s[l..r]   (zeros included)
+        #   concat_val = integer formed by NON-ZERO digits only
+        #   answer = concat_val × digit_sum mod MOD
+        #
+        # Naively: O(r-l+1) per query → O(m × q) total.
+        # With prefix arrays: O(1) per query → O(m + q) total.
+        #
+        # THREE prefix arrays cover everything we need:
+        #   prefix_digit_sum[i]    = sum of s[0..i-1] digits (zeros included)
+        #   prefix_nonzero_cnt[i]  = count of non-zero digits in s[0..i-1]
+        #   prefix_concat_val[i]   = integer value formed by concatenating
+        #                            all non-zero digits in s[0..i-1] mod MOD
+        #
+        # All arrays are 1-INDEXED (size n+1, with [0] = 0 as sentinel)
+        # so range queries [l, r] become prefix[r+1] - prefix[l]
+        # without any special-case for l = 0.
+
+        # ── PRECOMPUTE POWERS OF 10 ──
+        # power_of_10[k] = 10^k mod MOD
+        # Used in the rolling-hash formula to "shift" prefix_concat_val left
+        # by k decimal places (one place per non-zero digit in the range).
+        power_of_10 = [1] * (str_len + 1)
+        for i in range(1, str_len + 1):
+            power_of_10[i] = (power_of_10[i - 1] * 10) % MOD
+
+        # ── BUILD PREFIX ARRAYS (all 1-indexed, size str_len+1) ──
+        #
+        # prefix_digit_sum[i]   → cumulative sum of every digit  s[0..i-1]
+        # prefix_nonzero_cnt[i] → cumulative count of non-zero   s[0..i-1]
+        # prefix_concat_val[i]  → value of concatenation of non-zeros s[0..i-1] mod MOD
+        #
+        # Example: s = "10203"
+        #   i=0 (empty):   sum=0, cnt=0, val=0
+        #   i=1 (s[0]='1'): sum=1, cnt=1, val=1
+        #   i=2 (s[1]='0'): sum=1, cnt=1, val=1   ← '0' skipped in val/cnt
+        #   i=3 (s[2]='2'): sum=3, cnt=2, val=12  ← val = 1*10+2 = 12
+        #   i=4 (s[3]='0'): sum=3, cnt=2, val=12
+        #   i=5 (s[4]='3'): sum=6, cnt=3, val=123 ← val = 12*10+3 = 123
+        prefix_digit_sum   = [0] * (str_len + 1)
+        prefix_nonzero_cnt = [0] * (str_len + 1)
+        prefix_concat_val  = [0] * (str_len + 1)
+
+        for i in range(str_len):
+            digit = int(s[i])
+
+            # ── CARRY FORWARD from previous position ──
+            # Every prefix[i+1] starts as a copy of prefix[i], then
+            # conditionally adds the contribution of s[i].
+            prefix_digit_sum[i + 1]   = prefix_digit_sum[i]   + digit
+            prefix_nonzero_cnt[i + 1] = prefix_nonzero_cnt[i]
+            prefix_concat_val[i + 1]  = prefix_concat_val[i]
+
+            if digit != 0:
+                # ── NON-ZERO DIGIT: update count and concatenated value ──
+                #
+                # Count: simply increment
+                prefix_nonzero_cnt[i + 1] += 1
+                #
+                # Value: treat concatenation as a number being built left-to-right.
+                # Each new non-zero digit d appends to the right:
+                #   new_val = old_val * 10 + d
+                # Example: old_val=12, d=3 → new_val = 12*10+3 = 123  ✓
+                # Zero digits are SKIPPED entirely — they don't appear in x.
+                prefix_concat_val[i + 1] = (
+                    prefix_concat_val[i] * 10 + digit
+                ) % MOD
+            # If digit == 0: all three prefix values are already copied above.
+            # Zero contributes to digit_sum (via prefix_digit_sum) but NOT
+            # to nonzero_cnt or concat_val.
+
+        # ── ANSWER EACH QUERY IN O(1) ──
+        answers = []
+
+        for query_l, query_r in queries:
+
+            # ── DIGIT SUM: sum of ALL digits in s[query_l..query_r] ──
+            # Standard prefix difference (1-indexed: r+1 and l)
+            range_digit_sum = (
+                prefix_digit_sum[query_r + 1] - prefix_digit_sum[query_l]
+            )
+
+            # ── NON-ZERO COUNT: how many non-zero digits in range ──
+            # Needed to determine shift amount in the rolling-hash extraction
+            range_nonzero_cnt = (
+                prefix_nonzero_cnt[query_r + 1] - prefix_nonzero_cnt[query_l]
+            )
+
+            # If no non-zero digits exist → x = 0, answer = 0 × 0 = 0
+            if range_nonzero_cnt == 0:
+                answers.append(0)
+                continue
+
+            # ── EXTRACT CONCATENATED VALUE (ROLLING HASH) ──
+            # prefix_concat_val[query_r + 1] = value of ALL non-zeros in s[0..query_r]
+            #   = (value of non-zeros before query_l) × 10^(range_nonzero_cnt)
+            #     + (value of non-zeros in [query_l, query_r])
+            #
+            # Let:
+            #   V_before = prefix_concat_val[query_l]         (non-zeros before range)
+            #   V_full   = prefix_concat_val[query_r + 1]     (non-zeros 0..query_r)
+            #   k        = range_nonzero_cnt                  (non-zeros in range)
+            #
+            # So:  V_full = V_before × 10^k + concat_val
+            # ↔    concat_val = V_full - V_before × 10^k
+            #
+            # Example: s = "10203", query [0,4]
+            #   V_before = 0 (no digits before index 0)
+            #   V_full   = 123
+            #   k        = 3  (digits 1, 2, 3)
+            #   concat_val = 123 - 0 × 10^3 = 123  ✓
+            #
+            # Example: s = "10203", query [2,4]
+            #   V_before = 1  (digit '1' before index 2)
+            #   V_full   = 123
+            #   k        = 2  (digits 2, 3 in range)
+            #   concat_val = 123 - 1 × 10^2 = 123 - 100 = 23  ✓
+            concat_val = (
+                prefix_concat_val[query_r + 1]
+                - prefix_concat_val[query_l] * power_of_10[range_nonzero_cnt]
+            ) % MOD
+
+            # ── FINAL ANSWER = concat_val × digit_sum mod MOD ──
+            query_answer = (concat_val * range_digit_sum) % MOD
+            answers.append(query_answer)
+
+        return answers

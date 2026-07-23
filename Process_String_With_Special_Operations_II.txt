@@ -1,0 +1,177 @@
+3614. Process String with Special Operations II
+Solved
+Hard
+Topics
+premium lock icon
+Companies
+Hint
+You are given a string s consisting of lowercase English letters and the special characters: '*', '#', and '%'.
+
+You are also given an integer k.
+
+Build a new string result by processing s according to the following rules from left to right:
+
+If the letter is a lowercase English letter append it to result.
+A '*' removes the last character from result, if it exists.
+A '#' duplicates the current result and appends it to itself.
+A '%' reverses the current result.
+Return the kth character of the final string result. If k is out of the bounds of result, return '.'.
+
+ 
+
+Example 1:
+
+Input: s = "a#b%*", k = 1
+
+Output: "a"
+
+Explanation:
+
+i	s[i]	Operation	Current result
+0	'a'	Append 'a'	"a"
+1	'#'	Duplicate result	"aa"
+2	'b'	Append 'b'	"aab"
+3	'%'	Reverse result	"baa"
+4	'*'	Remove the last character	"ba"
+The final result is "ba". The character at index k = 1 is 'a'.
+
+Example 2:
+
+Input: s = "cd%#*#", k = 3
+
+Output: "d"
+
+Explanation:
+
+i	s[i]	Operation	Current result
+0	'c'	Append 'c'	"c"
+1	'd'	Append 'd'	"cd"
+2	'%'	Reverse result	"dc"
+3	'#'	Duplicate result	"dcdc"
+4	'*'	Remove the last character	"dcd"
+5	'#'	Duplicate result	"dcddcd"
+The final result is "dcddcd". The character at index k = 3 is 'd'.
+
+Example 3:
+
+Input: s = "z*#", k = 0
+
+Output: "."
+
+Explanation:
+
+i	s[i]	Operation	Current result
+0	'z'	Append 'z'	"z"
+1	'*'	Remove the last character	""
+2	'#'	Duplicate the string	""
+The final result is "". Since index k = 0 is out of bounds, the output is '.'.
+
+ 
+
+Constraints:
+
+1 <= s.length <= 105
+s consists of only lowercase English letters and special characters '*', '#', and '%'.
+0 <= k <= 1015
+The length of result after processing s will not exceed 1015.
+
+
+Solution 1:
+
+class Solution:
+    def processStr(self, s: str, k: int) -> str:
+        # ── CORE IDEA: TWO-PASS APPROACH ──
+        # It's impossible to directly simulate because '#' can double the
+        # length up to 10^15 times — we can't store that many characters.
+        #
+        # Instead:
+        #   PASS 1 (forward): track only the LENGTH after each operation.
+        #   PASS 2 (backward): work backwards through operations, tracing
+        #                      WHERE position k maps back to in earlier states,
+        #                      until we hit the original letter that placed it.
+
+        total_ops = len(s)
+
+        # ── PASS 1: FORWARD — compute final length ──
+        # Simulate all operations but track only a single integer (length),
+        # NOT the actual string. This handles lengths up to 10^15 safely.
+        # Note: '%' (reverse) doesn't change length → safely ignored here.
+        current_length = 0
+
+        for ch in s:
+            if 'a' <= ch <= 'z':
+                # Append letter → length grows by 1
+                current_length += 1
+
+            elif ch == '*':
+                # Remove last character → length shrinks by 1 (if non-empty)
+                if current_length > 0:
+                    current_length -= 1
+
+            elif ch == '#':
+                # Duplicate entire string → length doubles
+                current_length *= 2
+
+            # '%' (reverse): length unchanged → no action needed
+
+        # ── BOUNDS CHECK ──
+        # If k is beyond the final string, return sentinel '.'
+        if k >= current_length:
+            return "."
+
+        # ── PASS 2: BACKWARD — trace position k back to its source letter ──
+        # We reverse through the operations, UNDOING each one to figure out
+        # what position k corresponds to in the progressively shorter string.
+        #
+        # At each step, `current_length` is restored to what it was JUST
+        # BEFORE that operation was applied in the forward pass.
+        # `target_pos` tracks where our target character lives at each stage.
+        target_pos = k
+
+        for i in range(total_ops - 1, -1, -1):
+
+            if s[i] == '*':
+                # Forward: '*' REMOVED the last character (length decreased by 1).
+                # Undo: restore that character → length increases by 1.
+                # target_pos is unaffected: the removed character was AFTER
+                # everything else, so positions 0..current_length-1 are unchanged.
+                current_length += 1
+
+            elif s[i] == '#':
+                # Forward: '#' DOUBLED the string [A] → [A][A] (length *= 2).
+                # Undo: halve the length back to what it was before doubling.
+                current_length //= 2
+
+                # The doubled string [A][A] means:
+                #   positions 0 .. current_length-1 → first  copy of A
+                #   positions current_length .. 2*current_length-1 → second copy of A
+                # If target_pos was in the SECOND HALF, it's a duplicate of
+                # the first half → map it back into the first half.
+                if target_pos >= current_length:
+                    target_pos = target_pos - current_length
+                # If already in the first half, no mapping needed.
+
+            elif s[i] == '%':
+                # Forward: '%' REVERSED the string of length `current_length`.
+                # Undo: reversing is its own inverse → apply the same mapping.
+                # Position target_pos in the reversed string corresponds to
+                # position (current_length - target_pos - 1) in the original.
+                target_pos = current_length - target_pos - 1
+
+            else:
+                # s[i] is a lowercase letter.
+                # Forward: appending this letter INCREASED length by 1.
+                # Undo: remove it → length decreases by 1.
+                current_length -= 1
+
+                # ── MATCH CHECK ──
+                # After undoing the append, current_length is the length
+                # BEFORE this letter was added.
+                # This letter was placed at index current_length (0-indexed),
+                # i.e. it was the last character of the string at that point.
+                # If target_pos == current_length, this IS our target character.
+                if target_pos == current_length:
+                    return s[i]
+
+        # Should never reach here if input guarantees k < final_length
+        return "."

@@ -1,0 +1,105 @@
+1833. Maximum Ice Cream Bars
+Solved
+Medium
+Topics
+premium lock icon
+Companies
+Hint
+It is a sweltering summer day, and a boy wants to buy some ice cream bars.
+
+At the store, there are n ice cream bars. You are given an array costs of length n, where costs[i] is the price of the ith ice cream bar in coins. The boy initially has coins coins to spend, and he wants to buy as many ice cream bars as possible. 
+
+Note: The boy can buy the ice cream bars in any order.
+
+Return the maximum number of ice cream bars the boy can buy with coins coins.
+
+You must solve the problem by counting sort.
+
+ 
+
+Example 1:
+
+Input: costs = [1,3,2,4,1], coins = 7
+Output: 4
+Explanation: The boy can buy ice cream bars at indices 0,1,2,4 for a total price of 1 + 3 + 2 + 1 = 7.
+Example 2:
+
+Input: costs = [10,6,8,7,7,8], coins = 5
+Output: 0
+Explanation: The boy cannot afford any of the ice cream bars.
+Example 3:
+
+Input: costs = [1,6,3,1,2,5], coins = 20
+Output: 6
+Explanation: The boy can buy all the ice cream bars for a total price of 1 + 6 + 3 + 1 + 2 + 5 = 18.
+ 
+
+Constraints:
+
+costs.length == n
+1 <= n <= 105
+1 <= costs[i] <= 105
+1 <= coins <= 108
+
+
+Solution 1:
+
+class Solution:
+    def maxIceCream(self, costs: List[int], coins: int) -> int:
+        # Number of ice cream bars available
+        num_bars = len(costs)
+
+        # Sort costs in ascending order so we always buy the cheapest first
+        costs.sort()
+
+        # Counter for how many bars we can buy
+        bars_bought = 0
+
+        # Iterate through each bar's cost
+        for i in range(num_bars):
+            # If we can afford this bar with remaining coins
+            if costs[i] <= coins:
+                coins -= costs[i]       # Deduct the cost from available coins
+                bars_bought += 1        # Increase count of bars bought
+            else:
+                # If we can't afford the current bar, stop (since all further bars are more expensive)
+                break
+
+        # Return the maximum number of bars bought
+        return bars_bought
+
+
+Solution 2:
+
+class Solution:
+    def maxIceCream(self, costs: List[int], coins: int) -> int:
+        # Step 1: Build frequency array for costs
+        # Find the maximum cost value to size our frequency array
+        max_price = max(costs)
+        price_frequency = [0] * (max_price + 1)
+
+        # Count how many ice cream bars exist at each price
+        for price in costs:
+            price_frequency[price] += 1
+
+        # Step 2: Greedily buy cheapest bars first
+        bars_bought = 0
+
+        # Iterate through all possible prices starting from 1 (cheapest)
+        for price in range(1, max_price + 1):
+            if price_frequency[price] == 0:
+                continue  # Skip if no bars at this price
+
+            # Determine how many bars of this price we can afford
+            affordable_bars = min(price_frequency[price], coins // price)
+
+            # Update counters
+            bars_bought += affordable_bars
+            coins -= affordable_bars * price
+
+            # If we don't have enough coins for the next bar at this price, stop early
+            if coins < price:
+                break
+
+        # Return the maximum number of bars bought
+        return bars_bought

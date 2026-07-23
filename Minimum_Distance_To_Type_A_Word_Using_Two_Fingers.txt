@@ -1,0 +1,194 @@
+1320. Minimum Distance to Type a Word Using Two Fingers
+Solved
+Hard
+Topics
+premium lock icon
+Companies
+Hint
+
+You have a keyboard layout as shown above in the X-Y plane, where each English uppercase letter is located at some coordinate.
+
+For example, the letter 'A' is located at coordinate (0, 0), the letter 'B' is located at coordinate (0, 1), the letter 'P' is located at coordinate (2, 3) and the letter 'Z' is located at coordinate (4, 1).
+Given the string word, return the minimum total distance to type such string using only two fingers.
+
+The distance between coordinates (x1, y1) and (x2, y2) is |x1 - x2| + |y1 - y2|.
+
+Note that the initial positions of your two fingers are considered free so do not count towards your total distance, also your two fingers do not have to start at the first letter or the first two letters.
+
+ 
+
+Example 1:
+
+Input: word = "CAKE"
+Output: 3
+Explanation: Using two fingers, one optimal way to type "CAKE" is: 
+Finger 1 on letter 'C' -> cost = 0 
+Finger 1 on letter 'A' -> cost = Distance from letter 'C' to letter 'A' = 2 
+Finger 2 on letter 'K' -> cost = 0 
+Finger 2 on letter 'E' -> cost = Distance from letter 'K' to letter 'E' = 1 
+Total distance = 3
+Example 2:
+
+Input: word = "HAPPY"
+Output: 6
+Explanation: Using two fingers, one optimal way to type "HAPPY" is:
+Finger 1 on letter 'H' -> cost = 0
+Finger 1 on letter 'A' -> cost = Distance from letter 'H' to letter 'A' = 2
+Finger 2 on letter 'P' -> cost = 0
+Finger 2 on letter 'P' -> cost = Distance from letter 'P' to letter 'P' = 0
+Finger 1 on letter 'Y' -> cost = Distance from letter 'A' to letter 'Y' = 4
+Total distance = 6
+ 
+
+Constraints:
+
+2 <= word.length <= 300
+word consists of uppercase English letters.
+
+
+Solution 1:
+
+class Solution:
+    def minimumDistance(self, word: str) -> int:
+        n = len(word)
+
+        # Convert a letter index (0–25) into its (row, col) position on the keyboard
+        # Keyboard layout: 6 columns per row
+        def getDist(letter1, letter2):
+            x1, y1 = letter1 // 6, letter1 % 6
+            x2, y2 = letter2 // 6, letter2 % 6
+            return abs(x2 - x1) + abs(y2 - y1)
+
+        # dp[i][finger1][finger2] = minimum cost to type word[i:]
+        # finger1 and finger2 represent the current positions of the two fingers
+        # Values range from 0–25 for letters, and 26 for "not placed yet"
+        dp = [[[-1] * 27 for _ in range(27)] for _ in range(n)]
+
+        def solve(i, finger1, finger2):
+            # Base case: all characters typed
+            if i == n:
+                return 0
+
+            # Return cached result if already computed
+            if dp[i][finger1][finger2] != -1:
+                return dp[i][finger1][finger2]
+
+            # Current letter index (0–25)
+            curr = ord(word[i]) - ord('A')
+
+            # Try typing with finger1 or finger2
+            cost_with_finger1 = cost_with_finger2 = float('inf')
+
+            if finger1 == 26 and finger2 == 26:
+                # Both fingers unused → place finger1 on current letter
+                cost_with_finger1 = solve(i + 1, curr, finger2)
+            elif finger2 == 26:
+                # Only finger1 placed → either move finger1 or place finger2
+                cost_with_finger1 = getDist(finger1, curr) + solve(i + 1, curr, finger2)
+                cost_with_finger2 = solve(i + 1, finger1, curr)
+            else:
+                # Both fingers placed → choose the cheaper move
+                cost_with_finger1 = getDist(finger1, curr) + solve(i + 1, curr, finger2)
+                cost_with_finger2 = getDist(finger2, curr) + solve(i + 1, finger1, curr)
+
+            # Store the minimum cost in dp
+            dp[i][finger1][finger2] = min(cost_with_finger1, cost_with_finger2)
+            return dp[i][finger1][finger2]
+
+        # Start with both fingers unused (represented by 26)
+        return solve(0, 26, 26)
+
+
+Solution 2:
+
+class Solution:
+    def minimumDistance(self, word: str) -> int:
+        n = len(word)
+
+        # Convert a letter index (0–25) into its (row, col) position on the keyboard.
+        # Keyboard layout: 6 columns per row.
+        def getDist(letter1: int, letter2: int) -> int:
+            x1, y1 = divmod(letter1, 6)
+            x2, y2 = divmod(letter2, 6)
+            return abs(x2 - x1) + abs(y2 - y1)
+
+        # dp[i][finger1][finger2] = minimum cost to type word[i:]
+        # finger1 and finger2 represent the current positions of the two fingers.
+        # Values range from 0–25 for letters, and 26 for "not placed yet".
+        dp = [[[0] * 27 for _ in range(27)] for _ in range(n + 1)]
+
+        # Fill the DP table backwards (bottom‑up).
+        # Start from the last character and work toward the first.
+        for i in range(n - 1, -1, -1):
+            for finger1 in range(27):
+                for finger2 in range(27):
+                    curr = ord(word[i]) - ord('A')
+
+                    # Try typing with finger1 or finger2
+                    cost_with_finger1 = cost_with_finger2 = float('inf')
+
+                    if finger1 == 26 and finger2 == 26:
+                        # Both fingers unused → place finger1 on current letter
+                        cost_with_finger1 = dp[i + 1][curr][finger2]
+                    elif finger2 == 26:
+                        # Only finger1 placed → either move finger1 or place finger2
+                        cost_with_finger1 = getDist(finger1, curr) + dp[i + 1][curr][finger2]
+                        cost_with_finger2 = dp[i + 1][finger1][curr]
+                    else:
+                        # Both fingers placed → choose the cheaper move
+                        cost_with_finger1 = getDist(finger1, curr) + dp[i + 1][curr][finger2]
+                        cost_with_finger2 = getDist(finger2, curr) + dp[i + 1][finger1][curr]
+
+                    # Store the minimum cost in dp
+                    dp[i][finger1][finger2] = min(cost_with_finger1, cost_with_finger2)
+
+        # Start with both fingers unused (represented by 26)
+        return dp[0][26][26]
+
+
+Solution 3:
+
+class Solution:
+    def minimumDistance(self, word: str) -> int:
+        n = len(word)
+
+        # Convert letter index (0–25) into (row, col) position on keyboard
+        def getDist(letter1: int, letter2: int) -> int:
+            x1, y1 = divmod(letter1, 6)
+            x2, y2 = divmod(letter2, 6)
+            return abs(x2 - x1) + abs(y2 - y1)
+
+        # Precompute numeric indices for the word
+        letters = [ord(ch) - ord('A') for ch in word]
+
+        # dp[finger1][finger2] = min cost to type from current position onward
+        # Initialize with zeros for the base case (after typing all letters)
+        next_dp = [[0] * 27 for _ in range(27)]
+
+        # Fill DP backwards
+        for i in range(n - 1, -1, -1):
+            curr = letters[i]
+            curr_dp = [[0] * 27 for _ in range(27)]
+
+            for finger1 in range(27):
+                for finger2 in range(27):
+                    cost_with_finger1 = cost_with_finger2 = float('inf')
+
+                    if finger1 == 26 and finger2 == 26:
+                        # Both fingers unused → place finger1
+                        cost_with_finger1 = next_dp[curr][finger2]
+                    elif finger2 == 26:
+                        # Only finger1 placed → move finger1 or place finger2
+                        cost_with_finger1 = getDist(finger1, curr) + next_dp[curr][finger2]
+                        cost_with_finger2 = next_dp[finger1][curr]
+                    else:
+                        # Both fingers placed → choose cheaper move
+                        cost_with_finger1 = getDist(finger1, curr) + next_dp[curr][finger2]
+                        cost_with_finger2 = getDist(finger2, curr) + next_dp[finger1][curr]
+
+                    curr_dp[finger1][finger2] = min(cost_with_finger1, cost_with_finger2)
+
+            next_dp = curr_dp  # Roll forward
+
+        # Start with both fingers unused (26)
+        return next_dp[26][26]

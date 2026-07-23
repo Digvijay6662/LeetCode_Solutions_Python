@@ -1,0 +1,226 @@
+3559. Number of Ways to Assign Edge Weights II
+Solved
+Hard
+Topics
+premium lock icon
+Companies
+Hint
+There is an undirected tree with n nodes labeled from 1 to n, rooted at node 1. The tree is represented by a 2D integer array edges of length n - 1, where edges[i] = [ui, vi] indicates that there is an edge between nodes ui and vi.
+
+Initially, all edges have a weight of 0. You must assign each edge a weight of either 1 or 2.
+
+The cost of a path between any two nodes u and v is the total weight of all edges in the path connecting them.
+
+You are given a 2D integer array queries. For each queries[i] = [ui, vi], determine the number of ways to assign weights to edges in the path such that the cost of the path between ui and vi is odd.
+
+Return an array answer, where answer[i] is the number of valid assignments for queries[i].
+
+Since the answer may be large, apply modulo 109 + 7 to each answer[i].
+
+Note: For each query, disregard all edges not in the path between node ui and vi.
+
+ 
+
+Example 1:
+
+
+
+Input: edges = [[1,2]], queries = [[1,1],[1,2]]
+
+Output: [0,1]
+
+Explanation:
+
+Query [1,1]: The path from Node 1 to itself consists of no edges, so the cost is 0. Thus, the number of valid assignments is 0.
+Query [1,2]: The path from Node 1 to Node 2 consists of one edge (1 → 2). Assigning weight 1 makes the cost odd, while 2 makes it even. Thus, the number of valid assignments is 1.
+Example 2:
+
+
+
+Input: edges = [[1,2],[1,3],[3,4],[3,5]], queries = [[1,4],[3,4],[2,5]]
+
+Output: [2,1,4]
+
+Explanation:
+
+Query [1,4]: The path from Node 1 to Node 4 consists of two edges (1 → 3 and 3 → 4). Assigning weights (1,2) or (2,1) results in an odd cost. Thus, the number of valid assignments is 2.
+Query [3,4]: The path from Node 3 to Node 4 consists of one edge (3 → 4). Assigning weight 1 makes the cost odd, while 2 makes it even. Thus, the number of valid assignments is 1.
+Query [2,5]: The path from Node 2 to Node 5 consists of three edges (2 → 1, 1 → 3, and 3 → 5). Assigning (1,2,2), (2,1,2), (2,2,1), or (1,1,1) makes the cost odd. Thus, the number of valid assignments is 4.
+ 
+
+Constraints:
+
+2 <= n <= 105
+edges.length == n - 1
+edges[i] == [ui, vi]
+1 <= queries.length <= 105
+queries[i] == [ui, vi]
+1 <= ui, vi <= n
+edges represents a valid tree.
+
+
+Solution 1:
+
+class Solution:
+    def assignEdgeWeights(self, edges: List[List[int]], queries: List[List[int]]) -> List[int]:
+        MOD = 10**9 + 7
+
+        # ── MATHEMATICAL INSIGHT ──
+        # Path between u and v has exactly `path_len` edges.
+        # Each edge gets weight 1 or 2 → 2^path_len total assignments.
+        # For path cost to be ODD → odd number of edges must get weight 1.
+        # By combinatorial identity:
+        #   C(n,1) + C(n,3) + ... = 2^(n-1)  (exactly half of 2^n)
+        # Therefore: answer = 2^(path_len - 1) mod MOD
+        # Special case: u == v → path_len = 0 → answer = 0 (cost is always 0, never odd)
+
+        # ── SETUP ──
+        n = len(edges) + 1   # number of nodes = number of edges + 1 in a tree
+
+        # Convert to 0-indexed nodes (labels are 1-indexed in input)
+        adjacency_list = defaultdict(list)
+        for node_u, node_v in edges:
+            node_u -= 1   # convert 1-indexed → 0-indexed
+            node_v -= 1
+            adjacency_list[node_u].append(node_v)
+            adjacency_list[node_v].append(node_u)
+
+        # ── BINARY LIFTING TABLE SETUP ──
+        # Binary lifting allows LCA queries in O(log n) instead of O(n).
+        #
+        # max_log = number of bits needed to represent n.
+        #   e.g. n=8 → log2(8)=3 → we need jumps of size 1,2,4
+        # jump_table[node][j] = ancestor of `node` that is 2^j levels above it.
+        #   jump_table[node][0] = direct parent   (2^0 = 1 level up)
+        #   jump_table[node][1] = grandparent     (2^1 = 2 levels up)
+        #   jump_table[node][2] = great-great-grandparent (2^2 = 4 levels up)
+        #   ...
+        # -1 used as sentinel meaning "no ancestor exists" (above root)
+        max_log   = math.floor(math.log2(n)) + 1
+        jump_table = [[-1] * max_log for _ in range(n)]
+
+        # node_depth[i] = number of edges from root (node 0) to node i
+        node_depth = [0] * n
+
+        def dfs(current_node, parent_node):
+            """
+            Populates:
+              - jump_table[node][0] (direct parent of each node)
+              - node_depth[node]    (depth of each node from root)
+            These two arrays are the foundation for building the
+            full binary lifting table in the next step.
+            """
+            # Direct parent = one level up (2^0 = 1 jump)
+            jump_table[current_node][0] = parent_node
+
+            for neighbor in adjacency_list[current_node]:
+                if neighbor == parent_node:
+                    continue  # skip edge back to parent (undirected graph)
+
+                # Child is one edge deeper than current node
+                node_depth[neighbor] = node_depth[current_node] + 1
+                dfs(neighbor, current_node)
+
+        # Launch DFS from root (node 0, 0-indexed); root has no parent → -1 sentinel
+        dfs(0, -1)
+
+        # ── BUILD FULL BINARY LIFTING TABLE ──
+        # After DFS we have jump_table[node][0] for all nodes.
+        # Now fill in jump_table[node][j] for j = 1, 2, ..., max_log-1.
+        #
+        # Key recurrence:
+        #   jump_table[node][j] = jump_table[ jump_table[node][j-1] ][j-1]
+        #   "To jump 2^j levels, first jump 2^(j-1) levels, then jump 2^(j-1) more."
+        #
+        # Must fill in ORDER of j (outer loop) because level j depends on level j-1.
+        for jump_size in range(1, max_log):
+            for node in range(n):
+                # Ancestor at 2^(jump_size-1) levels above node
+                halfway_ancestor = jump_table[node][jump_size - 1]
+
+                if halfway_ancestor != -1:
+                    # Jump another 2^(jump_size-1) from there to reach 2^jump_size total
+                    jump_table[node][jump_size] = jump_table[halfway_ancestor][jump_size - 1]
+                # If halfway_ancestor == -1, we're already above root → stay -1 (default)
+
+        def findLCA(node_u, node_v):
+            """
+            Finds the Lowest Common Ancestor (LCA) of node_u and node_v
+            using binary lifting in O(log n).
+
+            LCA = deepest node that lies on the path from root to BOTH u and v.
+            Path length u→v = depth[u] + depth[v] - 2 * depth[LCA].
+
+            Steps:
+              1. Bring the deeper node up to the same depth as the shallower one.
+              2. If they're now equal → that IS the LCA.
+              3. Otherwise lift both together until their parents converge.
+            """
+
+            # ── STEP 1: EQUALISE DEPTHS ──
+            # Always ensure node_u is the deeper node
+            if node_depth[node_u] < node_depth[node_v]:
+                node_u, node_v = node_v, node_u
+
+            depth_difference = node_depth[node_u] - node_depth[node_v]
+
+            # Lift node_u up by depth_difference using binary representation.
+            # e.g. depth_difference=5 = 101 in binary → jump 4 then 1 levels.
+            bit_position = 0
+            remaining_diff = depth_difference
+            while remaining_diff:
+                if remaining_diff & 1:
+                    # This bit is set → make this power-of-2 jump
+                    node_u = jump_table[node_u][bit_position]
+                remaining_diff >>= 1    # shift to next bit
+                bit_position   += 1
+
+            # ── STEP 2: CHECK IF LCA FOUND IMMEDIATELY ──
+            # After equalising depths, if nodes are the same, one is an ancestor
+            # of the other → that node IS the LCA
+            if node_u == node_v:
+                return node_u
+
+            # ── STEP 3: LIFT BOTH NODES TOGETHER ──
+            # Scan from largest jump to smallest.
+            # Lift both as long as their ancestors at that level differ.
+            # When we can't lift anymore (ancestors would converge),
+            # the direct parent of where we stopped is the LCA.
+            for jump_size in range(max_log - 1, -1, -1):
+                anc_u = jump_table[node_u][jump_size]
+                anc_v = jump_table[node_v][jump_size]
+
+                # Only lift if ancestors are DIFFERENT (if same, we'd overshoot past LCA)
+                if anc_u != -1 and anc_u != anc_v:
+                    node_u = anc_u
+                    node_v = anc_v
+
+            # After the loop, node_u and node_v are just BELOW the LCA.
+            # Their direct parent (jump of 1) is the LCA itself.
+            return jump_table[node_u][0]
+
+        # ── ANSWER EACH QUERY ──
+        result = []
+
+        for query_u, query_v in queries:
+            # Convert 1-indexed query nodes to 0-indexed
+            query_u -= 1
+            query_v -= 1
+
+            lca_node = findLCA(query_u, query_v)
+
+            # Path length = edges from u to LCA + edges from LCA to v
+            # = (depth[u] - depth[LCA]) + (depth[v] - depth[LCA])
+            # = depth[u] + depth[v] - 2 * depth[LCA]
+            path_length = (node_depth[query_u]
+                           + node_depth[query_v]
+                           - 2 * node_depth[lca_node])
+
+            if path_length == 0:
+                # u == v: path has no edges → cost is always 0 → never odd
+                result.append(0)
+            else:
+                # Valid odd-cost assignments = 2^(path_length - 1) mod MOD
+                result.append(pow(2, path_length - 1, MOD))
+
+        return result

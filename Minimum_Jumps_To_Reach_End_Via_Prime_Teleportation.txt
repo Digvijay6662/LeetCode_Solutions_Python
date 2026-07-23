@@ -1,0 +1,187 @@
+3629. Minimum Jumps to Reach End via Prime Teleportation
+Solved
+Medium
+Topics
+premium lock icon
+Companies
+Hint
+You are given an integer array nums of length n.
+
+You start at index 0, and your goal is to reach index n - 1.
+
+From any index i, you may perform one of the following operations:
+
+Adjacent Step: Jump to index i + 1 or i - 1, if the index is within bounds.
+Prime Teleportation: If nums[i] is a prime number p, you may instantly jump to any index j != i such that nums[j] % p == 0.
+Return the minimum number of jumps required to reach index n - 1.
+
+ 
+
+Example 1:
+
+Input: nums = [1,2,4,6]
+
+Output: 2
+
+Explanation:
+
+One optimal sequence of jumps is:
+
+Start at index i = 0. Take an adjacent step to index 1.
+At index i = 1, nums[1] = 2 is a prime number. Therefore, we teleport to index i = 3 as nums[3] = 6 is divisible by 2.
+Thus, the answer is 2.
+
+Example 2:
+
+Input: nums = [2,3,4,7,9]
+
+Output: 2
+
+Explanation:
+
+One optimal sequence of jumps is:
+
+Start at index i = 0. Take an adjacent step to index i = 1.
+At index i = 1, nums[1] = 3 is a prime number. Therefore, we teleport to index i = 4 since nums[4] = 9 is divisible by 3.
+Thus, the answer is 2.
+
+Example 3:
+
+Input: nums = [4,6,5,8]
+
+Output: 3
+
+Explanation:
+
+Since no teleportation is possible, we move through 0 → 1 → 2 → 3. Thus, the answer is 3.
+ 
+
+Constraints:
+
+1 <= n == nums.length <= 105
+1 <= nums[i] <= 106
+
+
+Solution 1:
+
+class Solution:
+    def minJumps(self, nums: List[int]) -> int:
+        n = len(nums)
+
+        # ── STEP 1: Map each VALUE to all its INDICES ─────────────────────────
+        # valueToIndices[v] = list of all indices where nums[index] == v
+        # e.g. nums=[1,2,4,2] → valueToIndices={1:[0], 2:[1,3], 4:[2]}
+        # Used during teleportation to instantly find all reachable indices
+        valueToIndices = defaultdict(list)
+        maxVal         = 0
+
+        for i in range(n):
+            valueToIndices[nums[i]].append(i)       # group index under its value
+            maxVal = max(maxVal, nums[i])            # track largest value for sieve size
+
+        # ── STEP 2: Sieve of Eratosthenes ────────────────────────────────────
+        # isPrime[i] = True  → i is a prime number
+        # isPrime[i] = False → i is composite (or 0/1)
+        #
+        # How sieve works:
+        #   Start: assume ALL numbers are prime
+        #   For each prime p found: mark ALL its multiples as NOT prime
+        #
+        # e.g. maxVal=10:
+        #   p=2: mark 4,6,8,10 as False
+        #   p=3: mark 6,9 as False (6 already marked)
+        #   p=5: mark 10 as False  (10 already marked)
+        #   p=7: no multiples ≤ 10 to mark
+        #   isPrime = [F,F,T,T,F,T,F,T,F,F,F]
+        #                   2  3     5     7
+        isPrime = [True] * (maxVal + 1)
+        isPrime[0] = isPrime[1] = False             # 0 and 1 are not prime by definition
+
+        for num in range(2, maxVal + 1):
+            if isPrime[num]:                        # num is prime → mark its multiples
+                for composite in range(2 * num, maxVal + 1, num):
+                    isPrime[composite] = False      # composite can't be prime
+
+        # ── STEP 3: BFS for minimum jumps ────────────────────────────────────
+        # Model as unweighted graph → BFS gives shortest path (min jumps)
+        #
+        # Each index is a NODE
+        # Each valid move (adjacent step or teleport) is an EDGE of weight 1
+        # BFS processes all nodes at distance k before distance k+1
+        # → first time we reach index n-1 = minimum possible jumps
+        isVisited  = [False] * n
+        bfsQueue   = deque([0])                     # start BFS from index 0
+        isVisited[0] = True
+        jumpCount  = 0                              # current BFS level = jumps taken so far
+
+        while bfsQueue:
+
+            # Process ALL indices reachable in exactly 'jumpCount' jumps
+            # len(bfsQueue) freezes current level size before we add next level
+            for _ in range(len(bfsQueue)):
+                currIdx = bfsQueue.popleft()
+
+                # ── Found destination ─────────────────────────────────────────
+                # BFS guarantees this is the minimum number of jumps
+                if currIdx == n - 1:
+                    return jumpCount
+
+                # ── Adjacent Step LEFT (currIdx → currIdx-1) ──────────────────
+                # Can step left if not at boundary and not already visited
+                leftIdx = currIdx - 1
+                if leftIdx >= 0 and not isVisited[leftIdx]:
+                    bfsQueue.append(leftIdx)
+                    isVisited[leftIdx] = True       # mark immediately to avoid duplicates
+
+                # ── Adjacent Step RIGHT (currIdx → currIdx+1) ─────────────────
+                # Can step right if not at boundary and not already visited
+                rightIdx = currIdx + 1
+                if rightIdx < n and not isVisited[rightIdx]:
+                    bfsQueue.append(rightIdx)
+                    isVisited[rightIdx] = True
+
+                # ── Prime Teleportation ───────────────────────────────────────
+                # Only possible if nums[currIdx] itself is a prime p
+                # Rule: teleport to ANY index j where nums[j] % p == 0
+                # i.e. visit ALL indices whose values are multiples of p
+                #
+                # e.g. currIdx=1, nums[1]=2 (prime)
+                #   multiples of 2 = 2,4,6,8,...
+                #   visit all indices in valueToIndices[2], [4], [6], [8]...
+                if isPrime[nums[currIdx]]:
+                    primeVal = nums[currIdx]
+
+                    # Scan every multiple of primeVal up to maxVal
+                    # e.g. primeVal=3, maxVal=9 → check multiples 3,6,9
+                    for multipleOfPrime in range(primeVal, maxVal + 1, primeVal):
+
+                        # Add ALL unvisited indices having this multiple as value
+                        for teleportIdx in valueToIndices[multipleOfPrime]:
+                            if not isVisited[teleportIdx]:
+                                bfsQueue.append(teleportIdx)
+                                isVisited[teleportIdx] = True
+
+                        # ── CRITICAL OPTIMIZATION: clear after processing ─────
+                        # Why needed:
+                        #   Without clearing: if another index later has same
+                        #   primeVal, it re-scans ALL these indices → O(N) wasted
+                        #
+                        # Why safe:
+                        #   All indices for this multiple are now either:
+                        #     a) Already visited (in queue or processed)
+                        #     b) Just added to queue with isVisited=True
+                        #   Future BFS levels will skip them via isVisited check
+                        #   So clearing valueToIndices[multiple] loses nothing
+                        #
+                        # e.g. primeVal=2, multiple=4:
+                        #   Before: valueToIndices[4] = [2, 7, 15]
+                        #   After:  valueToIndices[4] = []    ← never re-scanned
+                        valueToIndices[multipleOfPrime] = []
+
+            # Finished processing all nodes at current jump distance
+            # Move to next BFS level (one more jump)
+            jumpCount += 1
+
+        # Should never reach here given problem constraints
+        # (path always exists between index 0 and n-1 via adjacent steps)
+        return -1

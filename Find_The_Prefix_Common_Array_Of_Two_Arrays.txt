@@ -57,3 +57,68 @@ class Solution:
             result.append(count)
 
         return result
+
+
+Solution 2:
+
+class Solution:
+    def findThePrefixCommonArray(self, A: List[int], B: List[int]) -> List[int]:
+        n = len(A)                     # Length of the permutations
+        seenA, seenB = set(), set()     # Track elements seen so far in A and B
+        ans = []                        # Final result array
+        common_count = 0                # Running count of common elements
+
+        for i in range(n):
+            # Add the current elements from A and B into their respective sets
+            seenA.add(A[i])
+            seenB.add(B[i])
+
+            # If the current element from A has already appeared in B's prefix,
+            # it means this number is now common to both prefixes
+            if A[i] in seenB:
+                common_count += 1
+
+            # Similarly, if the current element from B has already appeared in A's prefix,
+            # it is also a new common element. 
+            # The extra condition (B[i] != A[i]) avoids double-counting when both are the same.
+            if B[i] in seenA and B[i] != A[i]:
+                common_count += 1
+
+            # Append the current count of common elements to the result
+            ans.append(common_count)
+
+        return ans
+
+
+Solution 3:
+
+class Solution:
+    def findThePrefixCommonArray(self, A: List[int], B: List[int]) -> List[int]:
+        n = len(A)              # Length of the permutations
+        ans = []                # Result array to store prefix common counts
+        common = 0              # Running count of common elements so far
+        seen = set()            # Set to track all elements seen from both arrays
+
+        for i in range(n):
+            # Process A[i]:
+            # If A[i] was already added earlier (from B’s side),
+            # then it means A[i] is now common to both prefixes
+            if A[i] in seen:
+                common += 1
+            else:
+                # Otherwise, mark A[i] as seen
+                seen.add(A[i])
+            
+            # Process B[i]:
+            # If B[i] was already added earlier (from A’s side),
+            # then it means B[i] is now common to both prefixes
+            if B[i] in seen:
+                common += 1
+            else:
+                # Otherwise, mark B[i] as seen
+                seen.add(B[i])
+            
+            # Append the current count of common elements to the result
+            ans.append(common)
+        
+        return ans

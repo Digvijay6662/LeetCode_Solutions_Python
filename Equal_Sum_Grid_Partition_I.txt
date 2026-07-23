@@ -1,0 +1,125 @@
+3546. Equal Sum Grid Partition I
+Solved
+Medium
+Topics
+premium lock icon
+Companies
+Hint
+You are given an m x n matrix grid of positive integers. Your task is to determine if it is possible to make either one horizontal or one vertical cut on the grid such that:
+
+Each of the two resulting sections formed by the cut is non-empty.
+The sum of the elements in both sections is equal.
+Return true if such a partition exists; otherwise return false.
+
+ 
+
+Example 1:
+
+Input: grid = [[1,4],[2,3]]
+
+Output: true
+
+Explanation:
+
+
+
+A horizontal cut between row 0 and row 1 results in two non-empty sections, each with a sum of 5. Thus, the answer is true.
+
+Example 2:
+
+Input: grid = [[1,3],[2,4]]
+
+Output: false
+
+Explanation:
+
+No horizontal or vertical cut results in two non-empty sections with equal sums. Thus, the answer is false.
+
+ 
+
+Constraints:
+
+1 <= m == grid.length <= 105
+1 <= n == grid[i].length <= 105
+2 <= m * n <= 105
+1 <= grid[i][j] <= 105
+
+
+Solution 1:
+
+class Solution:
+    def canPartitionGrid(self, grid: List[List[int]]) -> bool:
+        # Number of rows and columns
+        rows, cols = len(grid), len(grid[0])
+        
+        # rowPrefix[i] will store cumulative sum of elements up to row i
+        rowPrefix = [0] * rows
+        # colPrefix[j] will store cumulative sum of elements up to column j
+        colPrefix = [0] * cols
+
+        # Step 1: Compute row sums and column sums
+        for i in range(rows):
+            for j in range(cols):
+                rowPrefix[i] += grid[i][j]   # add current cell to its row sum
+                colPrefix[j] += grid[i][j]   # add current cell to its column sum
+
+        # Step 2: Convert row sums into prefix sums (cumulative from top to bottom)
+        for i in range(1, rows):
+            rowPrefix[i] += rowPrefix[i - 1]
+
+        # Step 3: Convert column sums into prefix sums (cumulative from left to right)
+        for j in range(1, cols):
+            colPrefix[j] += colPrefix[j - 1]
+
+        # Step 4: Check possible horizontal cuts
+        # A horizontal cut is valid if the sum of the top part == sum of the bottom part
+        for i in range(rows - 1):  # cut must leave both parts non-empty
+            topSum = rowPrefix[i]                     # sum of rows above the cut
+            bottomSum = rowPrefix[rows - 1] - topSum  # sum of rows below the cut
+            if topSum == bottomSum:
+                return True
+
+        # Step 5: Check possible vertical cuts
+        # A vertical cut is valid if the sum of the left part == sum of the right part
+        for j in range(cols - 1):  # cut must leave both parts non-empty
+            leftSum = colPrefix[j]                      # sum of columns left of the cut
+            rightSum = colPrefix[cols - 1] - leftSum    # sum of columns right of the cut
+            if leftSum == rightSum:
+                return True
+
+        # Step 6: If no valid cut found, return False
+        return False
+
+
+Solution 2:
+
+class Solution:
+    def canPartitionGrid(self, grid: List[List[int]]) -> bool:
+        # Number of rows and columns in the grid
+        rows, cols = len(grid), len(grid[0])
+        
+        # Step 1: Compute the total sum of all elements in the grid
+        total_sum = sum(sum(row) for row in grid)
+        
+        # Step 2: Check for a possible horizontal cut
+        # A horizontal cut means splitting the grid into "top" and "bottom" parts.
+        # We maintain a running prefix sum of rows from the top.
+        prefix_sum = 0
+        for i in range(rows - 1):  # ensure both top and bottom parts are non-empty
+            prefix_sum += sum(grid[i])  # add the sum of the current row
+            # If the sum of the top part equals half of the total, then bottom part is also equal
+            if prefix_sum * 2 == total_sum:
+                return True
+        
+        # Step 3: Check for a possible vertical cut
+        # A vertical cut means splitting the grid into "left" and "right" parts.
+        # We maintain a running prefix sum of columns from the left.
+        prefix_sum = 0
+        for j in range(cols - 1):  # ensure both left and right parts are non-empty
+            prefix_sum += sum(grid[i][j] for i in range(rows))  # add the sum of the current column
+            # If the sum of the left part equals half of the total, then right part is also equal
+            if prefix_sum * 2 == total_sum:
+                return True
+        
+        # Step 4: If no valid cut found, return False
+        return False

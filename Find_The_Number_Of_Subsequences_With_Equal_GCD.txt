@@ -1,0 +1,203 @@
+3336. Find the Number of Subsequences With Equal GCD
+Solved
+Hard
+Topics
+premium lock icon
+Companies
+Hint
+You are given an integer array nums.
+
+Your task is to find the number of pairs of non-empty subsequences (seq1, seq2) of nums that satisfy the following conditions:
+
+The subsequences seq1 and seq2 are disjoint, meaning no index of nums is common between them.
+The GCD of the elements of seq1 is equal to the GCD of the elements of seq2.
+Return the total number of such pairs.
+
+Since the answer may be very large, return it modulo 109 + 7.
+
+ 
+
+Example 1:
+
+Input: nums = [1,2,3,4]
+
+Output: 10
+
+Explanation:
+
+The subsequence pairs which have the GCD of their elements equal to 1 are:
+
+([1, 2, 3, 4], [1, 2, 3, 4])
+([1, 2, 3, 4], [1, 2, 3, 4])
+([1, 2, 3, 4], [1, 2, 3, 4])
+([1, 2, 3, 4], [1, 2, 3, 4])
+([1, 2, 3, 4], [1, 2, 3, 4])
+([1, 2, 3, 4], [1, 2, 3, 4])
+([1, 2, 3, 4], [1, 2, 3, 4])
+([1, 2, 3, 4], [1, 2, 3, 4])
+([1, 2, 3, 4], [1, 2, 3, 4])
+([1, 2, 3, 4], [1, 2, 3, 4])
+Example 2:
+
+Input: nums = [10,20,30]
+
+Output: 2
+
+Explanation:
+
+The subsequence pairs which have the GCD of their elements equal to 10 are:
+
+([10, 20, 30], [10, 20, 30])
+([10, 20, 30], [10, 20, 30])
+Example 3:
+
+Input: nums = [1,1,1,1]
+
+Output: 50
+
+ 
+
+Constraints:
+
+1 <= nums.length <= 200
+1 <= nums[i] <= 200
+
+
+Solution 1:
+
+class Solution:
+    def subsequencePairCount(self, nums: List[int]) -> int:
+        MOD = 10**9 + 7   # modulus for large numbers
+        n = len(nums)     # length of the input array
+        maxVal = max(nums) + 1  # maximum possible gcd value (bounded by max element)
+
+        # 3D DP table initialized with -1 (meaning "not yet computed")
+        # dp[i][g1][g2] = number of valid subsequence pairs starting from index i
+        # with current gcd values g1 (for seq1) and g2 (for seq2)
+        dp = [[[-1] * maxVal for _ in range(maxVal)] for _ in range(n)]
+        
+        def solve(index: int, gcd_seq1: int, gcd_seq2: int) -> int:
+            """
+            Recursive function with memoization:
+            - index: current position in nums
+            - gcd_seq1: gcd of elements chosen so far for subsequence 1
+            - gcd_seq2: gcd of elements chosen so far for subsequence 2
+            Returns: number of valid subsequence pairs from this state
+            """
+            # Base case: if we've processed all elements
+            if index == n:
+                # Valid only if both subsequences are non-empty (gcd != 0)
+                # and their gcds are equal
+                if gcd_seq1 != 0 and gcd_seq1 == gcd_seq2:
+                    return 1
+                return 0
+                
+            # If already computed, return cached result
+            if dp[index][gcd_seq1][gcd_seq2] != -1:
+                return dp[index][gcd_seq1][gcd_seq2]
+
+            # Option 1: skip current element (do not include in either subsequence)
+            skip = solve(index + 1, gcd_seq1, gcd_seq2)
+
+            # Option 2: include current element in subsequence 1
+            new_gcd1 = gcd(nums[index], gcd_seq1) if gcd_seq1 != 0 else nums[index]
+            seq1 = solve(index + 1, new_gcd1, gcd_seq2)
+
+            # Option 3: include current element in subsequence 2
+            new_gcd2 = gcd(nums[index], gcd_seq2) if gcd_seq2 != 0 else nums[index]
+            seq2 = solve(index + 1, gcd_seq1, new_gcd2)
+
+            # Total ways = sum of all three choices
+            dp[index][gcd_seq1][gcd_seq2] = (skip + seq1 + seq2) % MOD
+            return dp[index][gcd_seq1][gcd_seq2]
+
+        # Start recursion with index 0 and empty subsequences (gcd = 0 means empty)
+        return solve(0, 0, 0)
+
+
+Solution 2:
+
+class Solution:
+    def subsequencePairCount(self, nums: List[int]) -> int:
+        MOD = 10**9 + 7   # modulus for large results
+        n = len(nums)     # number of elements in nums
+        maxVal = max(nums) + 1  # maximum possible gcd value (bounded by max element)
+
+        # dp[i][g1][g2] = number of valid subsequence pairs
+        # considering elements from index i onwards,
+        # where current gcd of subsequence1 = g1 and subsequence2 = g2
+        dp = [[[0] * maxVal for _ in range(maxVal)] for _ in range(n + 1)]
+
+        # Base case:
+        # At position n (past the last element), if gcd1 == gcd2 and both are non-zero,
+        # then we have found one valid pair of subsequences.
+        # Initialize dp[n][i][i] = 1 for all i (meaning both subsequences end with same gcd).
+        for i in range(1, maxVal):
+            dp[n][i][i] = 1
+
+        # Fill DP table backwards from index n-1 down to 0
+        for i in range(n - 1, -1, -1):
+            for gcd1 in range(maxVal):
+                for gcd2 in range(maxVal):
+                    # Option 1: skip current element (do not include in either subsequence)
+                    skip = dp[i + 1][gcd1][gcd2]
+
+                    # Option 2: include current element in subsequence 1
+                    # Update gcd1 with nums[i]
+                    seq1 = dp[i + 1][gcd(nums[i], gcd1)][gcd2]
+
+                    # Option 3: include current element in subsequence 2
+                    # Update gcd2 with nums[i]
+                    seq2 = dp[i + 1][gcd1][gcd(nums[i], gcd2)]
+
+                    # Total ways = sum of all three choices
+                    dp[i][gcd1][gcd2] = (skip + seq1 + seq2) % MOD
+
+        # Final answer: starting at index 0 with both subsequences empty (gcd = 0)
+        return dp[0][0][0]
+
+
+Solution 3:
+
+class Solution:
+    def subsequencePairCount(self, nums: List[int]) -> int:
+        MOD = 10**9 + 7   # modulus for large results
+        n = len(nums)     # number of elements in nums
+        maxVal = max(nums) + 1  # maximum possible gcd value (bounded by max element)
+
+        # prev[g1][g2] = number of valid subsequence pairs
+        # when we have already processed all elements (base case initially)
+        prev = [[0] * maxVal for _ in range(maxVal)]
+
+        # Base case:
+        # At the end of the array (i == n), if gcd1 == gcd2 and both are non-zero,
+        # then we have exactly one valid pair of subsequences.
+        # Initialize prev[i][i] = 1 for all gcd values i.
+        for i in range(1, maxVal):
+            prev[i][i] = 1
+
+        # Process elements backwards from index n-1 down to 0
+        for i in range(n - 1, -1, -1):
+            # curr[g1][g2] will store results for position i
+            curr = [[0] * maxVal for _ in range(maxVal)]
+            for gcd1 in range(maxVal):
+                for gcd2 in range(maxVal):
+                    # Option 1: skip nums[i] (do not include in either subsequence)
+                    skip = prev[gcd1][gcd2]
+
+                    # Option 2: include nums[i] in subsequence 1
+                    # Update gcd1 with nums[i]
+                    seq1 = prev[gcd(nums[i], gcd1)][gcd2]
+
+                    # Option 3: include nums[i] in subsequence 2
+                    # Update gcd2 with nums[i]
+                    seq2 = prev[gcd1][gcd(nums[i], gcd2)]
+
+                    # Total ways = sum of all three choices
+                    curr[gcd1][gcd2] = (skip + seq1 + seq2) % MOD
+
+            # Move current results into prev for next iteration
+            prev = curr
+
+        # Final answer: starting at index 0 with both subsequences empty (gcd = 0)
+        return prev[0][0]

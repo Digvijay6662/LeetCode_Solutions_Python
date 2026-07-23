@@ -1,0 +1,139 @@
+1594. Maximum Non Negative Product in a Matrix
+Solved
+Medium
+Topics
+premium lock icon
+Companies
+Hint
+You are given a m x n matrix grid. Initially, you are located at the top-left corner (0, 0), and in each step, you can only move right or down in the matrix.
+
+Among all possible paths starting from the top-left corner (0, 0) and ending in the bottom-right corner (m - 1, n - 1), find the path with the maximum non-negative product. The product of a path is the product of all integers in the grid cells visited along the path.
+
+Return the maximum non-negative product modulo 109 + 7. If the maximum product is negative, return -1.
+
+Notice that the modulo is performed after getting the maximum product.
+
+ 
+
+Example 1:
+
+
+Input: grid = [[-1,-2,-3],[-2,-3,-3],[-3,-3,-2]]
+Output: -1
+Explanation: It is not possible to get non-negative product in the path from (0, 0) to (2, 2), so return -1.
+Example 2:
+
+
+Input: grid = [[1,-2,1],[1,-2,1],[3,-4,1]]
+Output: 8
+Explanation: Maximum non-negative product is shown (1 * 1 * -2 * -4 * 1 = 8).
+Example 3:
+
+
+Input: grid = [[1,3],[0,-4]]
+Output: 0
+Explanation: Maximum non-negative product is shown (1 * 0 * -4 = 0).
+ 
+
+Constraints:
+
+m == grid.length
+n == grid[i].length
+1 <= m, n <= 15
+-4 <= grid[i][j] <= 4
+
+
+Solution 1:
+
+class Solution:
+    def maxProductPath(self, grid: List[List[int]]) -> int:
+        MOD = 10**9 + 7
+        rows, cols = len(grid), len(grid[0])
+
+        dp = {}
+
+        def dfs(r, c):
+            """
+            Returns (min_product, max_product) achievable from cell (r, c) to bottom-right.
+            We track both because multiplying by a negative can flip min ↔ max.
+            """
+            # If already computed, return from dp
+            if (r, c) in dp:
+                return dp[(r, c)]
+
+            # Base case: bottom-right cell
+            if r == rows - 1 and c == cols - 1:
+                dp[(r, c)] = (grid[r][c], grid[r][c])
+                return dp[(r, c)]
+
+            val = grid[r][c]
+            min_product, max_product = float('inf'), float('-inf')
+
+            # Move down
+            if r + 1 < rows:
+                down_min, down_max = dfs(r + 1, c)
+                min_product = min(min_product, val * down_min, val * down_max)
+                max_product = max(max_product, val * down_min, val * down_max)
+
+            # Move right
+            if c + 1 < cols:
+                right_min, right_max = dfs(r, c + 1)
+                min_product = min(min_product, val * right_min, val * right_max)
+                max_product = max(max_product, val * right_min, val * right_max)
+
+            dp[(r, c)] = (min_product, max_product)
+            return dp[(r, c)]
+
+        # Start DFS from top-left corner
+        _, best = dfs(0, 0)
+
+        # Return result modulo MOD if non-negative, else -1
+        return best % MOD if best >= 0 else -1
+
+
+Solution 2:
+
+class Solution:
+    def maxProductPath(self, grid: List[List[int]]) -> int:
+        MOD = 10**9 + 7
+        rows, cols = len(grid), len(grid[0])
+
+        # dp[r][c] = (min_product, max_product) achievable at cell (r, c)
+        dp = [[(0, 0)] * cols for _ in range(rows)]
+
+        # Initialize starting cell
+        dp[0][0] = (grid[0][0], grid[0][0])
+
+        # Fill first row (can only come from left)
+        for c in range(1, cols):
+            val = grid[0][c]
+            prev_min, prev_max = dp[0][c - 1]
+            dp[0][c] = (prev_min * val, prev_max * val)
+
+        # Fill first column (can only come from above)
+        for r in range(1, rows):
+            val = grid[r][0]
+            prev_min, prev_max = dp[r - 1][0]
+            dp[r][0] = (prev_min * val, prev_max * val)
+
+        # Fill rest of the grid
+        for r in range(1, rows):
+            for c in range(1, cols):
+                val = grid[r][c]
+
+                # From top
+                top_min, top_max = dp[r - 1][c]
+                # From left
+                left_min, left_max = dp[r][c - 1]
+
+                # Compute all possible products
+                candidates = [
+                    val * top_min, val * top_max,
+                    val * left_min, val * left_max
+                ]
+
+                dp[r][c] = (min(candidates), max(candidates))
+
+        # Final answer is max_product at bottom-right
+        _, best = dp[rows - 1][cols - 1]
+        return best % MOD if best >= 0 else -1

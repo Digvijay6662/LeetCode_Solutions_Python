@@ -1,0 +1,124 @@
+3741. Minimum Distance Between Three Equal Elements II
+Solved
+Medium
+Topics
+premium lock icon
+Companies
+Hint
+You are given an integer array nums.
+
+A tuple (i, j, k) of 3 distinct indices is good if nums[i] == nums[j] == nums[k].
+
+The distance of a good tuple is abs(i - j) + abs(j - k) + abs(k - i), where abs(x) denotes the absolute value of x.
+
+Return an integer denoting the minimum possible distance of a good tuple. If no good tuples exist, return -1.
+
+ 
+
+Example 1:
+
+Input: nums = [1,2,1,1,3]
+
+Output: 6
+
+Explanation:
+
+The minimum distance is achieved by the good tuple (0, 2, 3).
+
+(0, 2, 3) is a good tuple because nums[0] == nums[2] == nums[3] == 1. Its distance is abs(0 - 2) + abs(2 - 3) + abs(3 - 0) = 2 + 1 + 3 = 6.
+
+Example 2:
+
+Input: nums = [1,1,2,3,2,1,2]
+
+Output: 8
+
+Explanation:
+
+The minimum distance is achieved by the good tuple (2, 4, 6).
+
+(2, 4, 6) is a good tuple because nums[2] == nums[4] == nums[6] == 2. Its distance is abs(2 - 4) + abs(4 - 6) + abs(6 - 2) = 2 + 2 + 4 = 8.
+
+Example 3:
+
+Input: nums = [1]
+
+Output: -1
+
+Explanation:
+
+There are no good tuples. Therefore, the answer is -1.
+
+ 
+
+Constraints:
+
+1 <= n == nums.length <= 105
+1 <= nums[i] <= n
+
+
+Solution 1:
+
+class Solution:
+    def minimumDistance(self, nums: List[int]) -> int:
+        n = len(nums)
+        min_distance = float('inf')   # Initialize with infinity (no good tuple found yet)
+        index_map = defaultdict(deque)  # Map each number → deque of its recent indices
+
+        # Traverse the array
+        for current_index in range(n):
+            # Add the current index to the deque for this number
+            index_map[nums[current_index]].append(current_index)
+
+            # If we now have 3 occurrences of this number
+            if len(index_map[nums[current_index]]) == 3:
+                # Extract the three indices (oldest, middle, newest)
+                first_index, second_index, third_index = (
+                    index_map[nums[current_index]][0],
+                    index_map[nums[current_index]][1],
+                    index_map[nums[current_index]][2]
+                )
+
+                # Distance formula simplifies to 2 * (third - first) when indices are ordered
+                distance = 2 * (third_index - first_index)
+
+                # Update minimum distance if this tuple is better
+                min_distance = min(min_distance, distance)
+
+                # Remove the oldest index to keep only the last 2 + current
+                index_map[nums[current_index]].popleft()
+
+        # Return result, or -1 if no good tuple was found
+        return min_distance if min_distance != float('inf') else -1
+
+
+Solution 2:
+
+class Solution:
+    def minimumDistance(self, nums: List[int]) -> int:
+        n = len(nums)
+        # next_occurrence[i] will store the index of the next occurrence of nums[i]
+        next_occurrence = [-1] * n
+        # last_seen keeps track of the most recent index where each number appeared
+        last_seen = {}
+        # result will store the minimum distance found; start with infinity
+        min_distance = float('inf')
+
+        # Step 1: Build the next_occurrence array by traversing from right to left
+        for i in range(n - 1, -1, -1):
+            if nums[i] in last_seen:
+                next_occurrence[i] = last_seen[nums[i]]
+            # Update the last seen index of nums[i]
+            last_seen[nums[i]] = i
+        
+        # Step 2: Check for triples (i, second, third)
+        for i in range(n):
+            second = next_occurrence[i]  # next occurrence of nums[i]
+            if second != -1:
+                third = next_occurrence[second]  # next occurrence after 'second'
+                if third != -1:
+                    # Distance formula simplifies to 2 * (third - i)
+                    min_distance = min(min_distance, third - i)
+        
+        # Step 3: Return result
+        return 2 * min_distance if min_distance != float('inf') else -1

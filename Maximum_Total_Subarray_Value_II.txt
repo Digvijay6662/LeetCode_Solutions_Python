@@ -1,0 +1,240 @@
+3691. Maximum Total Subarray Value II
+Solved
+Hard
+Topics
+premium lock icon
+Companies
+Hint
+You are given an integer array nums of length n and an integer k.
+
+You must select exactly k distinct subarrays nums[l..r] of nums. Subarrays may overlap, but the exact same subarray (same l and r) cannot be chosen more than once.
+
+The value of a subarray nums[l..r] is defined as: max(nums[l..r]) - min(nums[l..r]).
+
+The total value is the sum of the values of all chosen subarrays.
+
+Return the maximum possible total value you can achieve.
+
+ 
+
+Example 1:
+
+Input: nums = [1,3,2], k = 2
+
+Output: 4
+
+Explanation:
+
+One optimal approach is:
+
+Choose nums[0..1] = [1, 3]. The maximum is 3 and the minimum is 1, giving a value of 3 - 1 = 2.
+Choose nums[0..2] = [1, 3, 2]. The maximum is still 3 and the minimum is still 1, so the value is also 3 - 1 = 2.
+Adding these gives 2 + 2 = 4.
+
+Example 2:
+
+Input: nums = [4,2,5,1], k = 3
+
+Output: 12
+
+Explanation:
+
+One optimal approach is:
+
+Choose nums[0..3] = [4, 2, 5, 1]. The maximum is 5 and the minimum is 1, giving a value of 5 - 1 = 4.
+Choose nums[1..3] = [2, 5, 1]. The maximum is 5 and the minimum is 1, so the value is also 4.
+Choose nums[2..3] = [5, 1]. The maximum is 5 and the minimum is 1, so the value is again 4.
+Adding these gives 4 + 4 + 4 = 12.
+
+ 
+
+Constraints:
+
+1 <= n == nums.length <= 5 * 10​​​​​​​4
+0 <= nums[i] <= 109
+1 <= k <= min(105, n * (n + 1) / 2)
+
+
+Solution 1:
+
+class SegmentTree:
+    """
+    Dual segment tree storing both range-min and range-max.
+    Allows O(log n) range queries for both min and max simultaneously,
+    which is needed to compute subarray value = max - min efficiently.
+    """
+
+    def __init__(self, n):
+        # 4*n nodes is the standard safe allocation for a segment tree
+        # covering an array of size n.
+        # minTree[i] = minimum value in the subarray covered by node i
+        # maxTree[i] = maximum value in the subarray covered by node i
+        self.minTree = [float('inf')]  * (4 * n)
+        self.maxTree = [float('-inf')] * (4 * n)
+
+    def buildTree(self, nums, node_idx, node_l, node_r):
+        """
+        Recursively fills minTree and maxTree bottom-up.
+        Each leaf stores nums[node_l]; each internal node
+        stores the aggregate of its two children.
+
+        Args:
+            node_idx : current node's index in the tree array
+            node_l   : leftmost  array index this node covers
+            node_r   : rightmost array index this node covers
+        """
+
+        # ── LEAF NODE ──
+        # Covers exactly one element → store it directly in both trees
+        if node_l == node_r:
+            self.minTree[node_idx] = nums[node_l]
+            self.maxTree[node_idx] = nums[node_l]
+            return
+
+        # ── INTERNAL NODE ──
+        # Split range in half, build each child, then pull up aggregates
+        mid         = node_l + (node_r - node_l) // 2
+        left_child  = 2 * node_idx + 1   # left  child node index
+        right_child = 2 * node_idx + 2   # right child node index
+
+        # Recursively build left half [node_l .. mid]
+        self.buildTree(nums, left_child,  node_l,    mid)
+        # Recursively build right half [mid+1 .. node_r]
+        self.buildTree(nums, right_child, mid + 1, node_r)
+
+        # Pull up: internal node = aggregate of both children
+        self.minTree[node_idx] = min(self.minTree[left_child], self.minTree[right_child])
+        self.maxTree[node_idx] = max(self.maxTree[left_child], self.maxTree[right_child])
+
+    def queryMax(self, node_idx, query_l, query_r, node_l, node_r):
+        """
+        Returns the maximum value in nums[query_l .. query_r].
+
+        Args:
+            node_idx        : current node's index in the tree array
+            query_l, query_r: the range we want the maximum for
+            node_l,  node_r : the range this node currently covers
+        """
+
+        # ── CASE 1: COMPLETELY OUTSIDE query range ──
+        # This node covers [node_l, node_r] which doesn't overlap [query_l, query_r].
+        # Contributes nothing → return identity value for max (-inf)
+        if node_r < query_l or node_l > query_r:
+            return float('-inf')
+
+        # ── CASE 2: COMPLETELY INSIDE query range ──
+        # This node's range [node_l, node_r] is fully within [query_l, query_r].
+        # The precomputed maxTree[node_idx] already holds the answer for this range.
+        # Return it directly — no need to recurse deeper.
+        if query_l <= node_l and node_r <= query_r:
+            return self.maxTree[node_idx]
+
+        # ── CASE 3: PARTIAL OVERLAP ──
+        # This node's range straddles the query boundary.
+        # Recurse into both children to find the max within each overlapping half.
+        mid         = node_l + (node_r - node_l) // 2
+        left_child  = 2 * node_idx + 1
+        right_child = 2 * node_idx + 2
+
+        left_max  = self.queryMax(left_child,  query_l, query_r, node_l,    mid)
+        right_max = self.queryMax(right_child, query_l, query_r, mid + 1, node_r)
+
+        return max(left_max, right_max)
+
+    def queryMin(self, node_idx, query_l, query_r, node_l, node_r):
+        """
+        Returns the minimum value in nums[query_l .. query_r].
+        Mirror image of queryMax with min logic and +inf identity.
+        """
+
+        # ── CASE 1: COMPLETELY OUTSIDE ──
+        # Return identity for min (+inf) so it never incorrectly wins a min()
+        if node_r < query_l or node_l > query_r:
+            return float('inf')
+
+        # ── CASE 2: COMPLETELY INSIDE ──
+        # Precomputed answer for this range — return directly
+        if query_l <= node_l and node_r <= query_r:
+            return self.minTree[node_idx]
+
+        # ── CASE 3: PARTIAL OVERLAP ──
+        mid         = node_l + (node_r - node_l) // 2
+        left_child  = 2 * node_idx + 1
+        right_child = 2 * node_idx + 2
+
+        left_min  = self.queryMin(left_child,  query_l, query_r, node_l,    mid)
+        right_min = self.queryMin(right_child, query_l, query_r, mid + 1, node_r)
+
+        return min(left_min, right_min)
+
+class Solution:
+    def maxTotalValue(self, nums: List[int], k: int) -> int:
+        """
+        ── GREEDY STRATEGY ──
+        For a fixed left endpoint sub_l:
+          value([sub_l, sub_r]) = max - min over [sub_l, sub_r]
+          This is NON-DECREASING as sub_r grows (wider range → larger spread).
+          So [sub_l, n-1] is ALWAYS the best subarray starting at sub_l.
+
+        Algorithm:
+          1. Seed a max-heap with [sub_l, n-1] for every sub_l.
+          2. Greedily pop the globally best subarray, add its value to result.
+          3. Push [sub_l, sub_r - 1] back — the next-best starting at sub_l.
+          4. Repeat k times.
+        This guarantees we always pick the k highest-value distinct subarrays.
+        """
+        n = len(nums)
+
+        # Build segment tree once — O(n).
+        # All subsequent range queries cost O(log n) each.
+        seg_tree = SegmentTree(n)
+        seg_tree.buildTree(nums, 0, 0, n - 1)
+
+        # ── MAX-HEAP SETUP ──
+        # Python's heapq is a MIN-heap, so we negate diff to simulate MAX-heap.
+        # Each entry: (-diff, sub_l, sub_r)
+        #   -diff  : negated value for max-heap ordering
+        #   sub_l  : left  endpoint of this candidate subarray
+        #   sub_r  : right endpoint of this candidate subarray
+        max_heap = []
+
+        # Seed heap: for each left endpoint, the widest (best) subarray is [l, n-1]
+        for sub_l in range(n):
+            range_max = seg_tree.queryMax(0, sub_l, n - 1, 0, n - 1)
+            range_min = seg_tree.queryMin(0, sub_l, n - 1, 0, n - 1)
+            diff      = range_max - range_min
+
+            # Push as negative diff → smallest negative = largest diff at top
+            heapq.heappush(max_heap, (-diff, sub_l, n - 1))
+
+        total_value = 0
+
+        # ── GREEDY SELECTION LOOP ──
+        # Each iteration picks the single best remaining subarray.
+        # Runs exactly k times (or until heap exhausted if fewer than k exist).
+        while k > 0 and max_heap:
+
+            # Pop the subarray with the HIGHEST value (least negative diff)
+            neg_diff, sub_l, sub_r = heapq.heappop(max_heap)
+
+            # Undo negation to recover the real value and add to total
+            total_value += (-neg_diff)
+
+            # Decrement k: one subarray has been chosen
+            k -= 1
+
+            # ── PUSH NEXT CANDIDATE FOR THIS LEFT ENDPOINT ──
+            # [sub_l, sub_r] is now used.
+            # The next-best subarray starting at sub_l is [sub_l, sub_r - 1].
+            # Only push if the shrunk subarray is still valid (needs ≥ 1 element,
+            # but practically sub_l < sub_r ensures it still has ≥ 2 elements
+            # and can have a non-zero value worth considering).
+            if sub_l < sub_r:
+                new_sub_r = sub_r - 1
+                range_max = seg_tree.queryMax(0, sub_l, new_sub_r, 0, n - 1)
+                range_min = seg_tree.queryMin(0, sub_l, new_sub_r, 0, n - 1)
+                diff      = range_max - range_min
+
+                heapq.heappush(max_heap, (-diff, sub_l, new_sub_r))
+
+        return total_value

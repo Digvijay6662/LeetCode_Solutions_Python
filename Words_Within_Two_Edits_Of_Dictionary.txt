@@ -1,0 +1,127 @@
+2452. Words Within Two Edits of Dictionary
+Solved
+Medium
+Topics
+premium lock icon
+Companies
+Hint
+You are given two string arrays, queries and dictionary. All words in each array comprise of lowercase English letters and have the same length.
+
+In one edit you can take a word from queries, and change any letter in it to any other letter. Find all words from queries that, after a maximum of two edits, equal some word from dictionary.
+
+Return a list of all words from queries, that match with some word from dictionary after a maximum of two edits. Return the words in the same order they appear in queries.
+
+ 
+
+Example 1:
+
+Input: queries = ["word","note","ants","wood"], dictionary = ["wood","joke","moat"]
+Output: ["word","note","wood"]
+Explanation:
+- Changing the 'r' in "word" to 'o' allows it to equal the dictionary word "wood".
+- Changing the 'n' to 'j' and the 't' to 'k' in "note" changes it to "joke".
+- It would take more than 2 edits for "ants" to equal a dictionary word.
+- "wood" can remain unchanged (0 edits) and match the corresponding dictionary word.
+Thus, we return ["word","note","wood"].
+Example 2:
+
+Input: queries = ["yes"], dictionary = ["not"]
+Output: []
+Explanation:
+Applying any two edits to "yes" cannot make it equal to "not". Thus, we return an empty array.
+ 
+
+Constraints:
+
+1 <= queries.length, dictionary.length <= 100
+n == queries[i].length == dictionary[j].length
+1 <= n <= 100
+All queries[i] and dictionary[j] are composed of lowercase English letters.
+
+
+Solution 1:
+
+class Solution:
+    def twoEditWords(self, queries: List[str], dictionary: List[str]) -> List[str]:
+        result = []  # list to store query words that match within 2 edits
+        
+        # Loop through each query word
+        for q in queries:
+            # Compare against each dictionary word
+            for d in dictionary:
+                # Count how many positions differ between q and d
+                diff = sum(1 for i in range(len(q)) if q[i] != d[i])
+                
+                # If differences are 2 or fewer, it's a valid match
+                if diff <= 2:
+                    result.append(q)   # add query word to result
+                    break              # stop checking other dictionary words for this query
+        return result
+
+
+Solution 2:
+
+class TrieNode:
+    def __init__(self):
+        # Each node holds children (mapping from character → next TrieNode)
+        self.children = {}
+        # Flag to mark if this node completes a word from the dictionary
+        self.is_word = False
+
+class Trie:
+    def __init__(self):
+        # Root node of the Trie (empty prefix)
+        self.root = TrieNode()
+
+    def insert(self, word):
+        # Insert a word into the Trie character by character
+        node = self.root
+        for ch in word:
+            # Create child node if character not already present
+            if ch not in node.children:
+                node.children[ch] = TrieNode()
+            # Move down to the child node
+            node = node.children[ch]
+        # Mark the end of the word
+        node.is_word = True
+
+    def search_with_edits(self, word, max_edits):
+        # Depth‑first search through the Trie while tracking edits used
+        def dfs(node, index, edits):
+            # If edits exceed allowed maximum, stop exploring this path
+            if edits > max_edits:
+                return False
+            # If we've consumed all characters of the query word
+            if index == len(word):
+                # Return True only if this node marks a dictionary word
+                # and edits used are within the limit
+                return node.is_word and edits <= max_edits
+
+            # Explore all children of the current Trie node
+            for ch, child in node.children.items():
+                # If character matches, no new edit needed
+                # If it differs, increment edit count
+                new_edits = edits + (0 if ch == word[index] else 1)
+                # Recurse to next character in query and child node in Trie
+                if dfs(child, index + 1, new_edits):
+                    return True
+            # If no path matched within edit limit, return False
+            return False
+
+        # Start DFS from root, at index 0, with 0 edits used
+        return dfs(self.root, 0, 0)
+
+class Solution:
+    def twoEditWords(self, queries: List[str], dictionary: List[str]) -> List[str]:
+        # Build Trie from dictionary words
+        trie = Trie()
+        for word in dictionary:
+            trie.insert(word)
+
+        result = []
+        # For each query, check if it can match any dictionary word
+        # with at most 2 edits using Trie search
+        for q in queries:
+            if trie.search_with_edits(q, 2):
+                result.append(q)
+        return result

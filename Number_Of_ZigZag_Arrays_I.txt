@@ -1,0 +1,156 @@
+3699. Number of ZigZag Arrays I
+Solved
+Hard
+Topics
+premium lock icon
+Companies
+Hint
+You are given three integers n, l, and r.
+
+A ZigZag array of length n is defined as follows:
+
+Each element lies in the range [l, r].
+No two adjacent elements are equal.
+No three consecutive elements form a strictly increasing or strictly decreasing sequence.
+Return the total number of valid ZigZag arrays.
+
+Since the answer may be large, return it modulo 109 + 7.
+
+A sequence is said to be strictly increasing if each element is strictly greater than its previous one (if exists).
+
+A sequence is said to be strictly decreasing if each element is strictly smaller than its previous one (if exists).
+
+ 
+
+Example 1:
+
+Input: n = 3, l = 4, r = 5
+
+Output: 2
+
+Explanation:
+
+There are only 2 valid ZigZag arrays of length n = 3 using values in the range [4, 5]:
+
+[4, 5, 4]
+[5, 4, 5]​​​​​​​
+Example 2:
+
+Input: n = 3, l = 1, r = 3
+
+Output: 10
+
+Explanation:
+
+There are 10 valid ZigZag arrays of length n = 3 using values in the range [1, 3]:
+
+[1, 2, 1], [1, 3, 1], [1, 3, 2]
+[2, 1, 2], [2, 1, 3], [2, 3, 1], [2, 3, 2]
+[3, 1, 2], [3, 1, 3], [3, 2, 3]
+All arrays meet the ZigZag conditions.
+
+ 
+
+Constraints:
+
+3 <= n <= 2000
+1 <= l < r <= 2000
+
+
+Solution 1:
+
+class Solution:
+    def zigZagArrays(self, n: int, l: int, r: int) -> int:
+        MOD = 10**9 + 7
+
+        # Total distinct values in [l, r].
+        # Work with 0-indexed values [0, value_count-1] instead of [l, r]:
+        # only relative ordering matters for UP/DOWN comparisons, not actual values.
+        value_count = r - l + 1
+
+        # ── BASE CASE: last position (index n-1) ──
+        # At the last element there is no outgoing transition.
+        # Initialize both arrays to 1 so the recurrence at position n-2
+        # correctly counts each possible last-element value as 1 completion.
+        #
+        # future_down[j] = ways to complete from position i+1 onward,
+        #                  where position i+1 has 0-indexed value j AND
+        #                  the OUTGOING transition from i+1 goes DOWN.
+        #
+        # future_up[j]   = same, but outgoing transition goes UP.
+        future_down = [1] * value_count
+        future_up   = [1] * value_count
+
+        # ── BACKWARD DP ──
+        # Each iteration "prepends" one more position to the left.
+        # We run exactly n-1 steps:
+        #   step 1 (outermost i=n-1) → computes DP for position n-2
+        #   step 2 (i=n-2)           → computes DP for position n-3
+        #   ...
+        #   step n-1 (i=1)           → computes DP for position 0
+        # The value of `i` is NOT used inside the loop body; we only need
+        # to iterate n-1 times. `_` would work equally well here.
+        for _ in range(n - 1, 0, -1):
+
+            curr_up   = [0] * value_count  # outgoing UP  for current position
+            curr_down = [0] * value_count  # outgoing DOWN for current position
+
+            # ── SUFFIX SUM → compute curr_up ──
+            # curr_up[val] = Σ future_down[k]  for all k > val
+            #
+            # Why future_down[k]?
+            #   From val, going UP to k requires k > val.
+            #   After arriving at k via an UP step, ZigZag forces
+            #   the next step FROM k to be DOWN → use future_down[k].
+            #
+            # Naive O(m²): for each val, loop k from val+1 to value_count-1.
+            # Optimized O(m): accumulate RIGHT TO LEFT so each prior sum
+            #                 is reused (suffix sum avoids recomputing).
+            #
+            # When val = value_count-1: no k > val → curr_up = 0
+            # When val = value_count-2: k = value_count-1 → curr_up = future_down[value_count-1]
+            # When val = value_count-3: k ∈ {value_count-2, value_count-1} → ...
+            suffix_sum = 0
+            for val in range(value_count - 1, -1, -1):
+                # Set curr_up BEFORE adding future_down[val], so val itself
+                # is NOT counted as a valid k > val (must be STRICTLY greater)
+                curr_up[val] = suffix_sum
+                suffix_sum   = (suffix_sum + future_down[val]) % MOD
+
+            # ── PREFIX SUM → compute curr_down ──
+            # curr_down[val] = Σ future_up[k]  for all k < val
+            #
+            # Why future_up[k]?
+            #   From val, going DOWN to k requires k < val.
+            #   After arriving at k via a DOWN step, ZigZag forces
+            #   the next step FROM k to be UP → use future_up[k].
+            #
+            # Optimized O(m): accumulate LEFT TO RIGHT.
+            #
+            # When val = 0: no k < val → curr_down = 0
+            # When val = 1: k = 0 → curr_down = future_up[0]
+            # When val = 2: k ∈ {0, 1} → ...
+            prefix_sum = 0
+            for val in range(value_count):
+                # Set curr_down BEFORE adding future_up[val], so val itself
+                # is NOT counted as a valid k < val (must be STRICTLY less)
+                curr_down[val] = prefix_sum
+                prefix_sum     = (prefix_sum + future_up[val]) % MOD
+
+            # ── ROLLING ARRAY ──
+            # Discard the old "future" layer, replace with the current one.
+            # This keeps space at O(m) instead of O(n × m).
+            future_up   = curr_up
+            future_down = curr_down
+
+        # ── FINAL ANSWER ──
+        # After n-1 iterations, future_up and future_down represent position 0
+        # (the first element). Since there is no incoming constraint:
+        #   future_up[j]   = valid arrays starting with value j, first transition UP
+        #   future_down[j] = valid arrays starting with value j, first transition DOWN
+        # Total = all j, both directions
+        total_count = 0
+        for val in range(value_count):
+            total_count = (total_count + future_up[val] + future_down[val]) % MOD
+
+        return total_count

@@ -1,0 +1,127 @@
+1674. Minimum Moves to Make Array Complementary
+Solved
+Medium
+Topics
+premium lock icon
+Companies
+Hint
+You are given an integer array nums of even length n and an integer limit. In one move, you can replace any integer from nums with another integer between 1 and limit, inclusive.
+
+The array nums is complementary if for all indices i (0-indexed), nums[i] + nums[n - 1 - i] equals the same number. For example, the array [1,2,3,4] is complementary because for all indices i, nums[i] + nums[n - 1 - i] = 5.
+
+Return the minimum number of moves required to make nums complementary.
+
+ 
+
+Example 1:
+
+Input: nums = [1,2,4,3], limit = 4
+Output: 1
+Explanation: In 1 move, you can change nums to [1,2,2,3] (underlined elements are changed).
+nums[0] + nums[3] = 1 + 3 = 4.
+nums[1] + nums[2] = 2 + 2 = 4.
+nums[2] + nums[1] = 2 + 2 = 4.
+nums[3] + nums[0] = 3 + 1 = 4.
+Therefore, nums[i] + nums[n-1-i] = 4 for every i, so nums is complementary.
+Example 2:
+
+Input: nums = [1,2,2,1], limit = 2
+Output: 2
+Explanation: In 2 moves, you can change nums to [2,2,2,2]. You cannot change any number to 3 since 3 > limit.
+Example 3:
+
+Input: nums = [1,2,1,2], limit = 2
+Output: 0
+Explanation: nums is already complementary.
+ 
+
+Constraints:
+
+n == nums.length
+2 <= n <= 105
+1 <= nums[i] <= limit <= 105
+n is even.
+
+
+Solution 1:
+
+class Solution:
+    def minMoves(self, nums: List[int], limit: int) -> int:
+        n = len(nums)
+
+        # ── Difference Array Setup ────────────────────────────────────────────
+        # diffArray[T] will store the CHANGE in total moves at target sum T
+        # After prefix sum: diffArray[T] = total moves needed to make all
+        #                                  pairs sum to T
+        #
+        # Valid target range: [2, 2*limit]
+        #   minimum possible sum = 1+1 = 2       (both elements = 1)
+        #   maximum possible sum = limit+limit    (both elements = limit)
+        #
+        # Size 2*limit+2 to safely handle index 2*limit+1 as boundary
+        diffArray = [0] * (2 * limit + 2)
+
+        for i in range(n // 2):
+            smallNum = nums[i]
+            largeNum = nums[n - i - 1]
+
+            # Ensure smallNum <= largeNum for clean range calculation
+            if smallNum > largeNum:
+                smallNum, largeNum = largeNum, smallNum
+
+            # Current pair sum (target where 0 moves needed for this pair)
+            pairSum = smallNum + largeNum
+
+            # Range where 1 move suffices for this pair:
+            #   oneMove_low  = change smallNum to 1     → sum = 1       + largeNum
+            #                = change largeNum to T-smallNum if valid
+            #                → minimum achievable T     = smallNum + 1
+            #   oneMove_high = change largeNum to limit → sum = smallNum + limit
+            #                → maximum achievable T     = smallNum + limit... wait
+            #   Actually:
+            #   oneMove_low  = min(a,b) + 1      (replace smaller with 1)
+            #   oneMove_high = max(a,b) + limit   (replace larger  with limit)
+            oneMoveRangeLow  = smallNum + 1         # min T achievable with 1 move
+            oneMoveRangeHigh = largeNum + limit      # max T achievable with 1 move
+
+            # ── Apply difference array updates for this pair ──────────────────
+            # BASELINE: add 2 moves to ALL targets in [2, 2*limit]
+            # (worst case: every pair needs 2 moves for any target)
+            # diff[2] += 2 means "add 2 starting at index 2"
+            # diff[2*limit+1] -= 2 means "stop adding 2 after index 2*limit"
+            diffArray[2]              += 2
+            diffArray[2 * limit + 1]  -= 2
+
+            # REDUCE by 1 for 1-move range [oneMoveRangeLow, oneMoveRangeHigh]
+            # Targets in this range only need 1 move (not 2) for this pair
+            # diff[low] -= 1 means "subtract 1 starting at low"
+            # diff[high+1] += 1 means "stop subtracting 1 after high"
+            diffArray[oneMoveRangeLow]       -= 1
+            diffArray[oneMoveRangeHigh + 1]  += 1
+
+            # REDUCE by 1 more for exact pairSum (0 moves for this pair)
+            # pairSum already equals T → no move needed for this pair at all
+            # Combined with previous -1: total reduction = -2 at pairSum
+            # Net effect: 2 - 1 - 1 = 0 moves at T == pairSum ✓
+            diffArray[pairSum]     -= 1
+            diffArray[pairSum + 1] += 1
+
+        # ── Prefix Sum to get actual total moves for each target ──────────────
+        # Convert difference array → actual moves array
+        # diffArray[T] after prefix sum = total moves needed for target T
+        #
+        # Simultaneously track minimum across all valid targets [2, 2*limit]
+        #
+        # e.g. diffArray before prefix = [0,0, 3,-1,-1, 1,-1, 1, 1,-3,...]
+        #      after prefix sum:
+        #      T=2: 3     T=3: 2     T=4: 1 ← minimum!    T=5: 2  ...
+        minMoves = float('inf')
+
+        for targetSum in range(2, 2 * limit + 1):
+            # Accumulate prefix sum: diffArray[T] now = total moves at target T
+            diffArray[targetSum] += diffArray[targetSum - 1]
+
+            # Track minimum moves across all possible target sums
+            minMoves = min(minMoves, diffArray[targetSum])
+
+        return minMoves

@@ -1,0 +1,197 @@
+1306. Jump Game III
+Solved
+Medium
+Topics
+premium lock icon
+Companies
+Hint
+Given an array of non-negative integers arr, you are initially positioned at start index of the array. When you are at index i, you can jump to i + arr[i] or i - arr[i], check if you can reach any index with value 0.
+
+Notice that you can not jump outside of the array at any time.
+
+ 
+
+Example 1:
+
+Input: arr = [4,2,3,0,3,1,2], start = 5
+Output: true
+Explanation: 
+All possible ways to reach at index 3 with value 0 are: 
+index 5 -> index 4 -> index 1 -> index 3 
+index 5 -> index 6 -> index 4 -> index 1 -> index 3 
+Example 2:
+
+Input: arr = [4,2,3,0,3,1,2], start = 0
+Output: true 
+Explanation: 
+One possible way to reach at index 3 with value 0 is: 
+index 0 -> index 4 -> index 1 -> index 3
+Example 3:
+
+Input: arr = [3,0,2,1,2], start = 2
+Output: false
+Explanation: There is no way to reach at index 1 with value 0.
+ 
+
+Constraints:
+
+1 <= arr.length <= 5 * 104
+0 <= arr[i] < arr.length
+0 <= start < arr.length
+
+
+Solution 1:
+
+class Solution:
+    def canReach(self, arr: List[int], start: int) -> bool:
+        arrayLen = len(arr)
+
+        # Track visited indices to prevent infinite loops
+        # e.g. arr=[4,2,3,0,3,1,2], without visited:
+        #   index 5 → index 4 → index 1 → index 4 → index 1 → ... forever!
+        isVisited = [False] * arrayLen
+
+        def dfs(currIdx):
+            # ── BASE CASE 1: Found a zero ─────────────────────────────────────
+            # arr[currIdx]==0 means we reached our target
+            # Return True immediately — no need to explore further
+            #
+            # e.g. arr=[4,2,3,0,...], currIdx=3 → arr[3]=0 → True ✓
+            if arr[currIdx] == 0:
+                return True
+
+            # ── BASE CASE 2: Already visited this index ───────────────────────
+            # If we've been here before, we're in a cycle → dead end
+            # Return False to backtrack and try other paths
+            #
+            # e.g. index 5 → 4 → 1 → 4 (already visited!) → False
+            if isVisited[currIdx]:
+                return False
+
+            # Mark current index as visited BEFORE exploring neighbors
+            # Must mark BEFORE recursive calls to prevent revisiting
+            # during the current exploration path
+            isVisited[currIdx] = True
+
+            # ── FORWARD JUMP: currIdx → currIdx + arr[currIdx] ───────────────
+            # Jump RIGHT by arr[currIdx] steps
+            # Bounds check: must stay within array (< arrayLen)
+            #
+            # e.g. currIdx=5, arr[5]=1 → jump to index 6
+            forwardIdx = currIdx + arr[currIdx]
+            if forwardIdx < arrayLen and dfs(forwardIdx):
+                return True                 # found zero via forward path!
+
+            # ── BACKWARD JUMP: currIdx → currIdx - arr[currIdx] ──────────────
+            # Jump LEFT by arr[currIdx] steps
+            # Bounds check: must stay within array (>= 0)
+            #
+            # e.g. currIdx=5, arr[5]=1 → jump to index 4
+            backwardIdx = currIdx - arr[currIdx]
+            if backwardIdx >= 0 and dfs(backwardIdx):
+                return True                 # found zero via backward path!
+
+            # Both forward and backward jumps failed → dead end
+            # Backtrack: return False so parent call tries other paths
+            return False
+
+        return dfs(start)
+
+
+Solution 2:
+
+class Solution:
+    def canReach(self, arr: List[int], start: int) -> bool:
+        arrayLen = len(arr)
+
+        # Track visited indices to prevent processing same index twice
+        # Without this, same index re-added to queue → wasteful reprocessing
+        #
+        # e.g. arr=[4,2,3,0,3,1,2]:
+        #   index 4 reachable from BOTH index 5 AND index 6
+        #   without isVisited → index 4 processed twice → redundant work
+        isVisited = [False] * arrayLen
+
+        # BFS queue initialized with starting index (First In First Out)
+        # BFS explores ALL neighbors at current level before going deeper
+        # This guarantees finding the SHORTEST path to zero
+        #
+        # e.g. start=5 → queue=[5] → explore all distance-1 neighbors first
+        bfsQueue = deque([start])
+
+        # ── BFS Loop ──────────────────────────────────────────────────────────
+        # Process indices level by level:
+        #   Level 0: [start]
+        #   Level 1: [all indices reachable in 1 jump from start]
+        #   Level 2: [all indices reachable in 2 jumps from start]
+        #   ...
+        # First time we reach zero = minimum jumps needed
+        while bfsQueue:
+
+            # popleft() → takes from FRONT of queue (FIFO)
+            # This is what makes it BFS (breadth first):
+            #   always process oldest-added index first
+            #   explores all same-distance indices before going further
+            #
+            # e.g. queue=[5,6,4] → pop 5 first (added earliest)
+            #      then 6, then 4 (level by level)
+            currIdx = bfsQueue.popleft()
+
+            # ── BASE CASE 1: Found a zero ─────────────────────────────────────
+            # arr[currIdx]==0 means we reached the target index
+            # Since BFS processes level by level, this is guaranteed
+            # to be the SHORTEST path (minimum jumps) to reach zero
+            #
+            # e.g. arr=[4,2,3,0,...], currIdx=3 → arr[3]=0 → True ✓
+            if arr[currIdx] == 0:
+                return True
+
+            # ── BASE CASE 2: Already visited this index ───────────────────────
+            # Same index can appear multiple times in BFS queue
+            # (added from multiple parent indices before being marked visited)
+            #
+            # e.g. index 4 reachable from index 5 (backward) AND index 6 (backward):
+            #   queue=[..., 4(from 5), ..., 4(from 6)]
+            #   first pop(4): process normally, mark isVisited[4]=True
+            #   second pop(4): isVisited[4]=True → skip with continue
+            if isVisited[currIdx]:
+                continue
+
+            # Mark visited AFTER duplicate check (not when adding to queue)
+            # This means duplicates CAN enter queue but are harmlessly
+            # skipped via the continue above when encountered
+            #
+            # Alternative: mark when ADDING prevents duplicates entirely
+            # but requires marking start separately before the loop
+            isVisited[currIdx] = True
+
+            # ── FORWARD JUMP: currIdx → currIdx + arr[currIdx] ───────────────
+            # Jump RIGHT by arr[currIdx] steps
+            # Two conditions before adding to queue:
+            #   1. forwardIdx < arrayLen → stays within array bounds
+            #   2. not isVisited        → not yet explored (avoid duplicates)
+            #
+            # e.g. currIdx=5, arr[5]=1 → forwardIdx=6
+            #   6 < 7 ✓ and not visited ✓ → add 6 to back of queue
+            forwardIdx = currIdx + arr[currIdx]
+            if forwardIdx < arrayLen and not isVisited[forwardIdx]:
+                bfsQueue.append(forwardIdx)     # add to BACK of queue
+
+            # ── BACKWARD JUMP: currIdx → currIdx - arr[currIdx] ──────────────
+            # Jump LEFT by arr[currIdx] steps
+            # Two conditions before adding to queue:
+            #   1. backwardIdx >= 0  → stays within array bounds
+            #   2. not isVisited     → not yet explored (avoid duplicates)
+            #
+            # e.g. currIdx=5, arr[5]=1 → backwardIdx=4
+            #   4 >= 0 ✓ and not visited ✓ → add 4 to back of queue
+            #
+            # NOTE: both forward and backward added to back of queue
+            #   → both explored at SAME BFS level (same distance from start)
+            #   this is different from DFS where backward explored before forward
+            backwardIdx = currIdx - arr[currIdx]
+            if backwardIdx >= 0 and not isVisited[backwardIdx]:
+                bfsQueue.append(backwardIdx)    # add to BACK of queue
+
+        # Queue exhausted without finding any zero → target unreachable
+        return False

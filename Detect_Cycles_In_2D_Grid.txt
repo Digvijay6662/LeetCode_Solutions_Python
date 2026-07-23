@@ -1,0 +1,235 @@
+1559. Detect Cycles in 2D Grid
+Solved
+Medium
+Topics
+premium lock icon
+Companies
+Hint
+Given a 2D array of characters grid of size m x n, you need to find if there exists any cycle consisting of the same value in grid.
+
+A cycle is a path of length 4 or more in the grid that starts and ends at the same cell. From a given cell, you can move to one of the cells adjacent to it - in one of the four directions (up, down, left, or right), if it has the same value of the current cell.
+
+Also, you cannot move to the cell that you visited in your last move. For example, the cycle (1, 1) -> (1, 2) -> (1, 1) is invalid because from (1, 2) we visited (1, 1) which was the last visited cell.
+
+Return true if any cycle of the same value exists in grid, otherwise, return false.
+
+ 
+
+Example 1:
+
+
+
+Input: grid = [["a","a","a","a"],["a","b","b","a"],["a","b","b","a"],["a","a","a","a"]]
+Output: true
+Explanation: There are two valid cycles shown in different colors in the image below:
+
+Example 2:
+
+
+
+Input: grid = [["c","c","c","a"],["c","d","c","c"],["c","c","e","c"],["f","c","c","c"]]
+Output: true
+Explanation: There is only one valid cycle highlighted in the image below:
+
+Example 3:
+
+
+
+Input: grid = [["a","b","b"],["b","z","b"],["b","b","a"]]
+Output: false
+ 
+
+Constraints:
+
+m == grid.length
+n == grid[i].length
+1 <= m, n <= 500
+grid consists only of lowercase English letters.
+
+
+Solution 1:
+
+class Solution:
+    def containsCycle(self, grid: List[List[str]]) -> bool:
+        # Number of rows and columns
+        rows, cols = len(grid), len(grid[0])
+        # visited[r][c] == True means the cell (r,c) has been visited
+        visited = [[False] * cols for _ in range(rows)]
+
+        def dfs(row: int, col: int, prev_row: int, prev_col: int) -> bool:
+            """
+            Depth-first search from (row, col).
+            prev_row, prev_col is the cell we came from (parent).
+            Returns True if a cycle is found in this connected component.
+            """
+            # If we reach a cell that is already visited, we found a cycle
+            # (we never revisit the immediate parent because we skip it below).
+            if visited[row][col]:
+                return True
+
+            # Mark current cell as visited (entering this node)
+            visited[row][col] = True
+
+            # Four possible directions: up, right, down, left
+            directions = [(-1, 0), (0, 1), (1, 0), (0, -1)]
+
+            # Explore neighbors with the same character
+            for dr, dc in directions:
+                nr, nc = row + dr, col + dc
+
+                # Check bounds and same-character condition
+                if 0 <= nr < rows and 0 <= nc < cols and grid[nr][nc] == grid[row][col]:
+                    # Skip the cell we came from (parent) to avoid trivial backtracking
+                    if nr == prev_row and nc == prev_col:
+                        continue
+
+                    # Recurse into neighbor; if recursion finds a cycle, propagate True
+                    if dfs(nr, nc, row, col):
+                        return True
+
+            # No cycle found from this path
+            return False
+
+        # Start DFS from every unvisited cell (each connected component)
+        for r in range(rows):
+            for c in range(cols):
+                if not visited[r][c]:
+                    # Use (-1, -1) as a sentinel parent for the starting cell
+                    if dfs(r, c, -1, -1):
+                        return True
+
+        # No cycles found in any component
+        return False
+
+
+Solution 2:
+
+class Solution:
+    def containsCycle(self, grid: List[List[str]]) -> bool:
+        # number of rows and columns
+        rows, cols = len(grid), len(grid[0])
+        # visited[r][c] == True means cell (r,c) has been seen (enqueued) already
+        visited = [[False] * cols for _ in range(rows)]
+
+        def bfs_cycle(start_r: int, start_c: int) -> bool:
+            """
+            Breadth-first search from (start_r, start_c).
+            Each queue entry stores (r, c, parent_r, parent_c).
+            Returns True if a cycle is found in this connected component.
+            """
+            # queue holds tuples: (row, col, parent_row, parent_col)
+            q = deque([(start_r, start_c, -1, -1)])
+            # mark the start cell as visited when enqueuing it
+            visited[start_r][start_c] = True
+
+            # four cardinal directions: up, right, down, left
+            directions = [(-1, 0), (0, 1), (1, 0), (0, -1)]
+
+            while q:
+                r, c, parent_r, parent_c = q.popleft()
+
+                # explore all 4 neighbors with the same character
+                for dr, dc in directions:
+                    nr, nc = r + dr, c + dc
+
+                    # skip out-of-bounds neighbors
+                    if not (0 <= nr < rows and 0 <= nc < cols):
+                        continue
+
+                    # only consider neighbors with the same character
+                    if grid[nr][nc] != grid[r][c]:
+                        continue
+
+                    # skip the immediate parent cell we came from
+                    if nr == parent_r and nc == parent_c:
+                        continue
+
+                    # if we encounter a visited neighbor that is not the parent,
+                    # we found a cycle
+                    if visited[nr][nc]:
+                        return True
+
+                    # otherwise mark neighbor visited and enqueue it with current as parent
+                    visited[nr][nc] = True
+                    q.append((nr, nc, r, c))
+
+            # no cycle found in this component
+            return False
+
+        # run BFS from every unvisited cell (each connected component)
+        for r in range(rows):
+            for c in range(cols):
+                if not visited[r][c]:
+                    if bfs_cycle(r, c):
+                        return True
+
+        return False
+
+
+Solution 3:
+
+class UnionFind:
+    def __init__(self, n: int):
+        # parent[i] = parent of node i in the disjoint-set forest
+        self.parent = [i for i in range(n)]
+        # size[i] = size of the tree whose root is i (used for union by size)
+        self.size = [1] * n
+
+    def find(self, node: int) -> int:
+        # Find with path compression (iterative)
+        while node != self.parent[node]:
+            # path compression: point node to its grandparent
+            self.parent[node] = self.parent[self.parent[node]]
+            node = self.parent[node]
+        return node
+
+    def union(self, node1: int, node2: int) -> bool:
+        """
+        Union two nodes. Return False if they are already connected
+        (which indicates a cycle in our usage), otherwise union and return True.
+        """
+        root1, root2 = self.find(node1), self.find(node2)
+        if root1 == root2:
+            # already in same set -> cycle detected
+            return False
+
+        # union by size: attach smaller tree under larger tree
+        if self.size[root1] > self.size[root2]:
+            self.parent[root2] = root1
+            self.size[root1] += self.size[root2]
+        else:
+            self.parent[root1] = root2
+            self.size[root2] += self.size[root1]
+
+        return True
+
+class Solution:
+    def containsCycle(self, grid: List[List[str]]) -> bool:
+        # number of rows and columns
+        rows, cols = len(grid), len(grid[0])
+        uf = UnionFind(rows * cols)
+
+        # helper to convert (r, c) -> unique id
+        # cell_id = r * cols + c
+
+        # iterate through every cell and union it with its top and left neighbors
+        # (only top and left to avoid processing each edge twice)
+        for r in range(rows):
+            for c in range(cols):
+                current_id = r * cols + c
+
+                # check the cell above (r-1, c)
+                if r > 0 and grid[r][c] == grid[r - 1][c]:
+                    above_id = (r - 1) * cols + c
+                    # if union returns False, the two cells are already connected -> cycle
+                    if not uf.union(current_id, above_id):
+                        return True
+
+                # check the cell to the left (r, c-1)
+                if c > 0 and grid[r][c] == grid[r][c - 1]:
+                    left_id = r * cols + (c - 1)
+                    if not uf.union(current_id, left_id):
+                        return True
+
+        # no cycle found after processing all same-value adjacencies
+        return False

@@ -1,0 +1,210 @@
+3753. Total Waviness of Numbers in Range II
+Solved
+Hard
+Topics
+premium lock icon
+Companies
+Hint
+You are given two integers num1 and num2 representing an inclusive range [num1, num2].
+
+The waviness of a number is defined as the total count of its peaks and valleys:
+
+A digit is a peak if it is strictly greater than both of its immediate neighbors.
+A digit is a valley if it is strictly less than both of its immediate neighbors.
+The first and last digits of a number cannot be peaks or valleys.
+Any number with fewer than 3 digits has a waviness of 0.
+Return the total sum of waviness for all numbers in the range [num1, num2].
+ 
+
+Example 1:
+
+Input: num1 = 120, num2 = 130
+
+Output: 3
+
+Explanation:
+
+In the range [120, 130]:
+
+120: middle digit 2 is a peak, waviness = 1.
+121: middle digit 2 is a peak, waviness = 1.
+130: middle digit 3 is a peak, waviness = 1.
+All other numbers in the range have a waviness of 0.
+Thus, total waviness is 1 + 1 + 1 = 3.
+
+Example 2:
+
+Input: num1 = 198, num2 = 202
+
+Output: 3
+
+Explanation:
+
+In the range [198, 202]:
+
+198: middle digit 9 is a peak, waviness = 1.
+201: middle digit 0 is a valley, waviness = 1.
+202: middle digit 0 is a valley, waviness = 1.
+All other numbers in the range have a waviness of 0.
+Thus, total waviness is 1 + 1 + 1 = 3.
+
+Example 3:
+
+Input: num1 = 4848, num2 = 4848
+
+Output: 2
+
+Explanation:
+
+Number 4848: the second digit 8 is a peak, and the third digit 4 is a valley, giving a waviness of 2.
+
+ 
+
+Constraints:
+
+1 <= num1 <= num2 <= 1015​​​​​​​
+
+
+Solution 1:
+
+class Solution:
+    def totalWaviness(self, num1: int, num2: int) -> int:
+        def count_waviness_upto(upper_bound: int) -> int:
+            """
+            Returns the SUM of waviness of every integer in [0, upper_bound].
+
+            ── WHY DIGIT DP? ──
+            upper_bound can be up to 10^15 (16 digits).
+            We can't iterate every number — digit DP builds numbers
+            digit-by-digit and counts contributions across all completions
+            in one pass, without enumerating each number individually.
+            """
+
+            # Numbers with fewer than 3 digits can never have peaks or valleys
+            # (both endpoints are excluded from peak/valley consideration)
+            if upper_bound < 100:
+                return 0
+
+            # Work with individual digits via string indexing
+            digit_str  = str(upper_bound)
+            num_digits = len(digit_str)
+
+            @cache
+            def dp(
+                pos: int,         # current digit position being placed (0-indexed)
+                two_back: int,    # digit placed at pos-2; -1 = doesn't exist yet
+                one_back: int,    # digit placed at pos-1; -1 = doesn't exist yet
+                is_tight: bool,   # True → every digit placed so far == digit_str's digit
+                                  #         → this digit is capped at digit_str[pos]
+                                  # False → a smaller digit was placed earlier
+                                  #         → this digit can freely go up to 9
+                is_leading: bool  # True → every digit placed so far has been 0
+                                  #        (i.e., we haven't started the real number yet)
+            ):
+                """
+                Returns [count, waviness]:
+                  count    : number of valid completions from position pos onward
+                  waviness : total waviness contributed by positions pos..end
+                             SUMMED across all valid completions
+
+                ── HOW WAVINESS IS ACCUMULATED ──
+                When we place digit d at pos, we finally know the full 3-digit
+                window: (two_back, one_back, d).  We check if one_back is a
+                peak or valley.  If yes, every single completion that follows
+                contributes +1 waviness at this position.  So we add sub_count
+                (not 1) to waviness — one unit per completion.
+                """
+
+                # ── BASE CASE ──
+                # All digits placed → one complete number built.
+                # It contributes 1 to count, 0 additional waviness from here.
+                if pos == num_digits:
+                    return [1, 0]
+
+                # ── DIGIT BOUND ──
+                # is_tight → we must not exceed digit_str[pos] or we'd exceed upper_bound
+                # Not tight → any digit 0–9 is fine
+                max_allowed_digit = int(digit_str[pos]) if is_tight else 9
+
+                total_count    = 0   # accumulates count    across all digit choices
+                total_waviness = 0   # accumulates waviness across all digit choices
+
+                for digit in range(max_allowed_digit + 1):
+
+                    # ── UPDATE LEADING-ZERO FLAG ──
+                    # Still in leading-zero phase only if we WERE in it AND placed 0.
+                    # Example: building "007" → leading zeros until first non-zero digit.
+                    new_is_leading = is_leading and (digit == 0)
+
+                    # ── UPDATE TIGHT FLAG ──
+                    # Still tight only if we WERE tight AND chose the exact bound digit.
+                    # Example: digit_str = "543", pos=0, digit=5 → still tight.
+                    #                                    digit=4 → no longer tight.
+                    new_is_tight = is_tight and (max_allowed_digit == digit)
+
+                    # ── SLIDE THE TWO-DIGIT LOOK-BACK WINDOW ──
+                    # Before this step:  window = [two_back | one_back | ? ]
+                    # After  this step:  window = [one_back | digit    | ? ]
+                    #
+                    # two_back slides out; one_back shifts left; digit enters right.
+                    # In leading-zero phase: new digit is a phantom 0, not a real digit,
+                    # so new_one_back = -1 (sentinel meaning "no real digit yet").
+                    new_two_back = one_back               # old one_back becomes two_back
+                    new_one_back = -1 if new_is_leading else digit
+                    #              ↑ still leading zeros → no real digit recorded
+                    #                                  ↑ real digit → record it
+
+                    # ── RECURSE ──
+                    # Get count and future waviness for all completions
+                    # starting from the NEXT position with the updated state.
+                    [sub_count, sub_waviness] = dp(
+                        pos + 1,
+                        new_two_back, new_one_back,
+                        new_is_tight, new_is_leading
+                    )
+
+                    # ── PEAK / VALLEY CHECK FOR `one_back` (digit at pos-1) ──
+                    # Now that we have placed `digit` at pos, we know the full
+                    # 3-digit window around one_back:
+                    #   left  = two_back   (pos-2)
+                    #   mid   = one_back   (pos-1)  ← candidate for peak/valley
+                    #   right = digit      (pos)
+                    #
+                    # Three guards must all pass:
+                    #   not new_is_leading → `digit` is a real digit, not a leading 0
+                    #                         (a leading 0 is never a valid neighbor)
+                    #   two_back >= 0      → two_back is a real digit (left neighbor exists)
+                    #   one_back >= 0      → one_back is a real digit (mid exists)
+                    #
+                    # Note: first and last digits can't be peaks/valleys,
+                    # but the guard `two_back >= 0` naturally excludes the first
+                    # real digit (which has no left neighbor yet).
+                    if not new_is_leading and two_back >= 0 and one_back >= 0:
+                        is_peak   = (two_back < one_back) and (one_back > digit)
+                        is_valley = (two_back > one_back) and (one_back < digit)
+
+                        if is_peak or is_valley:
+                            # one_back is a peak/valley for ALL sub_count completions.
+                            # Each completion gets +1 waviness at this position,
+                            # so add sub_count (not 1) to the running total.
+                            total_waviness += sub_count
+
+                    # ── ALWAYS ACCUMULATE (regardless of peak/valley) ──
+                    # Every valid completion must be counted.
+                    # Future waviness from positions pos+1 onward must be included
+                    # regardless of what happened at this position.
+                    total_count    += sub_count
+                    total_waviness += sub_waviness
+
+                return [total_count, total_waviness]
+
+            # Start DP: no digits placed, fully tight, all-leading-zeros phase
+            return dp(0, -1, -1, True, True)[1]
+
+        # ── PREFIX-SUM DECOMPOSITION ──
+        # waviness([num1, num2]) = waviness([1, num2]) - waviness([1, num1-1])
+        # This reduces a range query to two prefix queries.
+        total_upto_num2      = count_waviness_upto(num2)
+        total_upto_before_num1 = count_waviness_upto(num1 - 1)
+
+        return total_upto_num2 - total_upto_before_num1

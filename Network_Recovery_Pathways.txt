@@ -1,0 +1,198 @@
+3620. Network Recovery Pathways
+Solved
+Hard
+Topics
+premium lock icon
+Companies
+Hint
+You are given a directed acyclic graph of n nodes numbered from 0 to n − 1. This is represented by a 2D array edges of length m, where edges[i] = [ui, vi, costi] indicates a one‑way communication from node ui to node vi with a recovery cost of costi.
+
+Some nodes may be offline. You are given a boolean array online where online[i] = true means node i is online. Nodes 0 and n − 1 are always online.
+
+A path from 0 to n − 1 is valid if:
+
+All intermediate nodes on the path are online.
+The total recovery cost of all edges on the path does not exceed k.
+For each valid path, define its score as the minimum edge‑cost along that path.
+
+Return the maximum path score (i.e., the largest minimum-edge cost) among all valid paths. If no valid path exists, return -1.
+
+ 
+
+Example 1:
+
+Input: edges = [[0,1,5],[1,3,10],[0,2,3],[2,3,4]], online = [true,true,true,true], k = 10
+
+Output: 3
+
+Explanation:
+
+
+
+The graph has two possible routes from node 0 to node 3:
+
+Path 0 → 1 → 3
+
+Total cost = 5 + 10 = 15, which exceeds k (15 > 10), so this path is invalid.
+
+Path 0 → 2 → 3
+
+Total cost = 3 + 4 = 7 <= k, so this path is valid.
+
+The minimum edge‐cost along this path is min(3, 4) = 3.
+
+There are no other valid paths. Hence, the maximum among all valid path‐scores is 3.
+
+Example 2:
+
+Input: edges = [[0,1,7],[1,4,5],[0,2,6],[2,3,6],[3,4,2],[2,4,6]], online = [true,true,true,false,true], k = 12
+
+Output: 6
+
+Explanation:
+
+
+
+Node 3 is offline, so any path passing through 3 is invalid.
+
+Consider the remaining routes from 0 to 4:
+
+Path 0 → 1 → 4
+
+Total cost = 7 + 5 = 12 <= k, so this path is valid.
+
+The minimum edge‐cost along this path is min(7, 5) = 5.
+
+Path 0 → 2 → 3 → 4
+
+Node 3 is offline, so this path is invalid regardless of cost.
+
+Path 0 → 2 → 4
+
+Total cost = 6 + 6 = 12 <= k, so this path is valid.
+
+The minimum edge‐cost along this path is min(6, 6) = 6.
+
+Among the two valid paths, their scores are 5 and 6. Therefore, the answer is 6.
+
+ 
+
+Constraints:
+
+n == online.length
+2 <= n <= 5 * 104
+0 <= m == edges.length <= min(105, n * (n - 1) / 2)
+edges[i] = [ui, vi, costi]
+0 <= ui, vi < n
+ui != vi
+0 <= costi <= 109
+0 <= k <= 5 * 1013
+online[i] is either true or false, and both online[0] and online[n − 1] are true.
+The given graph is a directed acyclic graph.
+
+
+Solution 1:
+
+class Solution:
+    def findMaxPathScore(self, edges: List[List[int]], online: List[bool], k: int) -> int:
+        n = len(online)
+
+        # ── BUILD GRAPH ──
+        # Only keep edges where BOTH endpoints are online.
+        # Offline intermediate nodes make a path invalid, and filtering
+        # their edges at build time is equivalent to removing them entirely.
+        adjacency = defaultdict(list)
+        edge_min_cost = float('inf')
+        edge_max_cost = 0
+
+        for src, dst, cost in edges:
+            if online[src] and online[dst]:
+                adjacency[src].append((dst, cost))
+                edge_min_cost = min(edge_min_cost, cost)
+                edge_max_cost = max(edge_max_cost, cost)
+
+        # ── BINARY SEARCH ──
+        # We binary search on `req_cost` (minimum edge cost threshold).
+        # check(req_cost) = True  ↔  ∃ valid path where every edge ≥ req_cost
+        #                              AND total cost ≤ k
+        #
+        # Monotonicity: check(high) = True → check(low) = True for low ≤ high
+        # (relaxing the minimum threshold can only add more valid paths)
+        # → Binary search finds the LARGEST req_cost where check is True.
+
+        def check(req_cost: int) -> bool:
+            """
+            Returns True if there exists a path from node 0 to node n-1 such that:
+              1. Every edge on the path has cost >= req_cost
+              2. The total path cost <= k
+
+            Uses Dijkstra to find the MINIMUM total cost path (among paths where
+            all edges >= req_cost). If that minimum cost <= k, answer is True.
+
+            Why Dijkstra and not BFS?
+              - BFS can visit the same node via multiple paths with different costs.
+              - Without distance tracking, we can't tell which is cheapest.
+              - Dijkstra guarantees each node is settled at its minimum total cost.
+            """
+            # dist[v] = minimum total edge cost to reach v via edges >= req_cost
+            dist = [float('inf')] * n
+            dist[0] = 0
+
+            # Min-heap: (total_cost_so_far, node)
+            # Start at node 0 with 0 cost
+            min_heap = [(0, 0)]
+
+            while min_heap:
+                total_cost, node = heapq.heappop(min_heap)
+
+                # Return early if total_cost > k
+                if total_cost > k:
+                    return False
+
+                # Stale entry: a cheaper path to this node was already found
+                if total_cost > dist[node]:
+                    continue
+
+                # Reached destination — dist[n-1] holds minimum total cost
+                if node == n - 1:
+                    break
+
+                for neighbor, edge_cost in adjacency[node]:
+
+                    # SKIP (not return False) edges below threshold.
+                    # Skipping means "this edge doesn't count toward the min-cost
+                    # requirement"; other edges from this node might still be valid.
+                    if edge_cost < req_cost:
+                        continue
+
+                    # track cumulative path cost
+                    new_total_cost = total_cost + edge_cost
+
+                    # only update if we found a cheaper route
+                    if new_total_cost < dist[neighbor]:
+                        dist[neighbor] = new_total_cost
+                        heapq.heappush(min_heap, (new_total_cost, neighbor))
+
+            # validate total cost against budget k
+            return dist[n - 1] <= k
+
+        # If no online edges exist, no valid path is possible
+        if edge_min_cost == float('inf'):
+            return -1
+
+        # Binary search over the range of actual edge costs
+        low, high   = edge_min_cost, edge_max_cost
+        best_answer = -1
+
+        while low <= high:
+            mid = low + (high - low) // 2
+
+            if check(mid):
+                # mid is achievable → try a higher threshold
+                best_answer = mid
+                low         = mid + 1
+            else:
+                # mid is too restrictive → lower the threshold
+                high = mid - 1
+
+        return best_answer

@@ -170,3 +170,195 @@ class Solution:
         return result
 
 
+Solution 3:
+
+class SegmentTree:
+    """
+    Max Segment Tree over COORDINATE space (not index space).
+    
+    What it stores:
+        gap_tree[pos] = gap between obstacle at 'pos' and its nearest left obstacle
+                      = pos - nearest_obstacle_strictly_to_left_of_pos
+    
+    What it answers:
+        "What is the largest recorded gap among all obstacles
+         whose positions fall in the range [query_start, query_end]?"
+    
+    Why max-gap is stored AT the obstacle's position:
+        Each obstacle 'owns' the gap to its left.
+        So querying range [0, prev_obstacle] finds the largest
+        obstacle-to-obstacle gap entirely within that range.
+    """
+
+    def __init__(self, coordinate_range):
+        # Allocate 4 × coordinate_range nodes — standard safe sizing
+        # for a segment tree over a range of size coordinate_range
+        self.tree = [0] * (4 * coordinate_range)
+
+    def update(self, target_pos, new_gap_val, node, left_bound, right_bound):
+        """
+        Point update: set gap_tree[target_pos] = new_gap_val
+        and propagate the max upward through ancestors.
+
+        Args:
+            target_pos   : coordinate being updated (obstacle position)
+            new_gap_val  : gap size = target_pos - its_new_left_neighbor
+            node         : current segment tree node index
+            left_bound   : leftmost coordinate covered by this node
+            right_bound  : rightmost coordinate covered by this node
+        """
+        # ── BASE CASE ──
+        # Leaf node reached — this node covers exactly target_pos
+        if left_bound == right_bound:
+            self.tree[node] = new_gap_val
+            return
+
+        mid = left_bound + (right_bound - left_bound) // 2
+
+        # ── DIRECTIONAL DESCENT ──
+        # Only recurse into the child whose range contains target_pos.
+        # This is O(log n); descending both sides would be O(n).
+        if target_pos <= mid:
+            # target_pos is in the LEFT half
+            self.update(target_pos, new_gap_val, 2 * node + 1, left_bound, mid)
+        else:
+            # target_pos is in the RIGHT half
+            self.update(target_pos, new_gap_val, 2 * node + 2, mid + 1, right_bound)
+
+        # ── PULL UP ──
+        # After child update, refresh this node to reflect the new max
+        # of its two children (maintains the max-segment-tree invariant)
+        self.tree[node] = max(self.tree[2 * node + 1], self.tree[2 * node + 2])
+
+    def query(self, range_start, range_end, node, left_bound, right_bound):
+        """
+        Range max query: return the largest gap value stored
+        at any coordinate in [range_start, range_end].
+
+        Args:
+            range_start  : left endpoint of the query range (inclusive)
+            range_end    : right endpoint of the query range (inclusive)
+            node         : current segment tree node index
+            left_bound   : leftmost coordinate covered by this node
+            right_bound  : rightmost coordinate covered by this node
+        """
+        # ── CASE 1: Completely outside query range → contribute nothing ──
+        if left_bound > range_end or right_bound < range_start:
+            return 0
+
+        # ── CASE 2: Completely inside query range → return stored max ──
+        if left_bound >= range_start and right_bound <= range_end:
+            return self.tree[node]
+
+        # ── CASE 3: Partially overlapping → recurse on both children ──
+        mid = left_bound + (right_bound - left_bound) // 2
+        left_max  = self.query(range_start, range_end, 2 * node + 1, left_bound, mid)
+        right_max = self.query(range_start, range_end, 2 * node + 2, mid + 1, right_bound)
+        return max(left_max, right_max)
+
+class Solution:
+    def getResults(self, queries: List[List[int]]) -> List[bool]:
+        total_queries = len(queries)
+
+        # ── COORDINATE SPACE SETUP ──
+        # x values are bounded by min(50000, 3 × total_queries) per constraints.
+        # The segment tree is indexed by COORDINATE (obstacle position),
+        # NOT by query index — this is what allows point-updates at position x.
+        max_coordinate = min(50000, 3 * total_queries)
+
+        # max_gap_tree[pos] = gap from pos to its nearest left obstacle
+        # Querying [0, p] returns the largest such gap among obstacles at positions ≤ p
+        max_gap_tree = SegmentTree(max_coordinate + 1)
+
+        # ── OBSTACLE TRACKER ──
+        # Keeps obstacle positions in SORTED ORDER for fast neighbor lookups.
+        # 0 (origin) is always present as the permanent left boundary —
+        # it ensures every obstacle always has a valid left neighbor.
+        sorted_obstacles = SortedList([0])
+
+        boolean_results = []  # collects True/False answers for type-2 queries
+
+        for current_query in queries:
+
+            # ════════════════════════════════════════════
+            # TYPE 1 QUERY — Place obstacle at position x
+            # ════════════════════════════════════════════
+            if current_query[0] == 1:
+                _, obstacle_pos = current_query
+
+                # ── FIND NEIGHBORS ──
+                # bisect_left gives the index where obstacle_pos would be inserted
+                # in sorted_obstacles to keep it sorted.
+                # Since obstacle_pos doesn't exist yet, this is also the index
+                # of the first existing obstacle STRICTLY to the RIGHT of obstacle_pos.
+                right_neighbor_idx = sorted_obstacles.bisect_left(obstacle_pos)
+
+                # The obstacle immediately to the LEFT of obstacle_pos
+                left_neighbor_pos  = sorted_obstacles[right_neighbor_idx - 1]
+
+                # ── UPDATE NEW OBSTACLE'S OWN GAP ──
+                # The new obstacle at obstacle_pos "owns" the gap to its left neighbor.
+                # Store: gap_tree[obstacle_pos] = distance to its left neighbor
+                new_obstacle_gap = obstacle_pos - left_neighbor_pos
+                max_gap_tree.update(
+                    obstacle_pos, new_obstacle_gap,
+                    0, 0, max_coordinate
+                )
+
+                # ── UPDATE RIGHT NEIGHBOR'S GAP ──
+                # Before this insertion, right_neighbor's left neighbor was left_neighbor_pos.
+                # Now it's obstacle_pos (closer), so its gap SHRINKS.
+                # We must update the segment tree to reflect the smaller gap.
+                if right_neighbor_idx < len(sorted_obstacles):
+                    right_neighbor_pos = sorted_obstacles[right_neighbor_idx]
+                    shrunk_gap = right_neighbor_pos - obstacle_pos
+                    max_gap_tree.update(
+                        right_neighbor_pos, shrunk_gap,
+                        0, 0, max_coordinate
+                    )
+
+                # ── REGISTER OBSTACLE ──
+                # Now insert obstacle_pos into the sorted list so future
+                # queries can find it as a neighbor. Done AFTER the tree updates
+                # so bisect_left above wasn't confused by obstacle_pos being present.
+                sorted_obstacles.add(obstacle_pos)
+
+            # ════════════════════════════════════════════════════════════
+            # TYPE 2 QUERY — Can a block of size sz fit within [0, x]?
+            # ════════════════════════════════════════════════════════════
+            else:
+                _, range_end, block_size = current_query
+
+                # ── FIND LAST OBSTACLE ≤ range_end ──
+                # bisect_left(range_end) gives index of first obstacle STRICTLY > range_end.
+                # So [insertion_idx - 1] is the last obstacle at or before range_end.
+                insertion_idx       = sorted_obstacles.bisect_left(range_end)
+                last_obstacle_pos   = sorted_obstacles[insertion_idx - 1]
+
+                # ── FIND MAX GAP IN COMPLETED INTERVALS ──
+                # Query the segment tree for the largest gap stored at any coordinate
+                # in [0, last_obstacle_pos]. This covers all obstacle-to-obstacle
+                # intervals that are fully enclosed within [0, range_end].
+                #
+                #   Example layout:  0──▐──▐────▐──last_obstacle_pos───range_end
+                #                        gap1 gap2       gap3 (open, handled below)
+                #   tree query returns max(gap1, gap2)
+                largest_completed_gap = max_gap_tree.query(
+                    0, last_obstacle_pos,
+                    0, 0, max_coordinate
+                )
+
+                # ── INCLUDE THE OPEN GAP AT THE RIGHT END ──
+                # Between last_obstacle_pos and range_end there may be no obstacle —
+                # this is a free stretch not yet recorded in the segment tree
+                # (it's "open" because range_end is a query boundary, not an obstacle).
+                # The available space here is exactly: range_end - last_obstacle_pos
+                open_right_gap = range_end - last_obstacle_pos
+
+                # The answer is the larger of the two candidates
+                largest_gap = max(largest_completed_gap, open_right_gap)
+
+                # Block fits if the largest available gap ≥ required block size
+                boolean_results.append(largest_gap >= block_size)
+
+        return boolean_results

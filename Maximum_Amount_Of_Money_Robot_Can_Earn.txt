@@ -1,0 +1,156 @@
+3418. Maximum Amount of Money Robot Can Earn
+Solved
+Medium
+Topics
+premium lock icon
+Companies
+Hint
+You are given an m x n grid. A robot starts at the top-left corner of the grid (0, 0) and wants to reach the bottom-right corner (m - 1, n - 1). The robot can move either right or down at any point in time.
+
+The grid contains a value coins[i][j] in each cell:
+
+If coins[i][j] >= 0, the robot gains that many coins.
+If coins[i][j] < 0, the robot encounters a robber, and the robber steals the absolute value of coins[i][j] coins.
+The robot has a special ability to neutralize robbers in at most 2 cells on its path, preventing them from stealing coins in those cells.
+
+Note: The robot's total coins can be negative.
+
+Return the maximum profit the robot can gain on the route.
+
+ 
+
+Example 1:
+
+Input: coins = [[0,1,-1],[1,-2,3],[2,-3,4]]
+
+Output: 8
+
+Explanation:
+
+An optimal path for maximum coins is:
+
+Start at (0, 0) with 0 coins (total coins = 0).
+Move to (0, 1), gaining 1 coin (total coins = 0 + 1 = 1).
+Move to (1, 1), where there's a robber stealing 2 coins. The robot uses one neutralization here, avoiding the robbery (total coins = 1).
+Move to (1, 2), gaining 3 coins (total coins = 1 + 3 = 4).
+Move to (2, 2), gaining 4 coins (total coins = 4 + 4 = 8).
+Example 2:
+
+Input: coins = [[10,10,10],[10,10,10]]
+
+Output: 40
+
+Explanation:
+
+An optimal path for maximum coins is:
+
+Start at (0, 0) with 10 coins (total coins = 10).
+Move to (0, 1), gaining 10 coins (total coins = 10 + 10 = 20).
+Move to (0, 2), gaining another 10 coins (total coins = 20 + 10 = 30).
+Move to (1, 2), gaining the final 10 coins (total coins = 30 + 10 = 40).
+ 
+
+Constraints:
+
+m == coins.length
+n == coins[i].length
+1 <= m, n <= 500
+-1000 <= coins[i][j] <= 1000
+
+
+Solution 1:
+
+class Solution:
+    def maximumAmount(self, coins: List[List[int]]) -> int:
+        n, m = len(coins), len(coins[0])
+        
+        # dp[i][j][left] = best result starting at (i,j) with 'left' neutralizations available
+        dp = [[[None] * 3 for _ in range(m)] for _ in range(n)]
+
+        def solve(i: int, j: int, left: int) -> int:
+            # If already computed, return stored value
+            if dp[i][j][left] is not None:
+                return dp[i][j][left]
+
+            # Base case: if we are at the bottom-right cell
+            if i == n - 1 and j == m - 1:
+                # If it's a robber cell and we still have neutralizations left, neutralize it
+                if coins[i][j] < 0 and left > 0:
+                    dp[i][j][left] = 0
+                else:
+                    # Otherwise take the cell value (positive or negative)
+                    dp[i][j][left] = coins[i][j]
+                return dp[i][j][left]
+
+            # Initialize possible moves as negative infinity (invalid state)
+            down = right = float('-inf')
+
+            # Try moving down
+            if i + 1 < n:
+                # Option 1: neutralize robber if current cell is negative and we have neutralizations left
+                if coins[i][j] < 0 and left > 0:
+                    down = max(down, solve(i + 1, j, left - 1))
+                # Option 2: take the cell value (positive or negative) and move down
+                down = max(down, coins[i][j] + solve(i + 1, j, left))
+
+            # Try moving right
+            if j + 1 < m:
+                # Option 1: neutralize robber if current cell is negative and we have neutralizations left
+                if coins[i][j] < 0 and left > 0:
+                    right = max(right, solve(i, j + 1, left - 1))
+                # Option 2: take the cell value (positive or negative) and move right
+                right = max(right, coins[i][j] + solve(i, j + 1, left))
+
+            # Store the best result between moving down or right
+            dp[i][j][left] = max(down, right)
+            return dp[i][j][left]
+
+        # Start from top-left corner with 2 neutralizations available
+        return solve(0, 0, 2)
+
+
+Solution 2:
+
+class Solution:
+    def maximumAmount(self, coins: List[List[int]]) -> int:
+        n, m = len(coins), len(coins[0])
+        # dp[i][j][k] stores the max profit starting from (i, j) to (n-1, m-1) 
+        # with 'k' neutralizations remaining.
+        dp = [[[float('-inf')] * 3 for _ in range(m)] for _ in range(n)]
+        
+        # Iterate backwards from the destination to the start
+        for i in range(n - 1, -1, -1):
+            for j in range(m - 1, -1, -1):
+                for k in range(3):
+                    # Base Case: Destination cell (bottom-right corner)
+                    if i == n - 1 and j == m - 1:
+                        # If current cell is a robber and we have uses left, neutralize to 0
+                        if coins[i][j] < 0 and k > 0:
+                            dp[i][j][k] = 0
+                        else:
+                            # Otherwise, must take the actual value (positive or negative)
+                            dp[i][j][k] = coins[i][j]
+                    else:
+                        down = right = float('-inf')
+                        
+                        # Try moving Down
+                        if i + 1 < n:
+                            # Case A: Use a neutralization on the CURRENT cell (if negative)
+                            if coins[i][j] < 0 and k > 0:
+                                down = max(down, dp[i + 1][j][k - 1])
+                            # Case B: Don't neutralize; add cell value and take best result from below
+                            down = max(down, coins[i][j] + dp[i + 1][j][k])
+
+                        # Try moving Right
+                        if j + 1 < m:
+                            # Case A: Use a neutralization on the CURRENT cell (if negative)
+                            if coins[i][j] < 0 and k > 0:
+                                right = max(right, dp[i][j + 1][k - 1])
+                            # Case B: Don't neutralize; add cell value and take best result from right
+                            right = max(right, coins[i][j] + dp[i][j + 1][k])
+
+                        # Store the best outcome among all possible choices for this state
+                        dp[i][j][k] = max(down, right)
+
+        # The answer is the best result starting at (0,0) with all 2 neutralizations available
+        return max(dp[0][0])

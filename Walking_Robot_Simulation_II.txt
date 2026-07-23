@@ -1,0 +1,188 @@
+2069. Walking Robot Simulation II
+Solved
+Medium
+Topics
+premium lock icon
+Companies
+Hint
+A width x height grid is on an XY-plane with the bottom-left cell at (0, 0) and the top-right cell at (width - 1, height - 1). The grid is aligned with the four cardinal directions ("North", "East", "South", and "West"). A robot is initially at cell (0, 0) facing direction "East".
+
+The robot can be instructed to move for a specific number of steps. For each step, it does the following.
+
+Attempts to move forward one cell in the direction it is facing.
+If the cell the robot is moving to is out of bounds, the robot instead turns 90 degrees counterclockwise and retries the step.
+After the robot finishes moving the number of steps required, it stops and awaits the next instruction.
+
+Implement the Robot class:
+
+Robot(int width, int height) Initializes the width x height grid with the robot at (0, 0) facing "East".
+void step(int num) Instructs the robot to move forward num steps.
+int[] getPos() Returns the current cell the robot is at, as an array of length 2, [x, y].
+String getDir() Returns the current direction of the robot, "North", "East", "South", or "West".
+ 
+
+Example 1:
+
+example-1
+Input
+["Robot", "step", "step", "getPos", "getDir", "step", "step", "step", "getPos", "getDir"]
+[[6, 3], [2], [2], [], [], [2], [1], [4], [], []]
+Output
+[null, null, null, [4, 0], "East", null, null, null, [1, 2], "West"]
+
+Explanation
+Robot robot = new Robot(6, 3); // Initialize the grid and the robot at (0, 0) facing East.
+robot.step(2);  // It moves two steps East to (2, 0), and faces East.
+robot.step(2);  // It moves two steps East to (4, 0), and faces East.
+robot.getPos(); // return [4, 0]
+robot.getDir(); // return "East"
+robot.step(2);  // It moves one step East to (5, 0), and faces East.
+                // Moving the next step East would be out of bounds, so it turns and faces North.
+                // Then, it moves one step North to (5, 1), and faces North.
+robot.step(1);  // It moves one step North to (5, 2), and faces North (not West).
+robot.step(4);  // Moving the next step North would be out of bounds, so it turns and faces West.
+                // Then, it moves four steps West to (1, 2), and faces West.
+robot.getPos(); // return [1, 2]
+robot.getDir(); // return "West"
+
+ 
+
+Constraints:
+
+2 <= width, height <= 100
+1 <= num <= 105
+At most 104 calls in total will be made to step, getPos, and getDir.
+
+
+Solution 1:
+
+class Robot:
+
+    def __init__(self, width: int, height: int):
+        # Flag to check if robot has moved at least once
+        self.has_moved = False
+        
+        # Path around the grid boundary (stores x, y, direction index)
+        self.path = []
+        
+        # Current index in the path list
+        self.current_index = 0
+
+        # Build the perimeter path in clockwise order:
+        # 0 = East, 1 = North, 2 = West, 3 = South
+
+        # Bottom row (moving East)
+        for x in range(width):
+            self.path.append([x, 0, 0])  
+
+        # Right column (moving North)
+        for y in range(1, height):
+            self.path.append([width - 1, y, 1])  
+
+        # Top row (moving West)
+        for x in range(width - 2, -1, -1):
+            self.path.append([x, height - 1, 2])  
+
+        # Left column (moving South)
+        for y in range(height - 2, 0, -1):
+            self.path.append([0, y, 3])  
+
+        self.path[0][2] = 3
+
+    def step(self, num: int) -> None:
+        # Mark that the robot has moved
+        self.has_moved = True
+        
+        # Move forward num steps along the perimeter path (wrap around if needed)
+        self.current_index = (self.current_index + num) % len(self.path)
+
+    def getPos(self) -> List[int]:
+        # Return current (x, y) position
+        return [self.path[self.current_index][0], self.path[self.current_index][1]]
+
+    def getDir(self) -> str:
+        # Map direction index to string
+        directions = ["East", "North", "West", "South"]
+        
+        # If robot hasn't moved yet, it must still face East
+        if not self.has_moved:
+            return "East"
+        
+        # Otherwise, return the direction stored in the path
+        return directions[self.path[self.current_index][2]]
+
+
+# Your Robot object will be instantiated and called as such:
+# obj = Robot(width, height)
+# obj.step(num)
+# param_2 = obj.getPos()
+# param_3 = obj.getDir()
+
+
+Solution 2:
+
+class Robot:
+
+    def __init__(self, width: int, height: int):
+        self.width = width
+        self.height = height
+        # The total number of steps to complete one full loop around the grid
+        self.perimeter = 2 * (width + height - 2)
+        # Current position on the 1D perimeter track (0 to perimeter-1)
+        self.pos = 0
+        # Flag to handle the special case: (0,0) is East at start, but South after moving
+        self.has_moved = False
+
+    def step(self, num: int) -> None:
+        self.has_moved = True
+        # O(1) Update: Calculate new position directly using modulo
+        self.pos = (self.pos + num) % self.perimeter
+
+    def getPos(self) -> List[int]:
+        # Map the 1D 'pos' back to 2D (x, y) coordinates
+        
+        # Bottom Edge: (0, 0) -> (w-1, 0)
+        if self.pos < self.width:
+            return [self.pos, 0]
+            
+        # Right Edge: (w-1, 1) -> (w-1, h-1)
+        elif self.pos < self.width + self.height - 1:
+            # Subtract the bottom edge length to get offset
+            offset = self.pos - (self.width - 1)
+            return [self.width - 1, offset]
+            
+        # Top Edge: (w-2, h-1) -> (0, h-1)
+        elif self.pos < 2 * self.width + self.height - 2:
+            # Subtract bottom and right edges
+            offset = self.pos - (self.width + self.height - 2)
+            return [self.width - 1 - offset, self.height - 1]
+            
+        # Left Edge: (0, h-2) -> (0, 1)
+        else:
+            # Subtract bottom, right, and top edges
+            offset = self.pos - (2 * self.width + self.height - 3)
+            return [0, self.height - 1 - offset]
+
+    def getDir(self) -> str:
+        # Special Case: Start position (0,0) is East before any movement
+        if not self.has_moved and self.pos == 0:
+            return "East"
+            
+        # Standard Ranges (Note: Corners belong to the incoming direction)
+        # If we land exactly on (w-1, 0), we were moving East.
+        if 0 < self.pos <= self.width - 1:
+            return "East"
+        elif self.width - 1 < self.pos <= self.width + self.height - 2:
+            return "North"
+        elif self.width + self.height - 2 < self.pos <= 2 * self.width + self.height - 3:
+            return "West"
+        else:
+            # This covers the Left Edge and the return to (0,0)
+            return "South"
+
+
+# Your Robot object will be instantiated and called as such:
+# obj = Robot(width, height)
+# obj.step(num)
+# param_2 = obj.getPos()
+# param_3 = obj.getDir()

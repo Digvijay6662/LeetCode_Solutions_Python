@@ -35,27 +35,92 @@ class Solution:
         """
         Do not return anything, modify matrix in-place instead.
         """
+        # left and right are POINTERS that define the current layer's boundaries
+        # They start at the outermost layer and move inward after each iteration
+        #
+        #   Initial state (n=4):
+        #   left=0 →  . . . .  ← right=3
+        #             . . . .
+        #             . . . .
+        #             . . . .
         left, right = 0, len(matrix) - 1
+
+        # Process layers from outside in
+        # When left >= right → reached center → nothing left to rotate
         while left < right:
+
+            # Each layer has (right - left) elements to rotate per side
+            # e.g. outermost layer of 4x4 matrix → 3 rotations (i = 0,1,2)
+            # We use 'i' as OFFSET from the layer's starting corner
             for i in range(right - left):
+
+                # top and bottom are ROW indices of current layer's boundaries
+                # They always equal left and right respectively because matrix is n×n
+                # Named separately for clarity — top/bottom for rows, left/right for cols
                 top, bottom = left, right
 
-                # save the topleft
+                # ── SAVE top-left element before it gets overwritten ──────────
+                #
+                #   [top][left + i] = top row, shifted right by i
+                #   e.g. i=0 → [0][0], i=1 → [0][1], i=2 → [0][2]
+                #
+                #    top→ [TL][ ][ ][ ]
+                #          [ ][ ][ ][ ]
+                #          [ ][ ][ ][ ]
+                #          [ ][ ][ ][ ]
                 topLeft = matrix[top][left + i]
 
-                # move bottom left into top left
+                # ── MOVE bottom-left INTO top-left ────────────────────────────
+                #
+                #   bottom-left = [bottom - i][left]
+                #   Moving UP the left column by offset i
+                #   e.g. i=0 → [3][0], i=1 → [2][0], i=2 → [1][0]
+                #
+                #    top→ [←][ ][ ][ ]      [BL][ ][ ][ ]
+                #          [ ][ ][ ][ ]  →   [ ][ ][ ][ ]
+                #         [][ ][ ][ ]      [ ][ ][ ][ ]
+                #          [BL][ ][ ][ ]      [ ][ ][ ][ ]
                 matrix[top][left + i] = matrix[bottom - i][left]
 
-                # move bottom right into bottom left
+                # ── MOVE bottom-right INTO bottom-left ────────────────────────
+                #
+                #   bottom-right = [bottom][right - i]
+                #   Moving LEFT along the bottom row by offset i
+                #   e.g. i=0 → [3][3], i=1 → [3][2], i=2 → [3][1]
+                #
+                #    top→ [ ][ ][ ][ ]      [ ][ ][ ][ ]
+                #          [ ][ ][ ][ ]  →   [ ][ ][ ][ ]
+                #         [][ ][ ][ ]      [ ][ ][ ][ ]
+                #          [←][ ][][BR]     [BR][ ][ ][ ]  ← bottom
                 matrix[bottom - i][left] = matrix[bottom][right - i]
 
-                # move top right into bottom right
+                # ── MOVE top-right INTO bottom-right ──────────────────────────
+                #
+                #   top-right = [top + i][right]
+                #   Moving DOWN the right column by offset i
+                #   e.g. i=0 → [0][3], i=1 → [1][3], i=2 → [2][3]
+                #
+                #    top→  [ ][ ][ ][TR]     [ ][ ][ ][ ]
+                #          [ ][ ][ ][ ]  →   [ ][ ][ ][ ]
+                #          [ ][ ][ ][ ]      [ ][ ][ ][ ]
+                #          [ ][ ][ ][←]      [ ][ ][ ][TR]  ← bottom
                 matrix[bottom][right - i] = matrix[top + i][right]
 
-                # move top left into top right
+                # ── MOVE saved top-left INTO top-right ────────────────────────
+                #
+                #   top-right = [top + i][right]
+                #   Moving DOWN the right column by offset i
+                #   e.g. i=0 → [0][3], i=1 → [1][3], i=2 → [2][3]
+                #
+                #    top→ [ ][ ][ ][←]
+                #          [ ][ ][ ][]
+                #          [ ][ ][ ][ ]
+                #          [ ][ ][ ][ ]
                 matrix[top + i][right] = topLeft
+
+            # Shrink inward to process the next inner layer
             right -= 1
-            left += 1
+            left  += 1
 
 
 Solution 2:
@@ -65,15 +130,40 @@ class Solution:
         """
         Do not return anything, modify matrix in-place instead.
         """
+        n = len(matrix)         # matrix is n x n, e.g. n=3 for 3x3 matrix
 
-        for i in range(len(matrix)):
-            for j in range(i):
+        # ── STEP 1: TRANSPOSE the matrix ─────────────────────────────────────
+        # Transpose means swapping matrix[i][j] with matrix[j][i]
+        # i.e. flipping the matrix along its main diagonal (top-left to bottom-right)
+        #
+        #   Before:          After Transpose:
+        #   1 2 3            1 4 7
+        #   4 5 6     →      2 5 8
+        #   7 8 9            3 6 9
+        #
+        # Why j starts from 0 to i (not 0 to n):
+        #   if j went from 0 to n, we'd swap each pair TWICE → undo the transpose
+        #   j < i means we only visit the LOWER triangle → each pair swapped once
+        #
+        #   i=0: j has no iterations (range(0) is empty) → diagonal element, skip
+        #   i=1: j=0          → swap (1,0) with (0,1)
+        #   i=2: j=0,1        → swap (2,0) with (0,2), swap (2,1) with (1,2)
+        #
+        #   Visual of swapped positions (marked with *):
+        #   . . .
+        #   * . .
+        #   * * .
+        for i in range(n):
+            for j in range(i):          # j < i → only lower triangle
                 matrix[i][j], matrix[j][i] = matrix[j][i], matrix[i][j]
 
-        for row in matrix:
-            row.reverse()
-
-
-
-
-
+        # ── STEP 2: REVERSE each row ──────────────────────────────────────────
+        # After transpose, reversing each row completes the 90° clockwise rotation
+        #
+        #   Before Reverse:  After Reverse:
+        #   1 4 7            7 4 1
+        #   2 5 8     →      8 5 2
+        #   3 6 9            9 6 3
+        #
+        for i in range(n):
+            matrix[i].reverse()         # built-in O(n) in-place row reversal

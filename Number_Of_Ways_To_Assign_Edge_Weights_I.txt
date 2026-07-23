@@ -1,0 +1,214 @@
+3558. Number of Ways to Assign Edge Weights I
+Solved
+Medium
+Topics
+premium lock icon
+Companies
+Hint
+There is an undirected tree with n nodes labeled from 1 to n, rooted at node 1. The tree is represented by a 2D integer array edges of length n - 1, where edges[i] = [ui, vi] indicates that there is an edge between nodes ui and vi.
+
+Initially, all edges have a weight of 0. You must assign each edge a weight of either 1 or 2.
+
+The cost of a path between any two nodes u and v is the total weight of all edges in the path connecting them.
+
+Select any one node x at the maximum depth. Return the number of ways to assign edge weights in the path from node 1 to x such that its total cost is odd.
+
+Since the answer may be large, return it modulo 109 + 7.
+
+Note: Ignore all edges not in the path from node 1 to x.
+
+ 
+
+Example 1:
+
+
+
+Input: edges = [[1,2]]
+
+Output: 1
+
+Explanation:
+
+The path from Node 1 to Node 2 consists of one edge (1 → 2).
+Assigning weight 1 makes the cost odd, while 2 makes it even. Thus, the number of valid assignments is 1.
+Example 2:
+
+
+
+Input: edges = [[1,2],[1,3],[3,4],[3,5]]
+
+Output: 2
+
+Explanation:
+
+The maximum depth is 2, with nodes 4 and 5 at the same depth. Either node can be selected for processing.
+For example, the path from Node 1 to Node 4 consists of two edges (1 → 3 and 3 → 4).
+Assigning weights (1,2) or (2,1) results in an odd cost. Thus, the number of valid assignments is 2.
+ 
+
+Constraints:
+
+2 <= n <= 105
+edges.length == n - 1
+edges[i] == [ui, vi]
+1 <= ui, vi <= n
+edges represents a valid tree.
+
+
+Solution 1:
+
+class Solution:
+    def assignEdgeWeights(self, edges: List[List[int]]) -> int:
+        MOD = 10**9 + 7
+
+        # ── MATHEMATICAL INSIGHT ──
+        # Path from root to deepest node has `max_depth` edges.
+        # Each edge gets weight 1 or 2 → total assignments = 2^max_depth.
+        #
+        # For the path cost to be ODD:
+        #   weight 1 contributes 1 to parity (odd)
+        #   weight 2 contributes 0 to parity (even)
+        #   ─────────────────────────────────────────
+        #   path cost parity = count of edges assigned weight 1 (mod 2)
+        #   cost is odd ↔ ODD NUMBER of edges have weight 1
+        #
+        # By combinatorial identity:
+        #   C(n,1) + C(n,3) + C(n,5) + ... = 2^(n-1)
+        #   (sum of odd-sized subsets of n items = exactly half of 2^n)
+        #
+        # Therefore: valid assignments = 2^(max_depth - 1)
+
+        # ── BUILD ADJACENCY LIST ──
+        # Undirected tree → each edge stored in both directions.
+        # defaultdict(list) avoids KeyError for nodes with no prior entry.
+        adjacency_list = defaultdict(list)
+        for node_u, node_v in edges:
+            adjacency_list[node_u].append(node_v)
+            adjacency_list[node_v].append(node_u)
+
+        # ── BFS TO FIND MAXIMUM DEPTH ──
+        # Start BFS from root (node 1).
+        # BFS naturally processes nodes level by level:
+        #   level 0 = node 1 (root)
+        #   level 1 = direct children of root
+        #   level d = nodes at depth d
+        # After BFS completes, the last level processed = maximum depth.
+        bfs_queue    = deque([1])  # seed with root node
+        visited_nodes = {1}        # prevent revisiting nodes (avoids infinite loops)
+        current_depth = 0          # tracks which BFS level we are currently on
+
+        while bfs_queue:
+
+            # ── PROCESS ENTIRE CURRENT LEVEL ──
+            # Loop exactly len(bfs_queue) times — one full level at a time.
+            # This is the standard "level-order BFS" trick:
+            # everything currently in the queue belongs to `current_depth`.
+            for _ in range(len(bfs_queue)):
+                current_node = bfs_queue.popleft()
+
+                for neighbor in adjacency_list[current_node]:
+                    if neighbor not in visited_nodes:
+                        # Unvisited neighbor → belongs to next depth level
+                        bfs_queue.append(neighbor)
+                        visited_nodes.add(neighbor)   # mark now to avoid duplicates
+
+            # Finished processing one complete level → move to next
+            current_depth += 1
+
+        # ── ADJUST DEPTH ──
+        # The while loop increments current_depth AFTER processing each level.
+        # After the last level (leaves), the queue empties and the loop exits —
+        # but current_depth was incremented one extra time for the empty queue.
+        #
+        # Example: single edge tree (nodes 1→2)
+        #   Iteration 1: process node 1, enqueue node 2 → current_depth = 1
+        #   Iteration 2: process node 2, nothing enqueued → current_depth = 2
+        #   Queue empty → exit.  But actual edge-depth = 1, not 2.
+        # Fix: subtract 1 to get the true number of edges from root to deepest node.
+        max_depth = current_depth - 1
+
+        # ── FINAL ANSWER ──
+        # valid assignments = 2^(max_depth - 1) mod MOD
+        # pow(base, exp, mod) uses fast modular exponentiation: O(log exp)
+        # Handles max_depth = 1 correctly: 2^0 = 1 (exactly one way: assign weight 1)
+        return pow(2, max_depth - 1, MOD)
+
+
+Solution 2:
+
+class Solution:
+    def assignEdgeWeights(self, edges: List[List[int]]) -> int:
+        MOD = 10**9 + 7
+
+        # ── MATHEMATICAL INSIGHT ──
+        # Path from root (node 1) to the deepest node has max_depth edges.
+        # Each edge is assigned weight 1 or 2 → 2^max_depth total assignments.
+        #
+        # For path cost to be ODD:
+        #   weight 1 → contributes 1 (odd) to parity
+        #   weight 2 → contributes 0 (even) to parity
+        #   Cost is odd ↔ an ODD number of edges are assigned weight 1.
+        #
+        # Counting subsets of odd size from max_depth items:
+        #   C(n,1) + C(n,3) + C(n,5) + ... = 2^(n-1)
+        #   (exactly half of all 2^n assignments produce an odd sum)
+        #
+        # Therefore: answer = 2^(max_depth - 1) mod MOD
+
+        # ── BUILD ADJACENCY LIST ──
+        # Undirected tree → each edge [u,v] stored in both directions.
+        # defaultdict(list) auto-initialises an empty list for any new node.
+        adjacency_list = defaultdict(list)
+        for node_u, node_v in edges:
+            adjacency_list[node_u].append(node_v)
+            adjacency_list[node_v].append(node_u)
+
+        def dfs(current_node, parent_node):
+            """
+            Recursively computes the maximum depth (in edges) reachable
+            from current_node, without going back through parent_node.
+
+            Args:
+                current_node : the node currently being visited
+                parent_node  : the node we came from (to avoid going back up)
+
+            Returns:
+                int : maximum number of edges from current_node to any leaf
+                      in its subtree (0 if current_node is itself a leaf)
+
+            ── WHY TRACK PARENT INSTEAD OF A VISITED SET? ──
+            A tree has no cycles — the only way to revisit a node is
+            to step back through the edge we arrived from.
+            Checking neighbor != parent_node blocks that one backtrack,
+            which is all we need.  This costs O(1) vs O(n) for a set.
+            """
+
+            # Start with 0: if this node has no children, it is a leaf
+            # and contributes 0 additional edges below it.
+            subtree_max_depth = 0
+
+            for neighbor in adjacency_list[current_node]:
+                if neighbor != parent_node:
+                    # ── RECURSE INTO CHILD ──
+                    # neighbor is a child (not the parent we came from).
+                    # The depth through this child = 1 (edge to child)
+                    #                              + deepest path below child.
+                    # Take the max across all children to find the deepest
+                    # path in this node's entire subtree.
+                    child_depth       = 1 + dfs(neighbor, current_node)
+                    subtree_max_depth = max(subtree_max_depth, child_depth)
+
+            return subtree_max_depth
+
+        # ── LAUNCH DFS FROM ROOT ──
+        # Root is node 1; it has no parent → sentinel value -1.
+        # -1 can never match a real node label (labels are 1-indexed),
+        # so the root will always explore all its neighbors freely.
+        # max_edge_depth = number of edges on the longest root-to-leaf path.
+        max_edge_depth = dfs(1, -1)
+
+        # ── FINAL ANSWER ──
+        # pow(base, exp, mod) uses fast modular exponentiation → O(log exp).
+        # Edge case: max_edge_depth = 1 (single edge) → pow(2, 0, MOD) = 1 ✓
+        #   Only one valid assignment: assign weight 1 to the single edge.
+        return pow(2, max_edge_depth - 1, MOD)

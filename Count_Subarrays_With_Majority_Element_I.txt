@@ -1,0 +1,173 @@
+3737. Count Subarrays With Majority Element I
+Solved
+Medium
+Topics
+premium lock icon
+Companies
+Hint
+You are given an integer array nums and an integer target.
+
+Return the number of subarrays of nums in which target is the majority element.
+
+The majority element of a subarray is the element that appears strictly more than half of the times in that subarray.
+
+ 
+
+Example 1:
+
+Input: nums = [1,2,2,3], target = 2
+
+Output: 5
+
+Explanation:
+
+Valid subarrays with target = 2 as the majority element:
+
+nums[1..1] = [2]
+nums[2..2] = [2]
+nums[1..2] = [2,2]
+nums[0..2] = [1,2,2]
+nums[1..3] = [2,2,3]
+So there are 5 such subarrays.
+
+Example 2:
+
+Input: nums = [1,1,1,1], target = 1
+
+Output: 10
+
+Explanation:
+
+​​​​​​​All 10 subarrays have 1 as the majority element.
+
+Example 3:
+
+Input: nums = [1,2,3], target = 4
+
+Output: 0
+
+Explanation:
+
+target = 4 does not appear in nums at all. Therefore, there cannot be any subarray where 4 is the majority element. Hence the answer is 0.
+
+ 
+
+Constraints:
+
+1 <= nums.length <= 1000
+1 <= nums[i] <= 10​​​​​​​9
+1 <= target <= 109
+
+
+Solution 1:
+
+class Solution:
+    def countMajoritySubarrays(self, nums: List[int], target: int) -> int:
+        n = len(nums)
+        total_majority_subarrays = 0   # Final answer: number of valid subarrays
+
+        # Outer loop: choose starting index of subarray
+        for start_index in range(n):
+            balance = 0  # Tracks difference between target count (+1) and non-target count (-1)
+
+            # Inner loop: extend subarray to the right
+            for end_index in range(start_index, n):
+                # If current element is target, increment balance
+                if nums[end_index] == target:
+                    balance += 1
+                else:
+                    # Otherwise decrement balance
+                    balance -= 1
+
+                # If balance > 0, target appears more than half → majority
+                if balance > 0:
+                    total_majority_subarrays += 1
+
+        return total_majority_subarrays
+
+
+Solution 2:
+
+class Solution:
+    def countMajoritySubarrays(self, nums: List[int], target: int) -> int:
+        n = len(nums)
+
+        # ── CORE INSIGHT: BALANCE ENCODING ──
+        # Assign +1 for every occurrence of target, -1 for everything else.
+        # Define prefix_balance[i] = sum of encodings from index 0 to i-1.
+        #   (prefix_balance[0] = 0 by convention — empty prefix)
+        #
+        # A subarray nums[l..r] has target as majority iff:
+        #   count(target) > count(non-target)  in range [l, r]
+        #   ↔  prefix_balance[r+1] - prefix_balance[l] > 0
+        #   ↔  prefix_balance[r+1] > prefix_balance[l]
+        #
+        # So we need to count pairs (l, r) where prefix_balance[r+1] > prefix_balance[l].
+
+        # ── KEY OPTIMIZATION: MAINTAIN valid_starts INCREMENTALLY ──
+        # Instead of scanning all l for each r (O(n²)), we track
+        # exactly how many valid left endpoints exist for the current right.
+        #
+        # When balance INCREASES (+1, target found):
+        #   Left endpoints where prefix_balance[l] == old_balance
+        #   were NOT valid before (old == old, not strictly less),
+        #   but become valid NOW (new = old+1 > old = prefix_balance[l]).
+        #   → ADD balance_freq[old_balance] to valid_starts BEFORE incrementing.
+        #
+        # When balance DECREASES (-1, non-target found):
+        #   Left endpoints where prefix_balance[l] == new_balance
+        #   WERE valid before (old > old-1 = prefix_balance[l]),
+        #   but become INVALID NOW (new == prefix_balance[l], not strictly greater).
+        #   → SUBTRACT balance_freq[new_balance] from valid_starts AFTER decrementing.
+
+        # running_balance = prefix_balance at current position (starts at 0)
+        running_balance = 0
+
+        # balance_freq[b] = how many prefix_balance values equal b have been seen
+        # Initialized with balance_freq[0] = 1 for the sentinel empty prefix
+        # (prefix_balance[0] = 0 before processing any element).
+        balance_freq = defaultdict(int)
+        balance_freq[0] = 1   # sentinel: the empty prefix has balance 0
+
+        total_valid_subarrays = 0
+
+        # valid_starts = number of valid left endpoints l for subarrays ending at i
+        # A left endpoint l is valid if prefix_balance[l] < prefix_balance[i+1]
+        valid_starts = 0
+
+        for i in range(n):
+
+            if nums[i] == target:
+                # ── BALANCE INCREASES: running_balance → running_balance + 1 ──
+                #
+                # Left endpoints where prefix_balance[l] == running_balance
+                # (the OLD balance) are crossing from invalid → valid:
+                #   Before: old_balance == prefix_balance[l]  (not strictly greater)
+                #   After:  new_balance  > prefix_balance[l]  (strictly greater) ✓
+                #
+                # Count them BEFORE incrementing (we need the OLD balance as key)
+                valid_starts    += balance_freq[running_balance]
+                running_balance += 1   # now reflects prefix_balance[i+1]
+
+            else:
+                # ── BALANCE DECREASES: running_balance → running_balance - 1 ──
+                #
+                # Left endpoints where prefix_balance[l] == new_balance
+                # (the NEW balance) are crossing from valid → invalid:
+                #   Before: old_balance  > prefix_balance[l]  (valid)
+                #   After:  new_balance == prefix_balance[l]  (not strictly greater) ✗
+                #
+                # Decrement FIRST so we can use the new balance as the key
+                running_balance -= 1   # now reflects prefix_balance[i+1]
+                valid_starts    -= balance_freq[running_balance]
+
+            # Record prefix_balance[i+1] = running_balance for future right endpoints
+            # (future iterations will query this when checking their left endpoints)
+            balance_freq[running_balance] += 1
+
+            # valid_starts now = count of all l in [0..i] where
+            # prefix_balance[l] < prefix_balance[i+1]
+            # Each such l defines a valid subarray nums[l..i] → add to total
+            total_valid_subarrays += valid_starts
+
+        return total_valid_subarrays

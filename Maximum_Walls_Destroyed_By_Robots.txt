@@ -1,0 +1,240 @@
+3661. Maximum Walls Destroyed by Robots
+Solved
+Hard
+Topics
+premium lock icon
+Companies
+Hint
+There is an endless straight line populated with some robots and walls. You are given integer arrays robots, distance, and walls:
+robots[i] is the position of the ith robot.
+distance[i] is the maximum distance the ith robot's bullet can travel.
+walls[j] is the position of the jth wall.
+Every robot has one bullet that can either fire to the left or the right at most distance[i] meters.
+
+A bullet destroys every wall in its path that lies within its range. Robots are fixed obstacles: if a bullet hits another robot before reaching a wall, it immediately stops at that robot and cannot continue.
+
+Return the maximum number of unique walls that can be destroyed by the robots.
+
+Notes:
+
+A wall and a robot may share the same position; the wall can be destroyed by the robot at that position.
+Robots are not destroyed by bullets.
+ 
+
+Example 1:
+
+Input: robots = [4], distance = [3], walls = [1,10]
+
+Output: 1
+
+Explanation:
+
+robots[0] = 4 fires left with distance[0] = 3, covering [1, 4] and destroys walls[0] = 1.
+Thus, the answer is 1.
+Example 2:
+
+Input: robots = [10,2], distance = [5,1], walls = [5,2,7]
+
+Output: 3
+
+Explanation:
+
+robots[0] = 10 fires left with distance[0] = 5, covering [5, 10] and destroys walls[0] = 5 and walls[2] = 7.
+robots[1] = 2 fires left with distance[1] = 1, covering [1, 2] and destroys walls[1] = 2.
+Thus, the answer is 3.
+Example 3:
+Input: robots = [1,2], distance = [100,1], walls = [10]
+
+Output: 0
+
+Explanation:
+
+In this example, only robots[0] can reach the wall, but its shot to the right is blocked by robots[1]; thus the answer is 0.
+
+ 
+
+Constraints:
+
+1 <= robots.length == distance.length <= 105
+1 <= walls.length <= 105
+1 <= robots[i], walls[j] <= 109
+1 <= distance[i] <= 105
+All values in robots are unique
+All values in walls are unique
+
+
+Solution 1:
+
+class Solution:
+    def maxWalls(self, robots: List[int], distance: List[int], walls: List[int]) -> int:
+        n = len(robots)
+        # Sort walls to enable binary search for range counting
+        walls.sort()
+        # Pair robots with their distance and sort by position to identify adjacent obstacles
+        robDist = sorted(zip(robots, distance))
+        robRange = []
+
+        # Precompute the maximum reachable boundaries for each robot
+        for i in range(n):
+            # Left limit: either (pos - distance) or the position of the robot to the left + 1
+            l = max(robDist[i - 1][0] + 1 if i > 0 else 1, robDist[i][0] - robDist[i][1])
+            # Right limit: either (pos + distance) or the position of the robot to the right - 1
+            r = min(robDist[i + 1][0] - 1 if i < n - 1 else 10**9, robDist[i][0] + robDist[i][1])
+            robRange.append([l, r])
+
+        # Helper function to find how many unique walls fall within the range [l, r]
+        def count(l, r):
+            if l > r: return 0
+            left_idx = bisect_left(walls, l)
+            right_idx = bisect_right(walls, r)
+            return right_idx - left_idx
+
+        # Memoization table: dp[i][prev_dir]
+        # i: current robot index
+        # prev_dir: 1 if the previous robot (i-1) shot Right, 0 otherwise
+        dp = [[-1] * 2 for _ in range(n)]
+
+        def solve(i, prev_dir):
+            # Base case: no more robots to process
+            if i == n:
+                return 0
+
+            # Return cached result if already computed
+            if dp[i][prev_dir] != -1:
+                return dp[i][prev_dir]
+
+            l, r = robRange[i]
+            
+            # CRITICAL LOGIC: If the previous robot shot RIGHT, its bullet might have 
+            # already destroyed walls that this robot could reach by shooting LEFT.
+            # We adjust the left boundary (l) to start after the previous robot's max reach.
+            if prev_dir == 1:
+                l = max(l, robRange[i - 1][1] + 1)
+
+            # Option 1: Current robot (i) shoots LEFT
+            # We count walls from adjusted 'l' to robot's position.
+            # Next robot (i+1) starts with prev_dir = 0 (since this robot shot left).
+            shoot_left = count(l, robDist[i][0]) + solve(i + 1, 0)
+
+            # Option 2: Current robot (i) shoots RIGHT
+            # We count walls from robot's position to its right limit 'r'.
+            # Next robot (i+1) starts with prev_dir = 1 (since this robot shot right).
+            shoot_right = count(robDist[i][0], r) + solve(i + 1, 1)
+
+            # Store and return the maximum walls possible from these two choices
+            dp[i][prev_dir] = max(shoot_left, shoot_right) 
+            return dp[i][prev_dir]
+
+        # Start with the first robot; prev_dir is 0 because there is no robot before it
+        return solve(0, 0)
+
+
+Solution 2:
+
+class Solution:
+    def maxWalls(self, robots: List[int], distance: List[int], walls: List[int]) -> int:
+        n = len(robots)
+        walls.sort()
+        # Sort robots and distances by robot position to ensure neighbors are correct
+        robDist = sorted([[r, d] for r, d in zip(robots, distance)])
+        robRange = []
+
+        # Precalculate the boundaries for each robot based on neighbors and distance
+        for i in range(n):
+            # Left bound: cannot pass the robot to the left
+            l = max(robDist[i - 1][0] + 1 if i > 0 else 1, robDist[i][0] - robDist[i][1])
+            # Right bound: cannot pass the robot to the right
+            r = min(robDist[i + 1][0] - 1 if i < n - 1 else 10**9, robDist[i][0] + robDist[i][1])
+            robRange.append([l, r])
+
+        # Binary search helper to count unique walls in a range
+        def count(l, r):
+            if l > r: return 0
+            left = bisect_left(walls, l)
+            right = bisect_right(walls, r)
+            return right - left
+
+        # dp[i][prev_dir] where i is robot index and prev_dir is 0 (shot left) or 1 (shot right)
+        dp = [[0] * 2 for _ in range(n + 1)]
+
+        # Iterate backwards from the last robot to the first (Bottom-Up)
+        for i in range(n - 1, -1, -1):
+            for prev_dir in range(2):
+                l, r = robRange[i]
+                
+                # Logic: If the previous robot shot right, this robot's left shot 
+                # starts after the previous robot's maximum right reach to avoid double counting
+                current_l = l
+                if prev_dir == 1:
+                    current_l = max(l, robRange[i - 1][1] + 1)
+
+                # Option 1: Current robot shoots Left
+                # Count walls from adjusted left bound to robot position + recurse (i+1, dir=0)
+                shoot_left = count(current_l, robDist[i][0]) + dp[i + 1][0]
+                
+                # Option 2: Current robot shoots Right
+                # Count walls from robot position to right bound + recurse (i+1, dir=1)
+                shoot_right = count(robDist[i][0], r) + dp[i + 1][1]
+
+                # Store the best result for this state
+                dp[i][prev_dir] = max(shoot_left, shoot_right)
+
+        # Result is starting at robot 0 with no "previous robot shooting right" (prev_dir = 0)
+        return dp[0][0]
+
+
+Solution 3:
+
+class Solution:
+    def maxWalls(self, robots: List[int], distance: List[int], walls: List[int]) -> int:
+        n = len(robots)
+        walls.sort()
+        # Sort robots and distances by robot position
+        robDist = sorted(zip(robots, distance))
+        
+        # Precompute the boundaries to avoid repeating logic in the DP loop
+        robRange = []
+        for i in range(n):
+            pos, dist = robDist[i]
+            l = max(robDist[i - 1][0] + 1 if i > 0 else 1, pos - dist)
+            r = min(robDist[i + 1][0] - 1 if i < n - 1 else 10**9, pos + dist)
+            robRange.append((l, r))
+
+        # Optimization: Memoize wall counts or use a sliding window approach
+        # For simplicity and speed, we'll keep the binary search but use Space Optimization on DP
+        def get_count(l, r):
+            if l > r: return 0
+            return bisect_right(walls, r) - bisect_left(walls, l)
+
+        # Space Optimization: We only need the results from the 'next' robot (i+1)
+        # dp_next[0] = solve(i+1, 0), dp_next[1] = solve(i+1, 1)
+        dp_next = [0, 0]
+
+        for i in range(n - 1, -1, -1):
+            pos = robDist[i][0]
+            l, r = robRange[i]
+            
+            # Temporary storage for current robot's results
+            dp_curr = [0, 0]
+            
+            for prev_dir in range(2):
+                # 1. Calculate Left Shot (accounting for potential overlap)
+                curr_l = l
+                if prev_dir == 1 and i > 0:
+                    curr_l = max(l, robRange[i - 1][1] + 1)
+                
+                # Shot left covers [curr_l, pos], next robot sees prev_dir=0
+                shoot_left = get_count(curr_l, pos) + dp_next[0]
+                
+                # 2. Calculate Right Shot
+                # Shot right covers [pos, r], next robot sees prev_dir=1
+                # We use pos + 1 in get_count if we want to avoid double counting the robot's pos,
+                # but following your logic:
+                shoot_right = get_count(pos, r) + dp_next[1]
+                
+                dp_curr[prev_dir] = max(shoot_left, shoot_right)
+            
+            dp_next = dp_curr
+
+        # The answer is robot 0 with no previous robot shooting right
+        return dp_next[0]
